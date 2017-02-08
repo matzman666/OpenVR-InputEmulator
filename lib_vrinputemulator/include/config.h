@@ -1,0 +1,3 @@
+#pragma once
+
+#define VRINPUTEMULATOR_EASYLOGGING 0
