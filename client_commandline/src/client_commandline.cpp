@@ -80,7 +80,7 @@ void buttonEvent(int argc, const char* argv[]) {
 	inputEmulator.connect();
 	inputEmulator.openvrButtonEvent(eventType, deviceId, buttonId, 0.0);
 	if (noHold) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		if (eventType == vrinputemulator::ButtonEventType::ButtonPressed) {
 			eventType = vrinputemulator::ButtonEventType::ButtonUnpressed;
 		} else {
