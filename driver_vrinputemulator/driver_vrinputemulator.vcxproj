@@ -20,17 +20,20 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp" />
-    <ClCompile Include="src\driver_device.cpp" />
-    <ClCompile Include="src\driver_ipc.cpp" />
+    <ClCompile Include="src\driver_deviceinfo.cpp" />
+    <ClCompile Include="src\driver_virtualdevices.cpp" />
+    <ClCompile Include="src\com\shm\driver_ipc_shm.cpp" />
     <ClCompile Include="src\driver_server.cpp" />
     <ClCompile Include="src\driver_vrinputemulator.cpp" />
     <ClCompile Include="src\stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\com\shm\driver_ipc_shm.h" />
     <ClInclude Include="src\driver_vrinputemulator.h" />
     <ClInclude Include="src\logging.h" />
     <ClInclude Include="src\stdafx.h" />
     <ClInclude Include="src\targetver.h" />
+    <ClInclude Include="src\utils\DevicePropertyValueVisitor.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AF6FBE95-527D-499B-9ABD-3A47E9E84C8A}</ProjectGuid>
@@ -91,7 +94,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Configuration)\driver\$(Platform)\</OutDir>
+    <OutDir>$(SolutionDir)\$(ProjectName)\bin\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)build\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>driver_00vrinputemulator</TargetName>
   </PropertyGroup>
@@ -103,7 +106,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Configuration)\driver\$(Platform)\</OutDir>
+    <OutDir>$(SolutionDir)\$(ProjectName)\bin\$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)build\$(ProjectName)\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>driver_00vrinputemulator</TargetName>
   </PropertyGroup>

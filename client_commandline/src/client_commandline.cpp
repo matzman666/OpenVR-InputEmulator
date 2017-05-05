@@ -50,7 +50,7 @@ void listDevices(int argc, const char* argv[]) {
 void buttonEvent(int argc, const char* argv[]) {
 	if (argc > 2 && std::strcmp(argv[2], "help") == 0) {
 		std::stringstream ss;
-		ss << "Usage: client_commandline.exe buttonevent [press|pressandhold|unpress|touch|touchandhold|untouch] <openvrId> <buttonId>";
+		ss << "Usage: client_commandline.exe buttonevent [press|pressandhold|unpress|touch|touchandhold|untouch] <openvrId> <buttonId> [pressTime]";
 		throw std::runtime_error(ss.str());
 	} else if (argc < 5) {
 		throw std::runtime_error("Error: Too few arguments.");
@@ -74,13 +74,19 @@ void buttonEvent(int argc, const char* argv[]) {
 	} else {
 		throw std::runtime_error( std::string("Error: Unknown button event type ") + std::string(argv[2]));
 	}
+	uint32_t holdTime = 50;
+	if (noHold) {
+		if (argc > 5) {
+			holdTime = std::atoi(argv[5]);
+		}
+	}
 	uint32_t deviceId = std::atoi(argv[3]);
 	vr::EVRButtonId buttonId = (vr::EVRButtonId)std::atoi(argv[4]);
 	vrinputemulator::VRInputEmulator inputEmulator;
 	inputEmulator.connect();
 	inputEmulator.openvrButtonEvent(eventType, deviceId, buttonId, 0.0);
 	if (noHold) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		std::this_thread::sleep_for(std::chrono::milliseconds(holdTime));
 		if (eventType == vrinputemulator::ButtonEventType::ButtonPressed) {
 			eventType = vrinputemulator::ButtonEventType::ButtonUnpressed;
 		} else {
@@ -440,7 +446,7 @@ void setDeviceRotation(int argc, const char* argv[]) {
 	vrinputemulator::VRInputEmulator inputEmulator;
 	inputEmulator.connect();
 	auto pose = inputEmulator.getVirtualDevicePose(deviceId);
-	pose.qRotation = vrmath::quatFromRotationYXZ(yaw, pitch, roll);
+	pose.qRotation = vrmath::quaternionFromYawPitchRoll(yaw, pitch, roll);
 	pose.poseIsValid = true;
 	pose.result = vr::TrackingResult_Running_OK;
 	inputEmulator.setVirtualDevicePose(deviceId, pose);
@@ -499,11 +505,16 @@ void deviceButtonMapping(int argc, const char * argv[]) {
 	}
 }
 
-void deviceTranslationOffset(int argc, const char * argv[]) {
+void deviceOffsets(int argc, const char * argv[]) {
 	if (argc > 2 && std::strcmp(argv[2], "help") == 0) {
 		std::stringstream ss;
-		ss << "Usage: client_commandline.exe devicetranslationoffset <openvrId> [enable|disable]" << std::endl
-			<< "       client_commandline.exe devicetranslationoffset <openvrId> set <x> <y> <z>";
+		ss << "Usage: client_commandline.exe deviceoffsets <openvrId> [enable|disable]" << std::endl
+			<< "       client_commandline.exe deviceoffsets <openvrId> set worldPosOffset <x> <y> <z>" << std::endl
+			<< "       client_commandline.exe deviceoffsets <openvrId> set worldRotOffset <yaw> <pitch> <roll>" << std::endl
+			<< "       client_commandline.exe deviceoffsets <openvrId> set driverPosOffset <x> <y> <z>" << std::endl
+			<< "       client_commandline.exe deviceoffsets <openvrId> set driverRotOffset <yaw> <pitch> <roll>" << std::endl
+			<< "       client_commandline.exe deviceoffsets <openvrId> set devicePosOffset <x> <y> <z>" << std::endl
+			<< "       client_commandline.exe deviceoffsets <openvrId> set deviceRotOffset <yaw> <pitch> <roll>";
 		throw std::runtime_error(ss.str());
 	} else if (argc < 4) {
 		throw std::runtime_error("Error: Too few arguments.");
@@ -511,19 +522,41 @@ void deviceTranslationOffset(int argc, const char * argv[]) {
 	uint32_t deviceId = std::atoi(argv[2]);
 	uint32_t enable = 0;
 	bool offsetValid = false;
+	int universe = 0;
+	int type = 0;
 	double offset[3];
 	if (std::strcmp(argv[3], "enable") == 0) {
 		enable = 1;
 	} else if (std::strcmp(argv[3], "disable") == 0) {
 		enable = 2;
 	} else if (std::strcmp(argv[3], "set") == 0) {
-		if (argc < 7) {
+		if (argc < 8) {
 			throw std::runtime_error("Error: Too few arguments.");
 		}
-		enable = 1;
-		offset[0] = std::atof(argv[4]);
-		offset[1] = std::atof(argv[5]);
-		offset[2] = std::atof(argv[6]);
+		if (std::strcmp(argv[3], "worldPosOffset") == 0) {
+			universe = 1;
+			type = 2;
+		} else if (std::strcmp(argv[4], "worldRotOffset") == 0) {
+			universe = 1;
+			type = 1;
+		} else if (std::strcmp(argv[4], "driverPosOffset") == 0) {
+			universe = 2;
+			type = 2;
+		} else if (std::strcmp(argv[4], "driverRotOffset") == 0) {
+			universe = 2;
+			type = 1;
+		} else if (std::strcmp(argv[4], "deviceRotOffset") == 0) {
+			universe = 3;
+			type = 1;
+		} else if (std::strcmp(argv[4], "devicePosOffset") == 0) {
+			universe = 3;
+			type = 2;
+		} else {
+			throw std::runtime_error("Error: Unknown argument.");
+		}
+		offset[0] = std::atof(argv[5]);
+		offset[1] = std::atof(argv[6]);
+		offset[2] = std::atof(argv[7]);
 		offsetValid = true;
 	} else {
 		throw std::runtime_error("Error: Unknown pose offset command");
@@ -531,52 +564,45 @@ void deviceTranslationOffset(int argc, const char * argv[]) {
 	vrinputemulator::VRInputEmulator inputEmulator;
 	inputEmulator.connect();
 	if (enable > 0) {
-		inputEmulator.enableDeviceTranslationOffset(deviceId, enable == 1 ? true : false);
+		inputEmulator.enableDeviceOffsets(deviceId, enable == 1 ? true : false);
 	} else if (offsetValid) {
-		inputEmulator.setDeviceTranslationOffset(deviceId, offset);
-	}
-}
-
-void deviceRotationOffset(int argc, const char * argv[]) {
-	if (argc > 2 && std::strcmp(argv[2], "help") == 0) {
-		std::stringstream ss;
-		ss << "Usage: client_commandline.exe devicerotationoffset <openvrId> [enable|disable]" << std::endl
-			<< "       client_commandline.exe devicerotationoffset <openvrId> set <yaw> <pitch> <roll>";
-		throw std::runtime_error(ss.str());
-	} else if (argc < 4) {
-		throw std::runtime_error("Error: Too few arguments.");
-	}
-	uint32_t deviceId = std::atoi(argv[2]);
-	uint32_t enable = 0;
-	bool rotationValid = false;
-	vr::HmdQuaternion_t rotation;
-	if (std::strcmp(argv[3], "enable") == 0) {
-		enable = 1;
-	} else if (std::strcmp(argv[3], "disable") == 0) {
-		enable = 2;
-	} else if (std::strcmp(argv[3], "set") == 0) {
-		if (argc < 7) {
-			throw std::runtime_error("Error: Too few arguments.");
+		if (type == 1) {
+			vr::HmdQuaternion_t rot = vrmath::quaternionFromYawPitchRoll(offset[0], offset[1], offset[2]);
+			switch (universe) {
+			case 1:
+				inputEmulator.setWorldFromDriverRotationOffset(deviceId, rot);
+				break;
+			case 2:
+				inputEmulator.setDriverFromHeadRotationOffset(deviceId, rot);
+				break;
+			case 3:
+				inputEmulator.setDriverRotationOffset(deviceId, rot);
+				break;
+			default:
+				throw std::runtime_error("Error: Unknown universe");
+			}
+		} else if (type == 2) {
+			vr::HmdVector3d_t pos = {offset[0], offset[1], offset[2]};
+			switch (universe) {
+			case 1:
+				inputEmulator.setWorldFromDriverTranslationOffset(deviceId, pos);
+				break;
+			case 2:
+				inputEmulator.setDriverFromHeadTranslationOffset(deviceId, pos);
+				break;
+			case 3:
+				inputEmulator.setDriverTranslationOffset(deviceId, pos);
+				break;
+			default:
+				throw std::runtime_error("Error: Unknown universe");
+			}
+		} else {
+			throw std::runtime_error("Error: Unknown type");
 		}
-		auto yaw = std::atof(argv[4]);
-		auto pitch = std::atof(argv[5]);
-		auto roll = std::atof(argv[6]);
-		rotationValid = true;
-		enable = 1;
-		rotation = vrmath::quatFromRotationYXZ(yaw, pitch, roll);
-	} else {
-		throw std::runtime_error("Error: Unknown pose rotation command");
-	}
-	vrinputemulator::VRInputEmulator inputEmulator;
-	inputEmulator.connect();
-	if (enable > 0) {
-		inputEmulator.enableDeviceRotationOffset(deviceId, enable == 1 ? true : false);
-	} else if (rotationValid) {
-		inputEmulator.setDeviceRotationOffset(deviceId, rotation);
 	}
 }
 
-void deviceMirrorMode(int argc, const char * argv[]) {
+void deviceModes(int argc, const char * argv[]) {
 	if (argc > 2 && std::strcmp(argv[2], "help") == 0) {
 		std::stringstream ss;
 		ss << "Usage: client_commandline.exe devicemirrormode <openvrId> off" << std::endl
@@ -585,7 +611,7 @@ void deviceMirrorMode(int argc, const char * argv[]) {
 	} else if (argc < 4) {
 		throw std::runtime_error("Error: Too few arguments.");
 	}
-	uint32_t deviceId = std::atoi(argv[2]);
+	/*uint32_t deviceId = std::atoi(argv[2]);
 	uint32_t mode;
 	uint32_t target = vr::k_unTrackedDeviceIndexInvalid;
 	if (std::strcmp(argv[3], "off") == 0) {
@@ -603,7 +629,7 @@ void deviceMirrorMode(int argc, const char * argv[]) {
 	}
 	vrinputemulator::VRInputEmulator inputEmulator;
 	inputEmulator.connect();
-	inputEmulator.setDeviceMirrorMode(deviceId, mode, target);
+	inputEmulator.setDeviceMirrorMode(deviceId, mode, target);*/
 }
 
 

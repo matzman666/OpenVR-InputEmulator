@@ -3,8 +3,28 @@
 #include <cmath>
 
 
-inline vr::HmdQuaternion_t operator*(const vr::HmdQuaternion_t& lhs, const vr::HmdQuaternion_t& rhs) {
+inline vr::HmdQuaternion_t operator+(const vr::HmdQuaternion_t& lhs, const vr::HmdQuaternion_t& rhs) {
+	return {
+		lhs.w + rhs.w,
+		lhs.x + rhs.x,
+		lhs.y + rhs.y,
+		lhs.z + rhs.z
+	};
+}
+
+
+inline vr::HmdQuaternion_t operator-(const vr::HmdQuaternion_t& lhs, const vr::HmdQuaternion_t& rhs) {
 	return{
+		lhs.w - rhs.w,
+		lhs.x - rhs.x,
+		lhs.y - rhs.y,
+		lhs.z - rhs.z
+	};
+}
+
+
+inline vr::HmdQuaternion_t operator*(const vr::HmdQuaternion_t& lhs, const vr::HmdQuaternion_t& rhs) {
+	return {
 		(lhs.w * rhs.w) - (lhs.x * rhs.x) - (lhs.y * rhs.y) - (lhs.z * rhs.z),
 		(lhs.w * rhs.x) + (lhs.x * rhs.w) + (lhs.y * rhs.z) - (lhs.z * rhs.y),
 		(lhs.w * rhs.y) + (lhs.y * rhs.w) + (lhs.z * rhs.x) - (lhs.x * rhs.z),
@@ -13,49 +33,86 @@ inline vr::HmdQuaternion_t operator*(const vr::HmdQuaternion_t& lhs, const vr::H
 }
 
 
+inline vr::HmdVector3d_t operator+(const vr::HmdVector3d_t& lhs, const vr::HmdVector3d_t& rhs) {
+	return {
+		lhs.v[0] + rhs.v[0],
+		lhs.v[1] + rhs.v[1],
+		lhs.v[2] + rhs.v[2]
+	};
+}
+
+inline vr::HmdVector3d_t operator+(const vr::HmdVector3d_t& lhs, const double(&rhs)[3]) {
+	return{
+		lhs.v[0] + rhs[0],
+		lhs.v[1] + rhs[1],
+		lhs.v[2] + rhs[2]
+	};
+}
+
+inline vr::HmdVector3d_t operator-(const vr::HmdVector3d_t& lhs, const vr::HmdVector3d_t& rhs) {
+	return{
+		lhs.v[0] - rhs.v[0],
+		lhs.v[1] - rhs.v[1],
+		lhs.v[2] - rhs.v[2]
+	};
+}
+
+inline vr::HmdVector3d_t operator-(const vr::HmdVector3d_t& lhs, const double (&rhs)[3]) {
+	return{
+		lhs.v[0] - rhs[0],
+		lhs.v[1] - rhs[1],
+		lhs.v[2] - rhs[2]
+	};
+}
+
+
 namespace vrmath {
 
-	inline vr::HmdQuaternion_t quatFromRotationAxis(double rot, double ux, double uy, double uz) {
+	inline vr::HmdQuaternion_t quaternionFromRotationAxis(double rot, double ux, double uy, double uz) {
+		auto ha = rot / 2;
 		return{
-			std::cos(rot / 2),
-			ux * std::sin(rot / 2),
-			uy * std::sin(rot / 2),
-			uz * std::sin(rot / 2)
+			std::cos(ha),
+			ux * std::sin(ha),
+			uy * std::sin(ha),
+			uz * std::sin(ha)
 		};
 	}
 
-	inline vr::HmdQuaternion_t quatFromRotationX(double rot) {
+	inline vr::HmdQuaternion_t quaternionFromRotationX(double rot) {
+		auto ha = rot / 2;
 		return{
-			std::cos(rot / 2),
-			std::sin(rot / 2),
+			std::cos(ha),
+			std::sin(ha),
 			0.0f,
 			0.0f
 		};
 	}
 
-	inline vr::HmdQuaternion_t quatFromRotationY(double rot) {
+	inline vr::HmdQuaternion_t quaternionFromRotationY(double rot) {
+		auto ha = rot / 2;
 		return{
-			std::cos(rot / 2),
+			std::cos(ha),
 			0.0f,
-			std::sin(rot / 2),
+			std::sin(ha),
 			0.0f
 		};
 	}
 
-	inline vr::HmdQuaternion_t quatFromRotationZ(double rot) {
+	inline vr::HmdQuaternion_t quaternionFromRotationZ(double rot) {
+		auto ha = rot / 2;
 		return{
-			std::cos(rot / 2),
+			std::cos(ha),
 			0.0f,
 			0.0f,
-			std::sin(rot / 2)
+			std::sin(ha)
 		};
 	}
 
-	inline vr::HmdQuaternion_t quatFromRotationYXZ(double yaw, double pitch, double roll) {
-		return quatFromRotationY(yaw) * quatFromRotationX(pitch) * quatFromRotationZ(roll);
+	inline vr::HmdQuaternion_t quaternionFromYawPitchRoll(double yaw, double pitch, double roll) {
+		return quaternionFromRotationY(yaw) * quaternionFromRotationX(pitch) * quaternionFromRotationZ(roll);
 	}
 
-	static vr::HmdQuaternion_t quatFromRotMat(const vr::HmdMatrix34_t& mat) {
+	inline vr::HmdQuaternion_t quaternionFromRotationMatrix(const vr::HmdMatrix34_t& mat) {
 		auto a = mat.m;
 		vr::HmdQuaternion_t q;
 		double trace = a[0][0] + a[1][1] + a[2][2];
@@ -92,8 +149,107 @@ namespace vrmath {
 		return q;
 	}
 
+	inline vr::HmdQuaternion_t quaternionConjugate(const vr::HmdQuaternion_t& quat) {
+		return {
+			quat.w,
+			-quat.x,
+			-quat.y,
+			-quat.z,
+		};
+	}
+
+	inline vr::HmdVector3d_t quaternionRotateVector(const vr::HmdQuaternion_t& quat, const vr::HmdVector3d_t& vector, bool reverse = false) {
+		if (reverse) {
+			vr::HmdQuaternion_t pin = { 0.0, vector.v[0], vector.v[1] , vector.v[2] };
+			auto pout = vrmath::quaternionConjugate(quat) * pin * quat;
+			return {pout.x, pout.y, pout.z};
+		} else {
+			vr::HmdQuaternion_t pin = { 0.0, vector.v[0], vector.v[1] , vector.v[2] };
+			auto pout = quat * pin * vrmath::quaternionConjugate(quat);
+			return { pout.x, pout.y, pout.z };
+		}
+	}
+
+	inline vr::HmdVector3d_t quaternionRotateVector(const vr::HmdQuaternion_t& quat, const double (&vector)[3], bool reverse = false) {
+		if (reverse) {
+			vr::HmdQuaternion_t pin = { 0.0, vector[0], vector[1] , vector[2] };
+			auto pout = vrmath::quaternionConjugate(quat) * pin * quat;
+			return{ pout.x, pout.y, pout.z };
+		} else {
+			vr::HmdQuaternion_t pin = { 0.0, vector[0], vector[1] , vector[2] };
+			auto pout = quat * pin * vrmath::quaternionConjugate(quat);
+			return{ pout.x, pout.y, pout.z };
+		}
+	}
+
+	inline vr::HmdMatrix34_t matMul33(const vr::HmdMatrix34_t& a, const vr::HmdMatrix34_t& b) {
+		vr::HmdMatrix34_t result;
+		for (unsigned i = 0; i < 3; i++) {
+			for (unsigned j = 0; j < 3; j++) {
+				result.m[i][j] = 0.0f;
+				for (unsigned k = 0; k < 3; k++) {
+					result.m[i][j] += a.m[i][k] * b.m[k][j];
+				}
+			}
+		}
+		return result;
+	}
+
+	inline vr::HmdVector3_t matMul33(const vr::HmdMatrix34_t& a, const vr::HmdVector3_t& b) {
+		vr::HmdVector3_t result;
+		for (unsigned i = 0; i < 3; i++) {
+			result.v[i] = 0.0f;
+			for (unsigned k = 0; k < 3; k++) {
+				result.v[i] += a.m[i][k] * b.v[k];
+			};
+		}
+		return result;
+	}
+
+	inline vr::HmdVector3d_t matMul33(const vr::HmdMatrix34_t& a, const vr::HmdVector3d_t& b) {
+		vr::HmdVector3d_t result;
+		for (unsigned i = 0; i < 3; i++) {
+			result.v[i] = 0.0f;
+			for (unsigned k = 0; k < 3; k++) {
+				result.v[i] += a.m[i][k] * b.v[k];
+			};
+		}
+		return result;
+	}
+
+	inline vr::HmdVector3_t matMul33(const vr::HmdVector3_t& a, const vr::HmdMatrix34_t& b) {
+		vr::HmdVector3_t result;
+		for (unsigned i = 0; i < 3; i++) {
+			result.v[i] = 0.0f;
+			for (unsigned k = 0; k < 3; k++) {
+				result.v[i] += a.v[k] * b.m[k][i];
+			};
+		}
+		return result;
+	}
+
+	inline vr::HmdVector3d_t matMul33(const vr::HmdVector3d_t& a, const vr::HmdMatrix34_t& b) {
+		vr::HmdVector3d_t result;
+		for (unsigned i = 0; i < 3; i++) {
+			result.v[i] = 0.0f;
+			for (unsigned k = 0; k < 3; k++) {
+				result.v[i] += a.v[k] * b.m[k][i];
+			};
+		}
+		return result;
+	}
+
+	inline vr::HmdMatrix34_t transposeMul33(const vr::HmdMatrix34_t& a) {
+		vr::HmdMatrix34_t result;
+		for (unsigned i = 0; i < 3; i++) {
+			for (unsigned k = 0; k < 3; k++) {
+				result.m[i][k] = a.m[k][i];
+			}
+		}
+		result.m[0][3] = a.m[0][3];
+		result.m[1][3] = a.m[1][3];
+		result.m[2][3] = a.m[2][3];
+		return result;
+	}
 }
-
-
-
 

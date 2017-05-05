@@ -2,9 +2,11 @@
 
 # OpenVR-InputEmulator
 
-An OpenVR driver that allows to create virtual controllers, emulate controller input, manipulate poses of existing controllers and remap buttons. A client-side library which communicates with the driver via shared-memory is also included.
+An OpenVR driver that allows to create virtual controllers, emulate controller input, enable motion compensation, manipulate poses of existing controllers and remap buttons. Includes a dashboard to configure some settings directly in VR, a command line client for more advanced settings, and a client-side library to support development of third-party applications.
 
-The OpenVR driver hooks into the HTC Vive lighthouse driver and allows to modify any pose updates or button/axis events coming from the Vive controllers. Due to the nature of this hack the driver may break when Valve decides to update the driver-side OpenVR API.
+![Example Screenshot](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/InVRScreenshot.png)
+
+The OpenVR driver hooks into the HTC Vive lighthouse driver and allows to modify any pose updates or button/axis events coming from the Vive controllers before they reach the OpenVR runtime. Due to the nature of this hack the driver may break when Valve decides to update the driver-side OpenVR API.
 
 The motivation of this driver is that I want to make myself a tracked gun that is guaranteed to work in any SteamVR game regardless of whether the original dev wants to support tracked guns or not. To accomplish this I need some way to add translation and rotation offsets to the poses of the motion controllers so that I can line up my tracked gun and the gun in the game. Additionally I need a way to easily switch between the tracking puck on my gun and my motion controller with the game thinking it's still the same controller (Throwing grenades with a tracked gun is not fun). But this driver should also support other use cases. 
 
@@ -12,31 +14,70 @@ There is also a client-side API which other programs can use to communicate with
 
 # Features
 
+- Add translation and rotation offsets to the pose of existing controllers.
+- Redirect the pose from one controller to another.
+- Swap controllers.
+- Motion  compensation for 6-dof motion platforms.
 - Create virtual controllers and control their positions and rotations.
 - Emulate controller input.
 - Remap controller buttons.
-- Add translation and rotation offsets to the pose of existing controllers.
-- Mirror the pose from one controller to another.
 - ...
 
 # Notes:
 
-This is a work-in-progress.
+This is a work-in-progress and may contain bugs.
 
 # Usage
 
-## Driver
+## Installer
 
-Download the newest driver archive from the [release section](https://github.com/matzman666/OpenVR-InputEmulator/releases) and copy the contained directory into "<Your SteamVR directory>\drivers".
+Download the newest installer from the [release section](https://github.com/matzman666/OpenVR-InputEmulator/releases) and then execute it. Don't forget to exit SteamVR before installing/de-installing.
 
-The **activateMultipleDrivers** setting must be set to true, otherwise SteamVR will not load the driver.
+## Command-Line Client
 
-## Client
-
-Currently there is only a command line client available. Download the newest client archive from the [release section](https://github.com/matzman666/OpenVR-InputEmulator/releases) and unpack it. Enter client_commandline.exe help on the command line for usage instructions.
+Download the newest command-line client from the [release section](https://github.com/matzman666/OpenVR-InputEmulator/releases), unzip it, and then execute the contained binary in a cmd window. Enter *'client_commandline.exe help'* on the command line for usage instructions.
 
 
 # Documentation
+
+## Top Page:
+
+![Root Page](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/DeviceManipulationPage.png)
+
+- **Identify**: Sends a haptic pulse to the selected device (Devices without haptic feedback like the Vive trackers can be identified by a flashing white light).
+- **Status**: Shows the current status of the selected device.
+- **Device Mode**: Allows to select a device mode.
+  - **Default**: Default mode.
+  - **Disable**: Let OpenVR think that the device has been disconnected.
+  - **Redirect to**: Impersonate another device.
+  - **Swap with**: Swap two devices.
+  - **Motion Compensation**: Enable motion compensation with the selected device as reference device.
+- **Device Offsets**: Allows to add translation or rotation offsets to the selected device.
+- **Motion Compensation Settings**: Allows to configure motion compensation mode.
+- **Render Model**: Shows a render model at the device position (experimental).
+- **Profile**: Allows to apply/define/delete device offsets/motion compensation profiles.
+
+### Redirect Mode
+
+Redirect mode allows to redirect the pose updates and controller events from one controller to another. To enable it select the device from with the pose updates/controller events should be redirected, then set the device mode to "Redirect to" and select the device that should be the redirect target from the combo box on the right, and at last press 'Apply'.
+
+Redirect mode can be temporarily suspended by pressing the system button on either the source or target device.
+
+## Device Offsets Page:
+
+![Device Offsets Page](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/DeviceOffsetsPage.png)
+
+- **Enable Offsets**: Enable/disable device offsets.
+- **WorldFormDriver Offsets**: Allows to add offsets to the 'WorldFromDriver' transformations.
+- **DriverFromHead Offsets**: Allows to add offsets to the 'DriverFromHead' transformations.
+- **Driver Offsets**: Allows to add offsets to the device driver pose.
+- **Clear**: Set all offsets to zero.
+
+## Motion Compensation Settings Page:
+
+![Motion Compensation Settings Page](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/MotionCompensationPage.png)
+
+- **Center Point**: Set the center point of the motion platform.
 
 ## client_commandline commands:
 
@@ -47,7 +88,7 @@ Lists all openvr devices.
 ### buttonevent
 
 ```
-buttonevent [press|pressandhold|unpress|touch|touchandhold|untouch] <openvrId> <buttonId>
+buttonevent [press|pressandhold|unpress|touch|touchandhold|untouch] <openvrId> <buttonId> [<pressTime>]
 ```
 
 Emulates a button event on the given device. See [openvr.h](https://github.com/ValveSoftware/openvr/blob/master/headers/openvr.h#L600-L626) for available button ids.
@@ -162,53 +203,12 @@ devicebuttonmapping <openvrId> remove [<buttonId>|all]
 
 Removes a button mapping from the given device. 
 
-### devicetranslationoffset
-
-```
-devicetranslationoffset <openvrId> [enable|disable]
-```
-
-Enables/disables pose translation offset on the given device.
-
-```
-devicetranslationoffset <openvrId> set <x> <y> <z>
-```
-
-Sets the pose translation offset on the given device.
-
-### devicerotationoffset
-
-```
-devicerotationoffset <openvrId> [enable|disable]
-```
-
-Enables/disables pose rotation offset on the given device.
-
-```
-devicerotationoffset <openvrId> set <yaw> <pitch> <roll>
-```
-
-Sets the pose rotation offset on the given device.
-
-### devicemirrormode
-
-```
-devicemirrormode <openvrId> off
-```
-
-Turns mirror mode off on the given device.
-
-```
-devicemirrormode <openvrId> [mirror|redirect] <targetOpenvrId>
-```
-
-Mirrors/Redirects the pose of the given device to another device.
 
 ## Client API
 
 ToDo. See [vrinputemulator.h](https://github.com/matzman666/OpenVR-InputEmulator/blob/master/lib_vrinputemulator/include/vrinputemulator.h).
 
-# Examples
+# Command-Line Client Examples
 
 ## Create virtual controller
 
@@ -258,6 +258,10 @@ client_commandline.exe devicebuttonmapping 3 add 2 33
 client_commandline.exe devicebuttonmapping 3 add 33 2
 client_commandline.exe devicebuttonmapping 3 enable
 ```
+
+# Development
+
+Open *'VRInputEmulator.sln'* in Visual Studio 2015.
 
 
 # Known Bugs

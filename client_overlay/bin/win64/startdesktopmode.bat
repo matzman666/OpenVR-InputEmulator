@@ -1,0 +1,1 @@
+start OpenVR-InputEmulatorOverlay.exe -desktop -nosound

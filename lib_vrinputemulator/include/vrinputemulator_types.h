@@ -33,4 +33,26 @@ namespace vrinputemulator {
 		VECTOR4 = 23
 	};
 
+
+	struct DeviceOffsets {
+		uint32_t deviceId;
+		bool offsetsEnabled;
+		vr::HmdQuaternion_t worldFromDriverRotationOffset;
+		vr::HmdVector3d_t worldFromDriverTranslationOffset;
+		vr::HmdQuaternion_t driverFromHeadRotationOffset;
+		vr::HmdVector3d_t driverFromHeadTranslationOffset;
+		vr::HmdQuaternion_t deviceRotationOffset;
+		vr::HmdVector3d_t deviceTranslationOffset;
+	};
+
+
+	struct DeviceInfo {
+		uint32_t deviceId;
+		vr::ETrackedDeviceClass deviceClass;
+		int deviceMode;
+		bool offsetsEnabled;
+		bool buttonMappingEnabled;
+		bool redirectSuspended;
+	};
+
 } // end namespace vrinputemulator

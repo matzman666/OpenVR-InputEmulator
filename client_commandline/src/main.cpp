@@ -68,12 +68,10 @@ int main(int argc, const char* argv[]) {
 			setDeviceRotation(argc, argv);
 		} else if (std::strcmp(argv[1], "devicebuttonmapping") == 0) {
 			deviceButtonMapping(argc, argv);
-		} else if (std::strcmp(argv[1], "devicetranslationoffset") == 0) {
-			deviceTranslationOffset(argc, argv);
-		} else if (std::strcmp(argv[1], "devicerotationoffset") == 0) {
-			deviceRotationOffset(argc, argv);
-		} else if (std::strcmp(argv[1], "devicemirrormode") == 0) {
-			deviceMirrorMode(argc, argv);
+		} else if (std::strcmp(argv[1], "deviceoffsets") == 0) {
+			deviceOffsets(argc, argv);
+		} else if (std::strcmp(argv[1], "devicemodes") == 0) {
+			deviceModes(argc, argv);
 		} else if (std::strcmp(argv[1], "benchmarkipc") == 0) {
 			benchmarkIPC(argc, argv);
 		} else {

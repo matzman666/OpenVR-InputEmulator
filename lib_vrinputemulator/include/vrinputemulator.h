@@ -150,30 +150,42 @@ public:
 	vr::DriverPose_t getVirtualDevicePose(uint32_t virtualDeviceId);
 	vr::VRControllerState_t getVirtualControllerState(uint32_t virtualDeviceId);
 	uint32_t addVirtualDevice(VirtualDeviceType deviceType, const std::string& deviceSerial, bool softfail = true);
-	void publishVirtualDevice(uint32_t virtualDeviceId, bool modal = false);
-	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, int32_t value, bool modal = false);
-	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, uint64_t value, bool modal = false);
-	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, float value, bool modal = false);
-	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, bool value, bool modal = false);
-	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, const std::string& value, bool modal = false);
-	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, const char* value, bool modal = false);
-	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, const vr::HmdMatrix34_t& value, bool modal = false);
-	void removeVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, bool modal = false);
-	void setVirtualDevicePose(uint32_t virtualDeviceId, const vr::DriverPose_t& pose, bool modal = false);
-	void setVirtualControllerState(uint32_t virtualDeviceId, const vr::VRControllerState_t& state, bool modal = false);
+	void publishVirtualDevice(uint32_t virtualDeviceId, bool modal = true);
+	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, int32_t value, bool modal = true);
+	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, uint64_t value, bool modal = true);
+	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, float value, bool modal = true);
+	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, bool value, bool modal = true);
+	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, const std::string& value, bool modal = true);
+	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, const char* value, bool modal = true);
+	void setVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, const vr::HmdMatrix34_t& value, bool modal = true);
+	void removeVirtualDeviceProperty(uint32_t virtualDeviceId, vr::ETrackedDeviceProperty deviceProperty, bool modal = true);
+	void setVirtualDevicePose(uint32_t virtualDeviceId, const vr::DriverPose_t& pose, bool modal = true);
+	void setVirtualControllerState(uint32_t virtualDeviceId, const vr::VRControllerState_t& state, bool modal = true);
 
-	void enableDeviceButtonMapping(uint32_t deviceId, bool enable);
-	void addDeviceButtonMapping(uint32_t deviceId, vr::EVRButtonId button, vr::EVRButtonId mapped);
-	void removeDeviceButtonMapping(uint32_t deviceId, vr::EVRButtonId button);
-	void removeAllDeviceButtonMappings(uint32_t deviceId);
+	void enableDeviceButtonMapping(uint32_t deviceId, bool enable, bool modal = true);
+	void addDeviceButtonMapping(uint32_t deviceId, vr::EVRButtonId button, vr::EVRButtonId mapped, bool modal = true);
+	void removeDeviceButtonMapping(uint32_t deviceId, vr::EVRButtonId button, bool modal = true);
+	void removeAllDeviceButtonMappings(uint32_t deviceId, bool modal = true);
 
-	void enableDeviceTranslationOffset(uint32_t deviceId, bool enable);
-	void setDeviceTranslationOffset(uint32_t deviceId, const double offset[3]);
+	void getDeviceOffsets(uint32_t deviceId, DeviceOffsets& data);
+	void enableDeviceOffsets(uint32_t deviceId, bool enable, bool modal = true);
+	void setWorldFromDriverRotationOffset(uint32_t deviceId, const vr::HmdQuaternion_t& value, bool modal = true);
+	void setWorldFromDriverTranslationOffset(uint32_t deviceId, const vr::HmdVector3d_t& value, bool modal = true);
+	void setDriverFromHeadRotationOffset(uint32_t deviceId, const vr::HmdQuaternion_t& value, bool modal = true);
+	void setDriverFromHeadTranslationOffset(uint32_t deviceId, const vr::HmdVector3d_t& value, bool modal = true);
+	void setDriverRotationOffset(uint32_t deviceId, const vr::HmdQuaternion_t& value, bool modal = true);
+	void setDriverTranslationOffset(uint32_t deviceId, const vr::HmdVector3d_t& value, bool modal = true);
 
-	void enableDeviceRotationOffset(uint32_t deviceId, bool enable);
-	void setDeviceRotationOffset(uint32_t deviceId, const vr::HmdQuaternion_t& q);
+	void getDeviceInfo(uint32_t deviceId, DeviceInfo& info);
+	void setDeviceNormalMode(uint32_t deviceId, bool modal = true);
+	void setDeviceFakeDisconnectedMode(uint32_t deviceId, bool modal = true);
+	void setDeviceRedictMode(uint32_t deviceId, uint32_t target, bool modal = true);
+	void setDeviceSwapMode(uint32_t deviceId, uint32_t target, bool modal = true);
+	void setDeviceMotionCompensationMode(uint32_t deviceId, const vr::HmdVector3d_t& centerPos = vr::HmdVector3d_t(), bool relativeToDevice = false, bool modal = true);
 
-	void setDeviceMirrorMode(uint32_t deviceId, uint32_t mode, uint32_t target = vr::k_unTrackedDeviceIndexInvalid);
+	void setMotionCompensationCenter(const vr::HmdVector3d_t& centerPos, bool relativeToDevice, bool modal = true);
+
+	void triggerHapticPulse(uint32_t deviceId, uint32_t axisId, uint16_t durationMicroseconds, bool directMode, bool modal = true);
 
 private:
 	std::recursive_mutex _mutex;

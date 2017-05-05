@@ -29,10 +29,8 @@ void setDeviceRotation(int argc, const char* argv[]);
 
 void deviceButtonMapping(int argc, const char* argv[]);
 
-void deviceTranslationOffset(int argc, const char* argv[]);
+void deviceOffsets(int argc, const char* argv[]);
 
-void deviceRotationOffset(int argc, const char* argv[]);
-
-void deviceMirrorMode(int argc, const char* argv[]);
+void deviceModes(int argc, const char* argv[]);
 
 void benchmarkIPC(int argc, const char* argv[]);

@@ -1,0 +1,16 @@
+{
+	"source" : "builtin",
+	"applications": [{
+		"app_key": "matzman666.VRInputEmulator",
+		"launch_type": "binary",
+		"binary_path_windows": "OpenVR-InputEmulatorOverlay.exe",
+		"is_dashboard_overlay": true,
+
+		"strings": {
+			"en_us": {
+				"name": "VR Input Emulator",
+				"description": "OpenVR Input Emulator Overlay"
+			}
+		}
+	}]
+}

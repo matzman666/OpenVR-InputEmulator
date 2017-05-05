@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{33E075DB-922D-3252-976E-46B5721DC3DE}</ProjectGuid>
+    <RootNamespace>OpenVR-InputEmulatorOverlay</RootNamespace>
+    <Keyword>Qt4VSv1.0</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <PlatformToolSet>v140</PlatformToolSet>
+    <OutputDirectory>bin\win64\</OutputDirectory>
+    <ATLMinimizesCRunTimeLibraryUsage>false</ATLMinimizesCRunTimeLibraryUsage>
+    <CharacterSet>NotSet</CharacterSet>
+    <ConfigurationType>Application</ConfigurationType>
+    <IntermediateDirectory>release\</IntermediateDirectory>
+    <PrimaryOutput>OpenVR-InputEmulatorOverlay</PrimaryOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <PlatformToolSet>v140</PlatformToolSet>
+    <OutputDirectory>bin\win64\</OutputDirectory>
+    <ATLMinimizesCRunTimeLibraryUsage>false</ATLMinimizesCRunTimeLibraryUsage>
+    <CharacterSet>NotSet</CharacterSet>
+    <ConfigurationType>Application</ConfigurationType>
+    <IntermediateDirectory>debug\</IntermediateDirectory>
+    <PrimaryOutput>OpenVR-InputEmulatorOverlay</PrimaryOutput>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bin\win64\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">OpenVR-InputEmulatorOverlay</TargetName>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</IgnoreImportLibrary>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bin\win64\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">OpenVR-InputEmulatorOverlay</TargetName>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</IgnoreImportLibrary>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\lib_vrinputemulator\include;..\third-party\boost_1_63_0;..\openvr\headers;..\third-party\easylogging++;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQuick;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtWidgets;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtGui;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtANGLE;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQml;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtNetwork;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtCore;release;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\mkspecs\win32-msvc2015;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>-Zc:strictStrings -Zc:throwingNew -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 %(AdditionalOptions)</AdditionalOptions>
+      <AssemblerListingLocation>release\</AssemblerListingLocation>
+      <BrowseInformation>false</BrowseInformation>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <DisableSpecificWarnings>4577;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;WIN64;QT_NO_DEBUG;QT_QUICK_LIB;QT_WIDGETS_LIB;QT_GUI_LIB;QT_QML_LIB;QT_NETWORK_LIB;QT_CORE_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessToFile>false</PreprocessToFile>
+      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\qtmain.lib;shell32.lib;..\openvr\lib\win64\openvr_api.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Quick.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Widgets.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Gui.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Qml.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Network.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Core.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>;..\third-party\boost_1_63_0\lib64-msvc-14.0;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib;C:\utils\postgresql\pgsql\lib;C:\utils\my_sql\my_sql\lib;$(QTDIR)\lib;..\openvr\lib\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreImportLibrary>true</IgnoreImportLibrary>
+      <LinkIncremental>false</LinkIncremental>
+      <OutputFile>$(OutDir)\OpenVR-InputEmulatorOverlay.exe</OutputFile>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <SubSystem>Windows</SubSystem>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Link>
+    <Midl>
+      <DefaultCharType>Unsigned</DefaultCharType>
+      <EnableErrorChecks>None</EnableErrorChecks>
+      <WarningLevel>0</WarningLevel>
+    </Midl>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;WIN64;QT_NO_DEBUG;QT_QUICK_LIB;QT_WIDGETS_LIB;QT_GUI_LIB;QT_QML_LIB;QT_NETWORK_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\lib_vrinputemulator\include;..\third-party\boost_1_63_0;..\openvr\headers;..\third-party\easylogging++;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQuick;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtWidgets;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtGui;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtANGLE;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQml;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtNetwork;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtCore;debug;..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\mkspecs\win32-msvc2015;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>-Zc:strictStrings -Zc:throwingNew -w34100 -w34189 -w44996 -w44456 -w44457 -w44458 %(AdditionalOptions)</AdditionalOptions>
+      <AssemblerListingLocation>debug\</AssemblerListingLocation>
+      <BrowseInformation>false</BrowseInformation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4577;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;WIN64;QT_QUICK_LIB;QT_WIDGETS_LIB;QT_GUI_LIB;QT_QML_LIB;QT_NETWORK_LIB;QT_CORE_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessToFile>false</PreprocessToFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <WarningLevel>Level3</WarningLevel>
+      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\qtmaind.lib;shell32.lib;..\openvr\lib\win64\openvr_api.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Quickd.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Widgetsd.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Guid.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Qmld.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Networkd.lib;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib\Qt5Cored.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>;..\third-party\boost_1_63_0\lib64-msvc-14.0;E:\Development\Qt\Qt5.7.0\5.7\msvc2015_64\lib;C:\utils\postgresql\pgsql\lib;C:\utils\my_sql\my_sql\lib;$(QTDIR)\lib;..\openvr\lib\win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>"/MANIFESTDEPENDENCY:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' publicKeyToken='6595b64144ccf1df' language='*' processorArchitecture='*'" %(AdditionalOptions)</AdditionalOptions>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreImportLibrary>true</IgnoreImportLibrary>
+      <OutputFile>$(OutDir)\OpenVR-InputEmulatorOverlay.exe</OutputFile>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <SubSystem>Windows</SubSystem>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Link>
+    <Midl>
+      <DefaultCharType>Unsigned</DefaultCharType>
+      <EnableErrorChecks>None</EnableErrorChecks>
+      <WarningLevel>0</WarningLevel>
+    </Midl>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;WIN64;QT_QUICK_LIB;QT_WIDGETS_LIB;QT_GUI_LIB;QT_QML_LIB;QT_NETWORK_LIB;QT_CORE_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Debug\moc_DeviceManipulationTabController.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Debug\moc_overlaycontroller.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Release\moc_DeviceManipulationTabController.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Release\moc_overlaycontroller.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\tabcontrollers\DeviceManipulationTabController.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\overlaycontroller.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\tabcontrollers\DeviceManipulationTabController.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o "$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DWIN64 -DQT_NO_DEBUG -DQT_QUICK_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DNDEBUG  "-I.\..\lib_vrinputemulator\include" "-I.\..\third-party\boost_1_63_0" "-I.\..\openvr\headers" "-I.\..\third-party\easylogging++" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQuick" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtWidgets" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtGui" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtANGLE" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQml" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtNetwork" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtCore" "-I.\release" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\mkspecs\win32-msvc2015"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Moc%27ing DeviceManipulationTabController.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o "$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DWIN64 -DQT_QUICK_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB  "-I.\..\lib_vrinputemulator\include" "-I.\..\third-party\boost_1_63_0" "-I.\..\openvr\headers" "-I.\..\third-party\easylogging++" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQuick" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtWidgets" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtGui" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtANGLE" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQml" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtNetwork" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtCore" "-I.\debug" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\mkspecs\win32-msvc2015"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Moc%27ing DeviceManipulationTabController.h...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
+    </CustomBuild>
+    <ClInclude Include="src\logging.h" />
+    <CustomBuild Include="src\overlaycontroller.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o "$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DWIN64 -DQT_NO_DEBUG -DQT_QUICK_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DNDEBUG  "-I.\..\lib_vrinputemulator\include" "-I.\..\third-party\boost_1_63_0" "-I.\..\openvr\headers" "-I.\..\third-party\easylogging++" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQuick" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtWidgets" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtGui" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtANGLE" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQml" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtNetwork" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtCore" "-I.\release" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\mkspecs\win32-msvc2015"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Moc%27ing overlaycontroller.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o "$(ConfigurationName)\moc_%(Filename).cpp"  -D_WINDOWS -DUNICODE -DWIN32 -DWIN64 -DQT_QUICK_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB  "-I.\..\lib_vrinputemulator\include" "-I.\..\third-party\boost_1_63_0" "-I.\..\openvr\headers" "-I.\..\third-party\easylogging++" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQuick" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtWidgets" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtGui" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtANGLE" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtQml" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtNetwork" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\include\QtCore" "-I.\debug" "-I.\..\..\..\..\Development\Qt\Qt5.7.0\5.7\msvc2015_64\mkspecs\win32-msvc2015"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Moc%27ing overlaycontroller.h...</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\lib_vrinputemulator\lib_vrinputemulator.vcxproj">
+      <Project>{05ac9994-2b63-4de5-abf3-95ce346f3a64}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="bin\win64\res\qml\MotionCompensationPage.qml" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" Qt5Version_x0020_x64="Qt 5.7.0 x64" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
