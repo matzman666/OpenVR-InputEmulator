@@ -281,6 +281,12 @@ void CServerDriver::RunFrame() {
 		starttime = std::chrono::duration_cast <std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		callcount = 0;
 	}*/
+	for (int i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i) {
+		auto vd = m_virtualDevices[i];
+		if (vd && vd->published() && vd->periodicPoseUpdates()) {
+			vd->sendPoseUpdate();
+		}
+	}
 }
 
 int32_t CServerDriver::virtualDevices_addDevice(VirtualDeviceType type, const std::string& serial) {
@@ -298,12 +304,14 @@ int32_t CServerDriver::virtualDevices_addDevice(VirtualDeviceType type, const st
 	for (uint32_t i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i) {
 		if (!m_virtualDevices[i]) {
 			virtualDeviceId = i;
+			break;
 		}
 	}
 	switch (type) {
 		case VirtualDeviceType::TrackedController: {
 			m_virtualDevices[virtualDeviceId] = std::make_shared<CTrackedControllerDriver>(this, serial);
 			LOG(INFO) << "Added new tracked controller:  type " << (int)type << ", serial \"" << serial << "\", emulatedDeviceId " << virtualDeviceId;
+			m_virtualDeviceCount++;
 			return virtualDeviceId;
 		}
 		default:
@@ -323,17 +331,12 @@ int32_t CServerDriver::virtualDevices_publishDevice(uint32_t emulatedDeviceId, b
 		if (device->published()) {
 			return -3;
 		}
-		device->publish();
-		if (notify && vr::VRServerDriverHost()) {
-			vr::ETrackedPropertyError pError;
-			vr::ETrackedDeviceClass deviceClass = (vr::ETrackedDeviceClass)device->getTrackedDeviceProperty<int32_t>(vr::Prop_DeviceClass_Int32, &pError);
-			if (pError == vr::TrackedProp_Success) {
-				vr::VRServerDriverHost()->TrackedDeviceAdded(device->serialNumber().c_str(), deviceClass, device);
-				LOG(INFO) << "Published tracked controller: emulatedDeviceId " << emulatedDeviceId;
-			} else {
-				LOG(ERROR) << "Error while publishing controller: Missing device class (" << (int)pError << ")";
-				return -4;
-			}
+		try {
+			device->publish();
+			LOG(INFO) << "Published tracked controller: virtualDeviceId " << emulatedDeviceId;
+		} catch (std::exception& e) {
+			LOG(ERROR) << "Error while publishing controller " << emulatedDeviceId << ": " << e.what();
+			return -4;
 		}
 		return 0;
 	}

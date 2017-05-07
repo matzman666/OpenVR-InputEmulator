@@ -66,6 +66,31 @@ void CTrackedDeviceDriver::updatePose(const vr::DriverPose_t & newPose, double t
 	}
 }
 
+void CTrackedDeviceDriver::sendPoseUpdate(double timeOffset, bool onlyWhenConnected) {
+	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::sendPoseUpdate( " << timeOffset << " )";
+	std::lock_guard<std::recursive_mutex> lock(_mutex);
+	if (!onlyWhenConnected || (m_pose.poseIsValid && m_pose.deviceIsConnected)) {
+		m_pose.poseTimeOffset = timeOffset;
+		if (m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
+			vr::VRServerDriverHost()->TrackedDevicePoseUpdated(m_openvrId, m_pose, sizeof(vr::DriverPose_t));
+		}
+	}
+}
+
+void CTrackedDeviceDriver::publish() {
+	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::publish()";
+	if (!m_published) {
+		vr::ETrackedPropertyError pError;
+		vr::ETrackedDeviceClass deviceClass = (vr::ETrackedDeviceClass)getTrackedDeviceProperty<int32_t>(vr::Prop_DeviceClass_Int32, &pError);
+		if (pError == vr::TrackedProp_Success) {
+			vr::VRServerDriverHost()->TrackedDeviceAdded(m_serialNumber.c_str(), deviceClass, this);
+			m_published = true;
+		} else {
+			throw std::runtime_error(std::string("Could not get device class (") + std::to_string((int)pError) + std::string(")"));
+		}
+	}
+}
+
 
 CTrackedControllerDriver::CTrackedControllerDriver(CServerDriver* parent, const std::string& serial)
 		: CTrackedDeviceDriver(parent, VirtualDeviceType::TrackedController, serial) {

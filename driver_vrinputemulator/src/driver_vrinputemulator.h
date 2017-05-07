@@ -314,6 +314,7 @@ protected:
 	VirtualDeviceType m_deviceType;
 	std::string m_serialNumber;
 	bool m_published = false;
+	bool m_periodicPoseUpdates = true;
 	uint32_t m_openvrId = vr::k_unTrackedDeviceIndexInvalid;
 	uint32_t m_virtualDeviceId;
 	vr::PropertyContainerHandle_t m_propertyContainer = vr::k_ulInvalidPropertyContainer;
@@ -339,6 +340,7 @@ public:
 	const std::string& serialNumber() { return m_serialNumber; }
 	VirtualDeviceType deviceType() { return m_deviceType; }
 	bool published() { return m_published; }
+	bool periodicPoseUpdates() { return m_periodicPoseUpdates; }
 
 	CServerDriver* serverDriver() { return m_serverDriver; }
 	uint32_t openvrDeviceId() { return m_openvrId; }
@@ -346,9 +348,11 @@ public:
 
 	vr::DriverPose_t& driverPose() { return m_pose; }
 
-	virtual void publish() { m_published = true; }
+	bool enablePeriodicPoseUpdates(bool enabled) { return m_periodicPoseUpdates; }
+	void publish();
 
 	void updatePose(const vr::DriverPose_t& newPose, double timeOffset, bool notify = true);
+	void sendPoseUpdate(double timeOffset = 0.0, bool onlyWhenConnected = true);
 
 	template<class T>
 	T getTrackedDeviceProperty(vr::ETrackedDeviceProperty prop, vr::ETrackedPropertyError * pError) {
