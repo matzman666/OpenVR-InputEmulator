@@ -259,9 +259,38 @@ client_commandline.exe devicebuttonmapping 3 add 33 2
 client_commandline.exe devicebuttonmapping 3 enable
 ```
 
-# Development
+## Initial Setup
+### Download the LeapMotion SDK
+1. Goto https://developer.leapmotion.com/get-started
+1. Click "Download Orion Beta"
+1. Unzip the "LeapSDK" folder in the zip file into `OpenVR-InputEmulator/third-party/LeapSDK`
 
-Open *'VRInputEmulator.sln'* in Visual Studio 2015.
+### Boost
+1. Goto https://sourceforge.net/projects/boost/files/boost-binaries/1.63.0/
+1. Download Boost 1.63 Binaries (boost_1_63_0-msvc-14.0-64.exe)
+1. Install Boost into `OpenVR-InputEmulator/third-party/boost_1_63_0`
+  
+### Qt
+1. Goto https://download.qt.io/official_releases/qt/5.7/5.7.0/
+1. Download Qt 5.7.0
+1. Run the Qt installer (I installed it to "c:\Qt")
+1. Goto `OpenVR-InputEmulator\client_overlay`
+1. Create `client_overlay.vcxproj.user` and paste the following into it:
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <QTDIR>C:\Qt\5.7\msvc2015_64</QTDIR>
+  </PropertyGroup>
+</Project>
+```
+
+NOTE: Adjust the path the `msvc2015_64` folder in Qt to match your installation
+
+## Building
+1. Open *'VRInputEmulator.sln'* in Visual Studio 2015.
+2. Build Solution
 
 
 # Known Bugs
