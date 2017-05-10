@@ -87,12 +87,12 @@ void LeapMotionClient::onFrame(const Leap::Controller& controller) {
 		bool leftPresent = false;
 		bool rightPresent = false;
 
-		leftPose.qWorldFromDriverRotation = leftRotationOffset * vrmath::quatFromRotMat(hmdPose.mDeviceToAbsoluteTracking);
+		leftPose.qWorldFromDriverRotation = leftRotationOffset * vrmath::quaternionFromRotationMatrix(hmdPose.mDeviceToAbsoluteTracking);
 		leftPose.vecWorldFromDriverTranslation[0] = hmdPose.mDeviceToAbsoluteTracking.m[0][3] + leftTranslationOffset[0];
 		leftPose.vecWorldFromDriverTranslation[1] = hmdPose.mDeviceToAbsoluteTracking.m[1][3] + leftTranslationOffset[1];
 		leftPose.vecWorldFromDriverTranslation[2] = hmdPose.mDeviceToAbsoluteTracking.m[2][3] + leftTranslationOffset[2];
 
-		rightPose.qWorldFromDriverRotation = rightRotationOffset * vrmath::quatFromRotMat(hmdPose.mDeviceToAbsoluteTracking);
+		rightPose.qWorldFromDriverRotation = rightRotationOffset * vrmath::quaternionFromRotationMatrix(hmdPose.mDeviceToAbsoluteTracking);
 		rightPose.vecWorldFromDriverTranslation[0] = hmdPose.mDeviceToAbsoluteTracking.m[0][3] + rightTranslationOffset[0];
 		rightPose.vecWorldFromDriverTranslation[1] = hmdPose.mDeviceToAbsoluteTracking.m[1][3] + rightTranslationOffset[1];
 		rightPose.vecWorldFromDriverTranslation[2] = hmdPose.mDeviceToAbsoluteTracking.m[2][3] + rightTranslationOffset[2];
@@ -137,7 +137,7 @@ void LeapMotionClient::onFrame(const Leap::Controller& controller) {
 			float yaw = d.yaw();
 			float pitch = d.pitch();
 			float roll = palmNormal.roll();
-			pose.qRotation = vrmath::quatFromRotationYXZ(-yaw, pitch, roll);
+			pose.qRotation = vrmath::quaternionFromYawPitchRoll(-yaw, pitch, roll);
 
 			pose.poseIsValid = true;
 			pose.result = vr::ETrackingResult::TrackingResult_Running_OK;
@@ -201,7 +201,7 @@ void LeapMotionClient::onFrame(const Leap::Controller& controller) {
 			float yaw = d.yaw();
 			float pitch = d.pitch();
 			float roll = palmNormal.roll();
-			pose.qRotation = vrmath::quatFromRotationYXZ(-yaw, pitch, roll);
+			pose.qRotation = vrmath::quaternionFromYawPitchRoll(-yaw, pitch, roll);
 
 			pose.poseIsValid = true;
 			pose.result = vr::ETrackingResult::TrackingResult_Running_OK;
