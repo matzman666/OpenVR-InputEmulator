@@ -812,12 +812,8 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 									} else {
 										auto serverDriver = CServerDriver::getInstance();
 										if (serverDriver) {
-											serverDriver->motionCompensation_setCenterPos(
-												message.msg.dm_MotionCompensationMode.centerPos,
-												message.msg.dm_MotionCompensationMode.centerRelativeToDevice
-											);
-										info->setMotionCompensationMode();
-										resp.status = ipc::ReplyStatus::Ok;
+											info->setMotionCompensationMode();
+											resp.status = ipc::ReplyStatus::Ok;
 										} else {
 											resp.status = ipc::ReplyStatus::UnknownError;
 										}
@@ -901,10 +897,6 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							resp.messageId = message.msg.dm_SetMotionCompensationProperties.messageId;
 							auto serverDriver = CServerDriver::getInstance();
 							if (serverDriver) {
-								serverDriver->motionCompensation_setCenterPos(
-									message.msg.dm_SetMotionCompensationProperties.centerPos, 
-									message.msg.dm_SetMotionCompensationProperties.centerRelativeToDevice
-								);
 								resp.status = ipc::ReplyStatus::Ok;
 							} else {
 								resp.status = ipc::ReplyStatus::UnknownError;

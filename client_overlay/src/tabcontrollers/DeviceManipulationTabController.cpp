@@ -239,26 +239,6 @@ double DeviceManipulationTabController::getDriverTranslationOffset(unsigned inde
 	}
 }
 
-int DeviceManipulationTabController::getMotionCompensationCenterMode() {
-	return motionCompensationCenterMode;
-}
-
-double DeviceManipulationTabController::getMotionCompensationCenter(int axis) {
-	if (axis >= 0 && axis < 3) {
-		return motionCompensationCenter.v[axis];
-	} else {
-		return 0.0;
-	}
-}
-
-double DeviceManipulationTabController::getMotionCompensationTmpCenter(int axis) {
-	if (axis >= 0 && axis < 3) {
-		return motionCompensationTmpCenter.v[axis];
-	} else {
-		return 0.0;
-	}
-}
-
 
 #define DEVICEMANIPULATIONSETTINGS_GETTRANSLATIONVECTOR(name) { \
 	double valueX = settings->value(#name ## "_x", 0.0).toDouble(); \
@@ -275,14 +255,9 @@ double DeviceManipulationTabController::getMotionCompensationTmpCenter(int axis)
 }
 
 void DeviceManipulationTabController::reloadDeviceManipulationSettings() {
-	auto settings = OverlayController::appSettings();
+	/*auto settings = OverlayController::appSettings();
 	settings->beginGroup("deviceManipulationSettings");
-	motionCompensationCenterMode = settings->value("motionCompensationCenterMode", 0).toInt();
-	double valueX = settings->value("motionCompensationCenter_x", 0.0).toDouble();
-	double valueY = settings->value("motionCompensationCenter_y", 0.0).toDouble();
-	double valueZ = settings->value("motionCompensationCenter_z", 0.0).toDouble();
-	motionCompensationCenter = { valueX, valueY, valueZ };
-	settings->endGroup();
+	settings->endGroup();*/
 }
 
 void DeviceManipulationTabController::reloadDeviceManipulationProfiles() {
@@ -305,25 +280,16 @@ void DeviceManipulationTabController::reloadDeviceManipulationProfiles() {
 			DEVICEMANIPULATIONSETTINGS_GETTRANSLATIONVECTOR(driverTranslationOffset);
 			DEVICEMANIPULATIONSETTINGS_GETROTATIONVECTOR(driverRotationOffset);
 		}
-		entry.includesMotionCompensationSettings = settings->value("includesMotionCompensationSettings", false).toBool();
-		if (entry.includesMotionCompensationSettings) {
-			entry.motionCompensationCenterMode = settings->value("motionCompensationCenterMode", 0).toInt();
-			DEVICEMANIPULATIONSETTINGS_GETTRANSLATIONVECTOR(motionCompensationCenter);
-		}
 	}
 	settings->endArray();
 	settings->endGroup();
 }
 
 void DeviceManipulationTabController::saveDeviceManipulationSettings() {
-	auto settings = OverlayController::appSettings();
+	/*auto settings = OverlayController::appSettings();
 	settings->beginGroup("deviceManipulationSettings");
-	settings->setValue("motionCompensationCenterMode", motionCompensationCenterMode);
-	settings->setValue("motionCompensationCenter_x", motionCompensationCenter.v[0]);
-	settings->setValue("motionCompensationCenter_y", motionCompensationCenter.v[1]);
-	settings->setValue("motionCompensationCenter_z", motionCompensationCenter.v[2]);
 	settings->endGroup();
-	settings->sync();
+	settings->sync();*/
 }
 
 
@@ -360,11 +326,6 @@ void DeviceManipulationTabController::saveDeviceManipulationProfiles() {
 			DEVICEMANIPULATIONSETTINGS_WRITEROTATIONVECTOR(driverFromHeadRotationOffset);
 			DEVICEMANIPULATIONSETTINGS_WRITETRANSLATIONVECTOR(driverTranslationOffset);
 			DEVICEMANIPULATIONSETTINGS_WRITEROTATIONVECTOR(driverRotationOffset);
-		}
-		settings->setValue("includesMotionCompensationSettings", p.includesMotionCompensationSettings);
-		if (p.includesMotionCompensationSettings) {
-			settings->setValue("motionCompensationCenterMode", p.motionCompensationCenterMode);
-			DEVICEMANIPULATIONSETTINGS_WRITETRANSLATIONVECTOR(motionCompensationCenter);
 		}
 		i++;
 	}
@@ -413,11 +374,6 @@ void DeviceManipulationTabController::addDeviceManipulationProfile(QString name,
 		profile->driverTranslationOffset = device->deviceTranslationOffset;
 		profile->driverRotationOffset = device->deviceRotationOffset;
 	}
-	profile->includesMotionCompensationSettings = includesMotionCompensationSettings;
-	if (includesMotionCompensationSettings) {
-		profile->motionCompensationCenterMode = motionCompensationCenterMode;
-		profile->motionCompensationCenter = motionCompensationCenter;
-	}
 	saveDeviceManipulationProfiles();
 	OverlayController::appSettings()->sync();
 	emit deviceManipulationProfilesChanged();
@@ -440,9 +396,6 @@ void DeviceManipulationTabController::applyDeviceManipulationProfile(unsigned in
 			enableDeviceOffsets(deviceIndex, profile.deviceOffsetsEnabled, false);
 			updateDeviceInfo(deviceIndex);
 			emit deviceInfoChanged(deviceIndex);
-		}
-		if (profile.includesMotionCompensationSettings) {
-			setMotionCompensationCenter(profile.motionCompensationCenterMode, profile.motionCompensationCenter.v[0], profile.motionCompensationCenter.v[1], profile.motionCompensationCenter.v[2]);
 		}
 	}
 }
@@ -602,7 +555,7 @@ void DeviceManipulationTabController::setDeviceMode(unsigned index, unsigned mod
 			vrInputEmulator.setDeviceSwapMode(deviceInfos[index]->openvrId, deviceInfos[targedIndex]->openvrId);
 			break;
 		case 4:
-			vrInputEmulator.setDeviceMotionCompensationMode(deviceInfos[index]->openvrId, motionCompensationCenter, motionCompensationCenterMode % 2 == 0 ? false : true);
+			vrInputEmulator.setDeviceMotionCompensationMode(deviceInfos[index]->openvrId);
 			break;
 		default:
 			LOG(ERROR) << "Unkown device mode";
@@ -665,52 +618,6 @@ void DeviceManipulationTabController::triggerHapticPulse(unsigned index) {
 		}, this->deviceInfos[index]->openvrId, &vrInputEmulator);*/
 	} catch (std::exception& e) {
 		LOG(ERROR) << "Exception caught while triggering haptic pulse: " << e.what();
-	}
-}
-
-void DeviceManipulationTabController::setMotionCompensationCenter(int mode, double x, double y, double z) {
-	motionCompensationCenterMode = mode;
-	motionCompensationCenter = { x, y, z };
-	vr::HmdVector3d_t centerRaw;
-	if (mode < 2) { // standing universe
-		auto trans1 = vr::VRSystem()->GetRawZeroPoseToStandingAbsoluteTrackingPose();
-		vr::HmdVector3d_t standingPos = { x - trans1.m[0][3], y - trans1.m[1][3], z - trans1.m[2][3] };
-		centerRaw = vrmath::matMul33(vrmath::transposeMul33(trans1), standingPos);
-	} else {
-		centerRaw = motionCompensationCenter;
-	}
-	vrInputEmulator.setMotionCompensationCenter(centerRaw, motionCompensationCenterMode % 2 == 0 ? false : true);
-	saveDeviceManipulationSettings();
-	emit motionCompensationSettingsChanged();
-}
-
-void DeviceManipulationTabController::retrieveMotionCompensationTmpCenter(int mode, int ref) {
-	if (ref == 0 || ref == 1) {
-		uint32_t deviceId = vr::k_unTrackedDeviceIndexInvalid;
-		if (ref == 0) {
-			deviceId = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_RightHand);
-		} else {
-			deviceId = vr::VRSystem()->GetTrackedDeviceIndexForControllerRole(vr::TrackedControllerRole_LeftHand);
-		}
-		vr::ETrackingUniverseOrigin universe;
-		if (mode == 0 ) {
-			universe = vr::TrackingUniverseStanding;
-		} else {
-			universe = vr::TrackingUniverseRawAndUncalibrated;
-		}
-		if (deviceId != vr::k_unTrackedDeviceIndexInvalid) {
-			vr::TrackedDevicePose_t poses[vr::k_unMaxTrackedDeviceCount];
-			vr::VRSystem()->GetDeviceToAbsoluteTrackingPose(universe, 0.0, poses, vr::k_unMaxTrackedDeviceCount);
-			motionCompensationTmpCenter = {
-				poses[deviceId].mDeviceToAbsoluteTracking.m[0][3],
-				poses[deviceId].mDeviceToAbsoluteTracking.m[2][3],
-				poses[deviceId].mDeviceToAbsoluteTracking.m[1][3]
-			};
-		}
-
-	} else if (ref == 2) {
-		auto pos = vr::VRSystem()->GetSeatedZeroPoseToStandingAbsoluteTrackingPose();
-		motionCompensationTmpCenter = { pos.m[0][3], pos.m[2][3], pos.m[1][3] };
 	}
 }
 

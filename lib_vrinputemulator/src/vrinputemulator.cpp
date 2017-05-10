@@ -1477,15 +1477,13 @@ void VRInputEmulator::setDeviceSwapMode(uint32_t deviceId, uint32_t target, bool
 }
 
 
-void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, const vr::HmdVector3d_t& centerPos, bool relativeToDevice, bool modal) {
+void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, bool modal) {
 	if (_ipcServerQueue) {
 		ipc::Request message(ipc::RequestType::DeviceManipulation_MotionCompensationMode);
 		memset(&message.msg, 0, sizeof(message.msg));
 		message.msg.dm_MotionCompensationMode.clientId = m_clientId;
 		message.msg.dm_MotionCompensationMode.messageId = 0;
 		message.msg.dm_MotionCompensationMode.deviceId = deviceId;
-		message.msg.dm_MotionCompensationMode.centerPos = centerPos;
-		message.msg.dm_MotionCompensationMode.centerRelativeToDevice = relativeToDevice;
 		if (modal) {
 			uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
 			message.msg.dm_MotionCompensationMode.messageId = messageId;
@@ -1519,44 +1517,6 @@ void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, const v
 	} else {
 		throw vrinputemulator_connectionerror("No active connection.");
 	}
-}
-
-void VRInputEmulator::setMotionCompensationCenter(const vr::HmdVector3d_t& centerPos, bool relativeToDevice, bool modal) {
-	if (_ipcServerQueue) {
-		ipc::Request message(ipc::RequestType::DeviceManipulation_SetMotionCompensationProperties);
-		memset(&message.msg, 0, sizeof(message.msg));
-		message.msg.dm_SetMotionCompensationProperties.clientId = m_clientId;
-		message.msg.dm_SetMotionCompensationProperties.messageId = 0;
-		message.msg.dm_SetMotionCompensationProperties.centerPos = centerPos;
-		message.msg.dm_SetMotionCompensationProperties.centerRelativeToDevice = relativeToDevice;
-		if (modal) {
-			uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
-			message.msg.dm_SetMotionCompensationProperties.messageId = messageId;
-			std::promise<ipc::Reply> respPromise;
-			auto respFuture = respPromise.get_future();
-			{
-				std::lock_guard<std::recursive_mutex> lock(_mutex);
-				_ipcPromiseMap.insert({ messageId, std::move(respPromise) });
-			}
-			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
-			auto resp = respFuture.get();
-			{
-				std::lock_guard<std::recursive_mutex> lock(_mutex);
-				_ipcPromiseMap.erase(messageId);
-			}
-			std::stringstream ss;
-			ss << "Error while enabling device offsets: ";
-			if (resp.status != ipc::ReplyStatus::Ok) {
-				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
-			}
-		} else {
-			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
-		}
-	} else {
-		throw vrinputemulator_connectionerror("No active connection.");
-	}
-
 }
 
 void VRInputEmulator::triggerHapticPulse(uint32_t deviceId, uint32_t axisId, uint16_t durationMicroseconds, bool directMode, bool modal) {

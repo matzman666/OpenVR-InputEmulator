@@ -25,11 +25,6 @@ struct DeviceManipulationProfile {
 	vr::HmdVector3d_t driverFromHeadRotationOffset;
 	vr::HmdVector3d_t driverTranslationOffset;
 	vr::HmdVector3d_t driverRotationOffset;
-
-	bool includesMotionCompensationSettings = false;
-	int motionCompensationCenterMode = 0;
-	vr::HmdVector3d_t motionCompensationCenter;
-
 };
 
 
@@ -65,10 +60,6 @@ private:
 
 	std::vector<DeviceManipulationProfile> deviceManipulationProfiles;
 
-	int motionCompensationCenterMode = 0; // 0 .. Absolute, 1 .. Relative, 2 .. Absolute (Raw Universe), 3 .. Relative (Raw Universe)
-	vr::HmdVector3d_t motionCompensationCenter = {0.0, 0.0, 0.0};
-	vr::HmdVector3d_t motionCompensationTmpCenter = { 0.0, 0.0, 0.0 };
-
 	unsigned settingsUpdateCounter = 0;
 
 	std::thread identifyThread;
@@ -94,9 +85,6 @@ public:
 	Q_INVOKABLE double getDriverFromHeadTranslationOffset(unsigned index, unsigned axis);
 	Q_INVOKABLE double getDriverRotationOffset(unsigned index, unsigned axis);
 	Q_INVOKABLE double getDriverTranslationOffset(unsigned index, unsigned axis);
-	Q_INVOKABLE int getMotionCompensationCenterMode();
-	Q_INVOKABLE double getMotionCompensationCenter(int axis);
-	Q_INVOKABLE double getMotionCompensationTmpCenter(int axis);
 
 	void reloadDeviceManipulationSettings();
 	void reloadDeviceManipulationProfiles();
@@ -122,8 +110,6 @@ public slots:
 	void setDriverTranslationOffset(unsigned index, double yaw, double pitch, double roll, bool notify = true);
 	void setDeviceMode(unsigned index, unsigned mode, unsigned targedIndex, bool notify = true);
 	void triggerHapticPulse(unsigned index);
-	void setMotionCompensationCenter(int mode, double x, double y, double z);
-	void retrieveMotionCompensationTmpCenter(int mode, int ref);
 	void setDeviceRenderModel(unsigned deviceIndex, unsigned renderModelIndex);
 
 	void addDeviceManipulationProfile(QString name, unsigned deviceIndex, bool includesDeviceOffsets, bool includesMotionCompensationSettings);

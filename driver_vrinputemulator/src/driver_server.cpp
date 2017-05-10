@@ -469,17 +469,6 @@ OpenvrDeviceManipulationInfo* CServerDriver::deviceManipulation_getInfo(uint32_t
 	return nullptr;
 }
 
-
-void CServerDriver::motionCompensation_setCenterPos(const vr::HmdVector3d_t& centerPos, bool relativeToDevice) {
-	_motionCompensationCenterPosRaw = centerPos;
-	_motionCompensationCenterRawIsRelative = relativeToDevice;
-	if (relativeToDevice && _motionCompensationZeroPoseValid) {
-		_motionCompensationCenterPosZero = _motionCompensationZeroPos + _motionCompensationCenterPosRaw;
-	} else if (!relativeToDevice) {
-		_motionCompensationCenterPosZero = _motionCompensationCenterPosRaw;
-	}
-}
-
 void CServerDriver::_enableMotionCompensation(bool enable) {
 	_motionCompensationZeroPoseValid = false;
 	_motionCompensationRefPoseValid = false;
@@ -491,32 +480,41 @@ bool CServerDriver::_isMotionCompensationZeroPoseValid() {
 }
 
 void CServerDriver::_setMotionCompensationZeroPose(const vr::DriverPose_t& pose) {
-	_motionCompensationZeroPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
-	if (_motionCompensationCenterRawIsRelative) {
-		_motionCompensationCenterPosZero = _motionCompensationZeroPos + _motionCompensationCenterPosRaw;
-	} else {
-		_motionCompensationCenterPosZero = _motionCompensationCenterPosRaw;
-	}
-	_motionCompensationZeroRot = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation) * pose.qRotation;
+	// convert pose from driver space to app space
+	auto tmpConj = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation);
+	_motionCompensationZeroPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
+	_motionCompensationZeroRot = tmpConj * pose.qRotation;
+
 	_motionCompensationZeroPoseValid = true;
 }
 
 void CServerDriver::_updateMotionCompensationRefPose(const vr::DriverPose_t& pose) {
-	auto poseWorldRot = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation) * pose.qRotation;
+	// convert pose from driver space to app space
+	auto tmpConj = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation);
+	_motionCompensationRefPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
+	auto poseWorldRot = tmpConj * pose.qRotation;
+
+	// calculate orientation difference and its inverse
 	_motionCompensationRotDiff = poseWorldRot * vrmath::quaternionConjugate(_motionCompensationZeroRot);
-	auto poseWorldPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
-	_motionCompensationCenterPosCur = poseWorldPos + vrmath::quaternionRotateVector(_motionCompensationRotDiff, _motionCompensationCenterPosZero - _motionCompensationZeroPos);
+	_motionCompensationRotDiffInv = vrmath::quaternionConjugate(_motionCompensationRotDiff);
+
 	_motionCompensationRefPoseValid = true;
 }
 
-bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose) {
+bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDeviceManipulationInfo* deviceInfo) {
 	if (_motionCompensationEnabled && _motionCompensationZeroPoseValid && _motionCompensationRefPoseValid) {
-		auto poseWorldRot = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation) * pose.qRotation;
-		auto adjPoseWorldRot = vrmath::quaternionConjugate(_motionCompensationRotDiff) * poseWorldRot;
-		pose.qRotation = pose.qWorldFromDriverRotation * adjPoseWorldRot;
-		auto poseWorldPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
-		auto adjPoseWorldPos = _motionCompensationCenterPosZero + vrmath::quaternionRotateVector(_motionCompensationRotDiff, poseWorldPos - _motionCompensationCenterPosCur, true);
-		auto adjPoseDriverPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, adjPoseWorldPos) + pose.vecWorldFromDriverTranslation;
+		// convert pose from driver space to app space
+		vr::HmdQuaternion_t tmpConj = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation);
+		auto poseWorldPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
+		auto poseWorldRot = tmpConj * pose.qRotation;
+
+		// do motion compensation
+		auto compensatedPoseWorldPos = _motionCompensationZeroPos + vrmath::quaternionRotateVector(_motionCompensationRotDiff, _motionCompensationRotDiffInv, poseWorldPos - _motionCompensationRefPos, true);
+		auto compensatedPoseWorldRot = _motionCompensationRotDiffInv * poseWorldRot;
+
+		// convert back to driver space
+		pose.qRotation = pose.qWorldFromDriverRotation * compensatedPoseWorldRot;
+		auto adjPoseDriverPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, compensatedPoseWorldPos + pose.vecWorldFromDriverTranslation);
 		pose.vecPosition[0] = adjPoseDriverPos.v[0];
 		pose.vecPosition[1] = adjPoseDriverPos.v[1];
 		pose.vecPosition[2] = adjPoseDriverPos.v[2];

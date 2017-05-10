@@ -181,9 +181,7 @@ public:
 	void setDeviceFakeDisconnectedMode(uint32_t deviceId, bool modal = true);
 	void setDeviceRedictMode(uint32_t deviceId, uint32_t target, bool modal = true);
 	void setDeviceSwapMode(uint32_t deviceId, uint32_t target, bool modal = true);
-	void setDeviceMotionCompensationMode(uint32_t deviceId, const vr::HmdVector3d_t& centerPos = vr::HmdVector3d_t(), bool relativeToDevice = false, bool modal = true);
-
-	void setMotionCompensationCenter(const vr::HmdVector3d_t& centerPos, bool relativeToDevice, bool modal = true);
+	void setDeviceMotionCompensationMode(uint32_t deviceId, bool modal = true);
 
 	void triggerHapticPulse(uint32_t deviceId, uint32_t axisId, uint16_t durationMicroseconds, bool directMode, bool modal = true);
 

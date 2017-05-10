@@ -170,6 +170,18 @@ namespace vrmath {
 		}
 	}
 
+	inline vr::HmdVector3d_t quaternionRotateVector(const vr::HmdQuaternion_t& quat, const vr::HmdQuaternion_t& quatInv, const vr::HmdVector3d_t& vector, bool reverse = false) {
+		if (reverse) {
+			vr::HmdQuaternion_t pin = { 0.0, vector.v[0], vector.v[1] , vector.v[2] };
+			auto pout = quatInv * pin * quat;
+			return{ pout.x, pout.y, pout.z };
+		} else {
+			vr::HmdQuaternion_t pin = { 0.0, vector.v[0], vector.v[1] , vector.v[2] };
+			auto pout = quat * pin * quatInv;
+			return{ pout.x, pout.y, pout.z };
+		}
+	}
+
 	inline vr::HmdVector3d_t quaternionRotateVector(const vr::HmdQuaternion_t& quat, const double (&vector)[3], bool reverse = false) {
 		if (reverse) {
 			vr::HmdQuaternion_t pin = { 0.0, vector[0], vector[1] , vector[2] };
@@ -178,6 +190,18 @@ namespace vrmath {
 		} else {
 			vr::HmdQuaternion_t pin = { 0.0, vector[0], vector[1] , vector[2] };
 			auto pout = quat * pin * vrmath::quaternionConjugate(quat);
+			return{ pout.x, pout.y, pout.z };
+		}
+	}
+
+	inline vr::HmdVector3d_t quaternionRotateVector(const vr::HmdQuaternion_t& quat, const vr::HmdQuaternion_t& quatInv, const double(&vector)[3], bool reverse = false) {
+		if (reverse) {
+			vr::HmdQuaternion_t pin = { 0.0, vector[0], vector[1] , vector[2] };
+			auto pout = quatInv * pin * quat;
+			return{ pout.x, pout.y, pout.z };
+		} else {
+			vr::HmdQuaternion_t pin = { 0.0, vector[0], vector[1] , vector[2] };
+			auto pout = quat * pin * quatInv;
 			return{ pout.x, pout.y, pout.z };
 		}
 	}

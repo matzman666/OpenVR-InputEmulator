@@ -269,10 +269,10 @@ MyStackViewPage {
                 id: motionCompensationButton
                 activationSoundEnabled: false
                 Layout.preferredWidth: 548
+                enabled: false
                 text: "Motion Compensation Settings"
                 onClicked: {
                     MyResources.playFocusChangedSound()
-                    motionCompensationPage.updateValues()
                     var res = mainView.push(motionCompensationPage)
                 }
             }
@@ -451,7 +451,7 @@ MyStackViewPage {
             deviceSelectionComboBox.currentIndex = -1
             deviceModeSelectionComboBox.enabled = false
             deviceModeApplyButton.enabled = false
-            motionCompensationButton.enabled = false
+            //motionCompensationButton.enabled = false
             deviceManipulationOffsetButton.enabled = false
             deviceIdentifyButton.enabled = false
             deviceRenderModelComboBox.enabled = false
@@ -461,7 +461,7 @@ MyStackViewPage {
         } else {
             deviceModeSelectionComboBox.enabled = true
             deviceManipulationOffsetButton.enabled = true
-            motionCompensationButton.enabled = true
+            //motionCompensationButton.enabled = true
             deviceModeApplyButton.enabled = true
             deviceIdentifyButton.enabled = true
             deviceRenderModelComboBox.enabled = true

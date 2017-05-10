@@ -86,6 +86,11 @@ private:
 	bool m_redirectSuspended = false;
 	OpenvrDeviceManipulationInfo* m_redirectRef = nullptr;
 
+	bool m_lastDriverPoseValid = false;
+	vr::DriverPose_t m_lastDriverPose;
+	long long m_lastDriverPoseTime = 0;
+
+
 public:
 	OpenvrDeviceManipulationInfo() {}
 	OpenvrDeviceManipulationInfo(vr::ITrackedDeviceServerDriver* driver, vr::ETrackedDeviceClass eDeviceClass, uint32_t openvrId, vr::IVRServerDriverHost* driverHost)
@@ -209,8 +214,6 @@ public:
 
 	OpenvrDeviceManipulationInfo* deviceManipulation_getInfo(uint32_t unWhichDevice);
 
-	void motionCompensation_setCenterPos(const vr::HmdVector3d_t& centerPos, bool relativeToDevice);
-
 
 	// internal API
 
@@ -224,7 +227,7 @@ public:
 	bool _isMotionCompensationZeroPoseValid();
 	void _setMotionCompensationZeroPose(const vr::DriverPose_t& pose);
 	void _updateMotionCompensationRefPose(const vr::DriverPose_t& pose);
-	bool _applyMotionCompensation(vr::DriverPose_t& pose);
+	bool _applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDeviceManipulationInfo* deviceInfo);
 
 
 private:
@@ -251,14 +254,11 @@ private:
 	bool _motionCompensationZeroPoseValid = false;
 	vr::HmdVector3d_t _motionCompensationZeroPos;
 	vr::HmdQuaternion_t _motionCompensationZeroRot;
-	
-	vr::HmdVector3d_t _motionCompensationCenterPosRaw;
-	bool _motionCompensationCenterRawIsRelative = false;
-	vr::HmdVector3d_t _motionCompensationCenterPosZero;
 
 	bool _motionCompensationRefPoseValid = false;
-	vr::HmdVector3d_t _motionCompensationCenterPosCur;
+	vr::HmdVector3d_t _motionCompensationRefPos;
 	vr::HmdQuaternion_t _motionCompensationRotDiff;
+	vr::HmdQuaternion_t _motionCompensationRotDiffInv;
 
 	//// function hooks related ////
 
