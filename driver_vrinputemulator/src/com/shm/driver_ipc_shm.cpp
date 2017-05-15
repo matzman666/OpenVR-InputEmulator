@@ -812,6 +812,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 									} else {
 										auto serverDriver = CServerDriver::getInstance();
 										if (serverDriver) {
+											serverDriver->setMotionCompensationVelAccMode(message.msg.dm_MotionCompensationMode.velAccCompensationMode);
 											info->setMotionCompensationMode();
 											resp.status = ipc::ReplyStatus::Ok;
 										} else {
@@ -897,6 +898,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							resp.messageId = message.msg.dm_SetMotionCompensationProperties.messageId;
 							auto serverDriver = CServerDriver::getInstance();
 							if (serverDriver) {
+								serverDriver->setMotionCompensationVelAccMode(message.msg.dm_SetMotionCompensationProperties.velAccCompensationMode);
 								resp.status = ipc::ReplyStatus::Ok;
 							} else {
 								resp.status = ipc::ReplyStatus::UnknownError;

@@ -91,6 +91,7 @@ private:
 	long long m_lastDriverPoseTime = 0;
 
 
+
 public:
 	OpenvrDeviceManipulationInfo() {}
 	OpenvrDeviceManipulationInfo(vr::ITrackedDeviceServerDriver* driver, vr::ETrackedDeviceClass eDeviceClass, uint32_t openvrId, vr::IVRServerDriverHost* driverHost)
@@ -147,6 +148,16 @@ public:
 	void handleAxisEvent(vr::IVRServerDriverHost* driver, _DetourTrackedDeviceAxisUpdated_t origFunc, uint32_t& unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState);
 
 	bool triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds, bool directMode = false);
+
+	bool lastDriverPoseValid() { return m_lastDriverPoseValid; }
+	vr::DriverPose_t& lastDriverPose() { return m_lastDriverPose; }
+	long long lastDriverPoseTime() { return m_lastDriverPoseTime; }
+	void setLastDriverPoseValid(bool valid) { m_lastDriverPoseValid = valid; }
+	void setLastDriverPose(const vr::DriverPose_t& pose, long long time) {
+		m_lastDriverPose = pose;
+		m_lastDriverPoseTime = time;
+		m_lastDriverPoseValid = true;
+	}
 };
 
 
@@ -223,7 +234,10 @@ public:
 	/** Called by virtual devices when they are deactivated */
 	void _trackedDeviceDeactivated(uint32_t deviceId);
 
-	void _enableMotionCompensation(bool enable);
+	/* Motion Compensation API */
+	void enableMotionCompensation(bool enable);
+	void setMotionCompensationVelAccMode(uint32_t velAccMode);
+	void disableMotionCompensationOnAllDevices();
 	bool _isMotionCompensationZeroPoseValid();
 	void _setMotionCompensationZeroPose(const vr::DriverPose_t& pose);
 	void _updateMotionCompensationRefPose(const vr::DriverPose_t& pose);
@@ -250,6 +264,7 @@ private:
 
 	//// motion compensation related ////
 	bool _motionCompensationEnabled = false;
+	int _motionCompensationVelAccMode = 0; // 0 .. Disabled, 1 .. Set Zero, 2 .. Substract Motion Ref, 3 .. Linear Approximation
 
 	bool _motionCompensationZeroPoseValid = false;
 	vr::HmdVector3d_t _motionCompensationZeroPos;
@@ -259,6 +274,12 @@ private:
 	vr::HmdVector3d_t _motionCompensationRefPos;
 	vr::HmdQuaternion_t _motionCompensationRotDiff;
 	vr::HmdQuaternion_t _motionCompensationRotDiffInv;
+
+	bool _motionCompensationRefVelAccValid = false;
+	vr::HmdVector3d_t _motionCompensationRefPosVel;
+	vr::HmdVector3d_t _motionCompensationRefPosAcc;
+	vr::HmdVector3d_t _motionCompensationRefRotVel;
+	vr::HmdVector3d_t _motionCompensationRefRotAcc;
 
 	//// function hooks related ////
 

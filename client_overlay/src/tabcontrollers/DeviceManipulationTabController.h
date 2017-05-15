@@ -60,6 +60,8 @@ private:
 
 	std::vector<DeviceManipulationProfile> deviceManipulationProfiles;
 
+	uint32_t motionCompensationVelAccMode = 0;
+
 	unsigned settingsUpdateCounter = 0;
 
 	std::thread identifyThread;
@@ -85,6 +87,7 @@ public:
 	Q_INVOKABLE double getDriverFromHeadTranslationOffset(unsigned index, unsigned axis);
 	Q_INVOKABLE double getDriverRotationOffset(unsigned index, unsigned axis);
 	Q_INVOKABLE double getDriverTranslationOffset(unsigned index, unsigned axis);
+	Q_INVOKABLE unsigned getMotionCompensationVelAccMode();
 
 	void reloadDeviceManipulationSettings();
 	void reloadDeviceManipulationProfiles();
@@ -116,11 +119,14 @@ public slots:
 	void applyDeviceManipulationProfile(unsigned index, unsigned deviceIndex);
 	void deleteDeviceManipulationProfile(unsigned index);
 
+	void setMotionCompensationVelAccMode(unsigned mode, bool notify = true);
+
 signals:
 	void deviceCountChanged(unsigned deviceCount);
 	void deviceInfoChanged(unsigned index);
 	void motionCompensationSettingsChanged();
 	void deviceManipulationProfilesChanged();
+	void motionCompensationVelAccModeChanged(unsigned mode);
 };
 
 } // namespace inputemulator

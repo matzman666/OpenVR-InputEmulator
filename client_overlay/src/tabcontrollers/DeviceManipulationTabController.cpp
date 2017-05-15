@@ -239,6 +239,10 @@ double DeviceManipulationTabController::getDriverTranslationOffset(unsigned inde
 	}
 }
 
+unsigned DeviceManipulationTabController::getMotionCompensationVelAccMode() {
+	return motionCompensationVelAccMode;
+}
+
 
 #define DEVICEMANIPULATIONSETTINGS_GETTRANSLATIONVECTOR(name) { \
 	double valueX = settings->value(#name ## "_x", 0.0).toDouble(); \
@@ -255,9 +259,10 @@ double DeviceManipulationTabController::getDriverTranslationOffset(unsigned inde
 }
 
 void DeviceManipulationTabController::reloadDeviceManipulationSettings() {
-	/*auto settings = OverlayController::appSettings();
+	auto settings = OverlayController::appSettings();
 	settings->beginGroup("deviceManipulationSettings");
-	settings->endGroup();*/
+	motionCompensationVelAccMode = settings->value("motionCompensationVelAccMode").toUInt();
+	settings->endGroup();
 }
 
 void DeviceManipulationTabController::reloadDeviceManipulationProfiles() {
@@ -286,10 +291,11 @@ void DeviceManipulationTabController::reloadDeviceManipulationProfiles() {
 }
 
 void DeviceManipulationTabController::saveDeviceManipulationSettings() {
-	/*auto settings = OverlayController::appSettings();
+	auto settings = OverlayController::appSettings();
 	settings->beginGroup("deviceManipulationSettings");
+	settings->setValue("motionCompensationVelAccMode", motionCompensationVelAccMode);
 	settings->endGroup();
-	settings->sync();*/
+	settings->sync();
 }
 
 
@@ -407,6 +413,17 @@ void DeviceManipulationTabController::deleteDeviceManipulationProfile(unsigned i
 		saveDeviceManipulationProfiles();
 		OverlayController::appSettings()->sync();
 		emit deviceManipulationProfilesChanged();
+	}
+}
+
+void DeviceManipulationTabController::setMotionCompensationVelAccMode(unsigned mode, bool notify) {
+	if (motionCompensationVelAccMode != mode) {
+		motionCompensationVelAccMode = mode;
+		vrInputEmulator.setMotionVelAccCompensationMode(mode);
+		saveDeviceManipulationSettings();
+		if (notify) {
+			emit motionCompensationVelAccModeChanged(mode);
+		}
 	}
 }
 
@@ -555,7 +572,7 @@ void DeviceManipulationTabController::setDeviceMode(unsigned index, unsigned mod
 			vrInputEmulator.setDeviceSwapMode(deviceInfos[index]->openvrId, deviceInfos[targedIndex]->openvrId);
 			break;
 		case 4:
-			vrInputEmulator.setDeviceMotionCompensationMode(deviceInfos[index]->openvrId);
+			vrInputEmulator.setDeviceMotionCompensationMode(deviceInfos[index]->openvrId, motionCompensationVelAccMode);
 			break;
 		default:
 			LOG(ERROR) << "Unkown device mode";

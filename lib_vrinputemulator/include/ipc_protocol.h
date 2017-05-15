@@ -264,6 +264,7 @@ struct Request_DeviceManipulation_MotionCompensationMode {
 	uint32_t clientId;
 	uint32_t messageId; // Used to associate with Reply
 	uint32_t deviceId;
+	uint32_t velAccCompensationMode;
 };
 
 struct Request_DeviceManipulation_TriggerHapticPulse {
@@ -278,6 +279,7 @@ struct Request_DeviceManipulation_TriggerHapticPulse {
 struct Request_DeviceManipulation_SetMotionCompensationProperties {
 	uint32_t clientId;
 	uint32_t messageId; // Used to associate with Reply
+	uint32_t velAccCompensationMode;
 };
 
 

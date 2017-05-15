@@ -60,8 +60,7 @@ MyStackViewPage {
                     Layout.preferredWidth: 555
                     Layout.fillWidth: true
                     model: [
-                        "Device Offsets",
-                        "Motion Compensation Settings",
+                        "Device Offsets"
                     ]
                     currentIndex: 0
                 }
@@ -451,7 +450,7 @@ MyStackViewPage {
             deviceSelectionComboBox.currentIndex = -1
             deviceModeSelectionComboBox.enabled = false
             deviceModeApplyButton.enabled = false
-            //motionCompensationButton.enabled = false
+            motionCompensationButton.enabled = false
             deviceManipulationOffsetButton.enabled = false
             deviceIdentifyButton.enabled = false
             deviceRenderModelComboBox.enabled = false
@@ -461,7 +460,7 @@ MyStackViewPage {
         } else {
             deviceModeSelectionComboBox.enabled = true
             deviceManipulationOffsetButton.enabled = true
-            //motionCompensationButton.enabled = true
+            motionCompensationButton.enabled = true
             deviceModeApplyButton.enabled = true
             deviceIdentifyButton.enabled = true
             deviceRenderModelComboBox.enabled = true

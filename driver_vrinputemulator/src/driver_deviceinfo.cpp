@@ -73,23 +73,7 @@ void OpenvrDeviceManipulationInfo::handleNewDevicePose(vr::IVRServerDriverHost* 
 		}
 		auto serverDriver = CServerDriver::getInstance();
 		if (serverDriver) {
-			if (serverDriver->_applyMotionCompensation(newPose, this)) {
-				/*auto now = std::chrono::duration_cast <std::chrono:: microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-				if (m_lastDriverPoseValid) {
-					double tdiff = (double)(now - m_lastDriverPoseTime) / 500000.0;
-					newPose.vecVelocity[0] = (newPose.vecPosition[0] - m_lastDriverPose.vecPosition[0]) / tdiff;
-					newPose.vecVelocity[1] = (newPose.vecPosition[1] - m_lastDriverPose.vecPosition[1]) / tdiff;
-					newPose.vecVelocity[2] = (newPose.vecPosition[2] - m_lastDriverPose.vecPosition[2]) / tdiff;
-				}
-				m_lastDriverPose = newPose;
-				m_lastDriverPoseTime = now;
-				m_lastDriverPoseValid = true;
-				newPose.vecAcceleration[0] = 0.0;
-				newPose.vecAcceleration[1] = 0.0;
-				newPose.vecAcceleration[2] = 0.0;*/
-			} else {
-				m_lastDriverPoseValid = false;
-			}
+			serverDriver->_applyMotionCompensation(newPose, this);
 		}
 		if (m_deviceMode == 2 && !m_redirectSuspended) { // redirect source
 			if (!_disconnectedMsgSend) {
@@ -227,7 +211,7 @@ int OpenvrDeviceManipulationInfo::setMotionCompensationMode() {
 	auto serverDriver = CServerDriver::getInstance();
 	if (res == 0 && serverDriver) {
 		_disconnectedMsgSend = false;
-		serverDriver->_enableMotionCompensation(true);
+		serverDriver->enableMotionCompensation(true);
 		m_deviceMode = 5;
 	}
 	return 0;
@@ -248,11 +232,18 @@ int OpenvrDeviceManipulationInfo::_disableOldMode(int newMode) {
 		if (m_deviceMode == 5) {
 			auto serverDriver = CServerDriver::getInstance();
 			if (serverDriver) {
-				serverDriver->_enableMotionCompensation(false);
+				serverDriver->enableMotionCompensation(false);
 			}
 		} else if (m_deviceMode == 3 || m_deviceMode == 2 || m_deviceMode == 4) {
 			m_redirectRef->m_deviceMode = 0;
 		}
+		if (newMode == 5) {
+			auto serverDriver = CServerDriver::getInstance();
+			if (serverDriver) {
+				serverDriver->disableMotionCompensationOnAllDevices();
+				serverDriver->enableMotionCompensation(false);
+			}
+		} 
 	}
 	return 0;
 }

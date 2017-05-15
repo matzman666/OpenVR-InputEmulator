@@ -9,17 +9,54 @@ MyStackViewPage {
 
     headerText: "Motion Compensation Settings"
 
+    property bool setupFinished: false
+
     content: ColumnLayout {
         spacing: 18
+
+        RowLayout {
+            spacing: 18
+            Layout.bottomMargin: 64
+
+            MyText {
+                text: "Vel/Acc Compensation Mode:"
+            }
+
+            MyComboBox {
+                id: deviceSelectionComboBox
+                Layout.maximumWidth: 750
+                Layout.minimumWidth: 750
+                Layout.preferredWidth: 750
+                Layout.fillWidth: true
+                model: [
+                    "Disabled",
+                    "Set Zero",
+                    "Use Reference Tracker",
+                    "Linear Approximation (Experimental)"
+                ]
+                onCurrentIndexChanged: {
+                    if (setupFinished) {
+                        DeviceManipulationTabController.setMotionCompensationVelAccMode(currentIndex)
+                    }
+                }
+            }
+        }
 
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
         }
 
+
+        Component.onCompleted: {
+            deviceSelectionComboBox.currentIndex = DeviceManipulationTabController.getMotionCompensationVelAccMode()
+            setupFinished = true
+        }
+
         Connections {
             target: DeviceManipulationTabController
-            onDeviceInfoChanged: {
+            onMotionCompensationVelAccModeChanged: {
+                deviceSelectionComboBox.currentIndex = mode
             }
         }
 

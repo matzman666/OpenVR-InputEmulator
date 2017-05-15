@@ -1283,7 +1283,7 @@ void VRInputEmulator::getDeviceInfo(uint32_t deviceId, DeviceInfo & info) {
 			_ipcPromiseMap.erase(messageId);
 		}
 		std::stringstream ss;
-		ss << "Error while enabling device offsets: ";
+		ss << "Error while getting device info: ";
 		if (resp.status == ipc::ReplyStatus::Ok) {
 			info.deviceId = resp.msg.dm_deviceInfo.deviceId;
 			info.deviceClass = resp.msg.dm_deviceInfo.deviceClass;
@@ -1329,7 +1329,7 @@ void VRInputEmulator::setDeviceNormalMode(uint32_t deviceId, bool modal) {
 				_ipcPromiseMap.erase(messageId);
 			}
 			std::stringstream ss;
-			ss << "Error while enabling device offsets: ";
+			ss << "Error while setting normal mode: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
 				throw vrinputemulator_invalidid(ss.str());
@@ -1371,7 +1371,7 @@ void VRInputEmulator::setDeviceFakeDisconnectedMode(uint32_t deviceId, bool moda
 				_ipcPromiseMap.erase(messageId);
 			}
 			std::stringstream ss;
-			ss << "Error while enabling device offsets: ";
+			ss << "Error while setting fake disconnection mode: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
 				throw vrinputemulator_invalidid(ss.str());
@@ -1414,7 +1414,7 @@ void VRInputEmulator::setDeviceRedictMode(uint32_t deviceId, uint32_t target, bo
 				_ipcPromiseMap.erase(messageId);
 			}
 			std::stringstream ss;
-			ss << "Error while enabling device offsets: ";
+			ss << "Error while setting redirect mode: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
 				throw vrinputemulator_invalidid(ss.str());
@@ -1457,7 +1457,7 @@ void VRInputEmulator::setDeviceSwapMode(uint32_t deviceId, uint32_t target, bool
 				_ipcPromiseMap.erase(messageId);
 			}
 			std::stringstream ss;
-			ss << "Error while enabling device offsets: ";
+			ss << "Error while setting swap mode: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
 				throw vrinputemulator_invalidid(ss.str());
@@ -1477,13 +1477,14 @@ void VRInputEmulator::setDeviceSwapMode(uint32_t deviceId, uint32_t target, bool
 }
 
 
-void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, bool modal) {
+void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, uint32_t velAccMode, bool modal) {
 	if (_ipcServerQueue) {
 		ipc::Request message(ipc::RequestType::DeviceManipulation_MotionCompensationMode);
 		memset(&message.msg, 0, sizeof(message.msg));
 		message.msg.dm_MotionCompensationMode.clientId = m_clientId;
 		message.msg.dm_MotionCompensationMode.messageId = 0;
 		message.msg.dm_MotionCompensationMode.deviceId = deviceId;
+		message.msg.dm_MotionCompensationMode.velAccCompensationMode = velAccMode;
 		if (modal) {
 			uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
 			message.msg.dm_MotionCompensationMode.messageId = messageId;
@@ -1500,7 +1501,7 @@ void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, bool mo
 				_ipcPromiseMap.erase(messageId);
 			}
 			std::stringstream ss;
-			ss << "Error while enabling device offsets: ";
+			ss << "Error while setting motion compensation mode: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
 				throw vrinputemulator_invalidid(ss.str());
@@ -1518,6 +1519,50 @@ void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, bool mo
 		throw vrinputemulator_connectionerror("No active connection.");
 	}
 }
+
+
+void VRInputEmulator::setMotionVelAccCompensationMode(uint32_t velAccMode, bool modal) {
+	if (_ipcServerQueue) {
+		ipc::Request message(ipc::RequestType::DeviceManipulation_SetMotionCompensationProperties);
+		memset(&message.msg, 0, sizeof(message.msg));
+		message.msg.dm_SetMotionCompensationProperties.clientId = m_clientId;
+		message.msg.dm_SetMotionCompensationProperties.messageId = 0;
+		message.msg.dm_SetMotionCompensationProperties.velAccCompensationMode = velAccMode;
+		if (modal) {
+			uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
+			message.msg.dm_SetMotionCompensationProperties.messageId = messageId;
+			std::promise<ipc::Reply> respPromise;
+			auto respFuture = respPromise.get_future();
+			{
+				std::lock_guard<std::recursive_mutex> lock(_mutex);
+				_ipcPromiseMap.insert({ messageId, std::move(respPromise) });
+			}
+			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+			auto resp = respFuture.get();
+			{
+				std::lock_guard<std::recursive_mutex> lock(_mutex);
+				_ipcPromiseMap.erase(messageId);
+			}
+			std::stringstream ss;
+			ss << "Error while setting motion compensation properties: ";
+			if (resp.status == ipc::ReplyStatus::InvalidId) {
+				ss << "Invalid device id";
+				throw vrinputemulator_invalidid(ss.str());
+			} else if (resp.status == ipc::ReplyStatus::NotFound) {
+				ss << "Device not found";
+				throw vrinputemulator_notfound(ss.str());
+			} else if (resp.status != ipc::ReplyStatus::Ok) {
+				ss << "Error code " << (int)resp.status;
+				throw vrinputemulator_exception(ss.str());
+			}
+		} else {
+			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+		}
+	} else {
+		throw vrinputemulator_connectionerror("No active connection.");
+	}
+}
+
 
 void VRInputEmulator::triggerHapticPulse(uint32_t deviceId, uint32_t axisId, uint16_t durationMicroseconds, bool directMode, bool modal) {
 	if (_ipcServerQueue) {

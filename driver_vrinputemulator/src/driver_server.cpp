@@ -72,7 +72,6 @@ CServerDriver::~CServerDriver() {
 	// Cleanup(); 
 }
 
-
 void CServerDriver::_poseUpatedDetourFunc(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, const vr::DriverPose_t& newPose, uint32_t unPoseStructSize) {
 	// Call rates:
 	//
@@ -96,7 +95,6 @@ void CServerDriver::_poseUpatedDetourFunc(vr::IVRServerDriverHost* _this, uint32
 			callcount = 0;
 		}
 	}*/
-
 	if (_openvrIdToDeviceInfoMap[unWhichDevice] && _openvrIdToDeviceInfoMap[unWhichDevice]->isValid()) {
 		_openvrIdToDeviceInfoMap[unWhichDevice]->handleNewDevicePose(_this, _poseUpatedDetour.origFunc, unWhichDevice, newPose);
 	} else {
@@ -469,10 +467,28 @@ OpenvrDeviceManipulationInfo* CServerDriver::deviceManipulation_getInfo(uint32_t
 	return nullptr;
 }
 
-void CServerDriver::_enableMotionCompensation(bool enable) {
+void CServerDriver::enableMotionCompensation(bool enable) {
 	_motionCompensationZeroPoseValid = false;
 	_motionCompensationRefPoseValid = false;
 	_motionCompensationEnabled = enable;
+}
+
+void CServerDriver::setMotionCompensationVelAccMode(uint32_t velAccMode) {
+	if (_motionCompensationVelAccMode != velAccMode) {
+		_motionCompensationRefVelAccValid = false;
+		for (auto d : _openvrDeviceInfos) {
+			d.second->setLastDriverPoseValid(false);
+		}
+		_motionCompensationVelAccMode = velAccMode;
+	}
+}
+
+void CServerDriver::disableMotionCompensationOnAllDevices() {
+	for (auto d : _openvrDeviceInfos) {
+		if (d.second->deviceMode() == 5) {
+			d.second->setDefaultMode();
+		}
+	}
 }
 
 bool CServerDriver::_isMotionCompensationZeroPoseValid() {
@@ -498,6 +514,17 @@ void CServerDriver::_updateMotionCompensationRefPose(const vr::DriverPose_t& pos
 	_motionCompensationRotDiff = poseWorldRot * vrmath::quaternionConjugate(_motionCompensationZeroRot);
 	_motionCompensationRotDiffInv = vrmath::quaternionConjugate(_motionCompensationRotDiff);
 
+	// Convert velocity and acceleration values into app space and undo device rotation
+	if (_motionCompensationVelAccMode == 2) {
+		auto tmpRot = tmpConj * vrmath::quaternionConjugate(pose.qRotation);
+		auto tmpRotInv = vrmath::quaternionConjugate(tmpRot);
+		_motionCompensationRefPosVel = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, { pose.vecVelocity[0], pose.vecVelocity[1], pose.vecVelocity[2] });
+		_motionCompensationRefPosAcc = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, { pose.vecAcceleration[0], pose.vecAcceleration[1], pose.vecAcceleration[2] });
+		_motionCompensationRefRotVel = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, { pose.vecAngularVelocity[0], pose.vecAngularVelocity[1], pose.vecAngularVelocity[2] });
+		_motionCompensationRefRotAcc = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, { pose.vecAngularAcceleration[0], pose.vecAngularAcceleration[1], pose.vecAngularAcceleration[2] });
+		_motionCompensationRefVelAccValid = true;
+	}
+
 	_motionCompensationRefPoseValid = true;
 }
 
@@ -518,6 +545,89 @@ bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDevic
 		pose.vecPosition[0] = adjPoseDriverPos.v[0];
 		pose.vecPosition[1] = adjPoseDriverPos.v[1];
 		pose.vecPosition[2] = adjPoseDriverPos.v[2];
+
+		// Velocity / Acceleration Compensation
+		if (_motionCompensationVelAccMode == 1) { // Set Zero
+			pose.vecVelocity[0] = 0.0;
+			pose.vecVelocity[1] = 0.0;
+			pose.vecVelocity[2] = 0.0;
+			pose.vecAcceleration[0] = 0.0;
+			pose.vecAcceleration[1] = 0.0;
+			pose.vecAcceleration[2] = 0.0;
+			pose.vecAngularVelocity[0] = 0.0;
+			pose.vecAngularVelocity[1] = 0.0;
+			pose.vecAngularVelocity[2] = 0.0;
+			pose.vecAngularAcceleration[0] = 0.0;
+			pose.vecAngularAcceleration[1] = 0.0;
+			pose.vecAngularAcceleration[2] = 0.0;
+		} else if (_motionCompensationVelAccMode == 2) { // Substract Motion Ref
+			if (_motionCompensationRefVelAccValid) {
+				auto tmpRot = pose.qWorldFromDriverRotation * pose.qRotation;
+				auto tmpRotInv = vrmath::quaternionConjugate(tmpRot);
+				auto tmpPosVel = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, _motionCompensationRefPosVel);
+				pose.vecVelocity[0] -= tmpPosVel.v[0];
+				pose.vecVelocity[1] -= tmpPosVel.v[1];
+				pose.vecVelocity[2] -= tmpPosVel.v[2];
+				auto tmpPosAcc = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, _motionCompensationRefPosAcc);
+				pose.vecAcceleration[0] -= tmpPosAcc.v[0];
+				pose.vecAcceleration[1] -= tmpPosAcc.v[1];
+				pose.vecAcceleration[2] -= tmpPosAcc.v[2];
+				auto tmpRotVel = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, _motionCompensationRefRotVel);
+				pose.vecAngularVelocity[0] -= tmpRotVel.v[0];
+				pose.vecAngularVelocity[1] -= tmpRotVel.v[1];
+				pose.vecAngularVelocity[2] -= tmpRotVel.v[2];
+				auto tmpRotAcc = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, _motionCompensationRefRotAcc);
+				pose.vecAngularAcceleration[0] -= tmpRotAcc.v[0];
+				pose.vecAngularAcceleration[1] -= tmpRotAcc.v[1];
+				pose.vecAngularAcceleration[2] -= tmpRotAcc.v[2];
+			}
+		} else if (_motionCompensationVelAccMode == 3) { // Linear Approximation
+			auto now = std::chrono::duration_cast <std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			if (deviceInfo->lastDriverPoseValid()) {
+				auto& lastPose = deviceInfo->lastDriverPose();
+				double tdiff = ((double)(now - deviceInfo->lastDriverPoseTime()) / 1.0E6) + (pose.poseTimeOffset - lastPose.poseTimeOffset);
+				tdiff *= 4; // To reduce jitter
+				if (tdiff < 0.0001) { // Sometimes we get a very small or even negative time difference between current and last pose
+					// In this case we just take the velocities and accelerations from last time
+					pose.vecVelocity[0] = lastPose.vecVelocity[0];
+					pose.vecVelocity[1] = lastPose.vecVelocity[1];
+					pose.vecVelocity[2] = lastPose.vecVelocity[2];
+					pose.vecAcceleration[0] = lastPose.vecAcceleration[0];
+					pose.vecAcceleration[1] = lastPose.vecAcceleration[1];
+					pose.vecAcceleration[2] = lastPose.vecAcceleration[2];
+				} else {
+					pose.vecVelocity[0] = (pose.vecPosition[0] - lastPose.vecPosition[0]) / tdiff;
+					// Set very small values to zero to avoid jitter
+					if (pose.vecVelocity[0] > -0.01 && pose.vecVelocity[0] < 0.01) {
+						pose.vecVelocity[0] = 0.0;
+					}
+					pose.vecVelocity[1] = (pose.vecPosition[1] - lastPose.vecPosition[1]) / tdiff;
+					if (pose.vecVelocity[1] > -0.01 && pose.vecVelocity[1] < 0.01) {
+						pose.vecVelocity[1] = 0.0;
+					}
+					pose.vecVelocity[2] = (pose.vecPosition[2] - lastPose.vecPosition[2]) / tdiff;
+					if (pose.vecVelocity[2] > -0.01 && pose.vecVelocity[2] < 0.01) {
+						pose.vecVelocity[2] = 0.0;
+					}
+
+					// Predicting acceleration values leads to a very jittery experience,
+					// furthermore the pose updates coming from the lighthouse driver do no have acceleration set in the first place.
+					/*pose.vecAcceleration[0] = (pose.vecVelocity[0] - lastPose.vecVelocity[0]) / tdiff;
+					if (pose.vecAcceleration[0] > -0.01 && pose.vecAcceleration[0] < 0.01) {
+						pose.vecAcceleration[0] = 0.0;
+					}
+					pose.vecAcceleration[1] = (pose.vecVelocity[1] - lastPose.vecVelocity[1]) / tdiff;
+					if (pose.vecAcceleration[1] > -0.01 && pose.vecAcceleration[1] < 0.01) {
+						pose.vecAcceleration[1] = 0.0;
+					}
+					pose.vecAcceleration[2] = (pose.vecVelocity[2] - lastPose.vecVelocity[2]) / tdiff;
+					if (pose.vecAcceleration[2] > -0.01 && pose.vecAcceleration[2] < 0.01) {
+						pose.vecAcceleration[2] = 0.0;
+					}*/
+				}
+			}
+			deviceInfo->setLastDriverPose(pose, now);
+		}
 		return true;
 	} else {
 		return false;

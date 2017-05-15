@@ -77,7 +77,11 @@ Redirect mode can be temporarily suspended by pressing the system button on eith
 
 ![Motion Compensation Settings Page](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/MotionCompensationPage.png)
 
-- **Center Point**: Set the center point of the motion platform.
+- **Vel/Acc Compensation Mode**: How should reported velocities and acceleration values be adjusted. The problem with only adjusting the headset position is that pose prediction also takes velocity and acceleration into accound. As long as the reported values to not differ too much from the real values, pose prediction errors are hardly noticeable. But with fast movements of the motion platform the pose prediction error can be noticeable. Available modes are:
+  - **Disabled**: Do not adjust velocity/acceration values.
+  - **Set Zero**: Set all velocity/acceleration values to zero. Most simple form of velocity/acceleration compensation.
+  - **Use Reference Tracker**: Substract the velocity/acceleration values of the motion compensation reference tracker/controller from the values reported from the headset. Most accurate form of velocity/acceleration compensation. However, it requires that the reference tracker/controller is as closely mounted to the head position as possible. The further away it is from the head position the larger the error.
+  - **Linear Approximation (Experimental)**: Uses linear approximation to estimate the velocity/acceleration values. The used formula is: (current_position - last_position) / time_difference, however the resulting values do cause a lot of jitter and therefore they are divided by four to reduce jitter to an acceptable level.
 
 ## client_commandline commands:
 
