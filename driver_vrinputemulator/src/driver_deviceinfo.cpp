@@ -84,9 +84,9 @@ void OpenvrDeviceManipulationInfo::handleNewDevicePose(vr::IVRServerDriverHost* 
 				_disconnectedMsgSend = true;
 				origFunc(driver, unWhichDevice, newPose2, sizeof(vr::DriverPose_t));
 			}
-			origFunc(driver, m_redirectRef->openvrId(), newPose, sizeof(vr::DriverPose_t));
+			origFunc(m_redirectRef->driverHost(), m_redirectRef->openvrId(), newPose, sizeof(vr::DriverPose_t));
 		} else if (m_deviceMode == 4) { // swap mode
-			origFunc(driver, m_redirectRef->openvrId(), newPose, sizeof(vr::DriverPose_t));
+			origFunc(m_redirectRef->driverHost(), m_redirectRef->openvrId(), newPose, sizeof(vr::DriverPose_t));
 		} else {
 			origFunc(driver, unWhichDevice, newPose, sizeof(vr::DriverPose_t));
 		}
