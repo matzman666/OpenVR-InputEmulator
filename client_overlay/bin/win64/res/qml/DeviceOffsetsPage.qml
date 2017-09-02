@@ -42,7 +42,6 @@ MyStackViewPage {
         MyOffsetGroupBox {
             boxTitle: "WorldFromDriver Offsets"
             id: worldFromDriverOffsetBox
-            keyboardUIDBase: 200
             setTranslationOffset: function(x, y, z) {
                 if (deviceIndex >= 0) {
                     DeviceManipulationTabController.setWorldFromDriverTranslationOffset(deviceIndex, x, y, z)
@@ -94,7 +93,6 @@ MyStackViewPage {
         MyOffsetGroupBox {
             boxTitle: "DriverFromHead Offsets"
             id: driverFromHeadOffsetBox
-            keyboardUIDBase: 210
             setTranslationOffset: function(x, y, z) {
                 if (deviceIndex >= 0) {
                     DeviceManipulationTabController.setDriverFromHeadTranslationOffset(deviceIndex, x, y, z)
@@ -146,7 +144,6 @@ MyStackViewPage {
         MyOffsetGroupBox {
             boxTitle: "Driver Offsets"
             id: driverOffsetBox
-            keyboardUIDBase: 220
             setTranslationOffset: function(x, y, z) {
                 if (deviceIndex >= 0) {
                     DeviceManipulationTabController.setDriverTranslationOffset(deviceIndex, x, y, z)

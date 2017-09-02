@@ -19,7 +19,9 @@
 #include <QQuickWindow>
 #include <QQuickItem>
 #include <QQuickRenderControl>
+#include <QSoundEffect>
 #include <memory>
+#include <atomic>
 #include "logging.h"
 
 #include "tabcontrollers/DeviceManipulationTabController.h"
@@ -60,6 +62,11 @@ private:
 
 	QUrl m_runtimePathUrl;
 
+	std::atomic_uint32_t m_uniqueNumber = 0;
+
+	QSoundEffect activationSoundEffect;
+	QSoundEffect focusChangedSoundEffect;
+
 public: // I know it's an ugly hack to make them public to enable external access, but I am too lazy to implement getters.
 	DeviceManipulationTabController deviceManipulationTabController;
 
@@ -85,6 +92,8 @@ public:
 
 	Q_INVOKABLE bool soundDisabled();
 
+	Q_INVOKABLE unsigned getNewUniqueNumber();
+
 	const vr::VROverlayHandle_t& overlayHandle();
 	const vr::VROverlayHandle_t& overlayThumbnailHandle();
 	bool getOverlayTexture(vr::Texture_t& texture);
@@ -95,6 +104,9 @@ public slots:
 	void OnTimeoutPumpEvents();
 
 	void showKeyboard(QString existingText, unsigned long userValue = 0);
+
+	void playActivationSound();
+	void playFocusChangedSound();
 
 signals:
 	void keyBoardInputSignal(QString input, unsigned long userValue = 0);

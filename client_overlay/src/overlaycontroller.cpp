@@ -48,6 +48,24 @@ void OverlayController::Init(QQmlEngine* qmlEngine) {
 	m_runtimePathUrl = QUrl::fromLocalFile(vr::VR_RuntimePath());
 	LOG(INFO) << "VR Runtime Path: " << m_runtimePathUrl.toLocalFile();
 
+	QString activationSoundFile = m_runtimePathUrl.toLocalFile().append("/content/panorama/sounds/activation.wav");
+	QFileInfo activationSoundFileInfo(activationSoundFile);
+	if (activationSoundFileInfo.exists() && activationSoundFileInfo.isFile()) {
+		activationSoundEffect.setSource(QUrl::fromLocalFile(activationSoundFile));
+		activationSoundEffect.setVolume(1.0);
+	} else {
+		LOG(ERROR) << "Could not find activation sound file " << activationSoundFile;
+	}
+
+	QString focusChangedSoundFile = m_runtimePathUrl.toLocalFile().append("/content/panorama/sounds/focus_change.wav");
+	QFileInfo focusChangedSoundFileInfo(focusChangedSoundFile);
+	if (focusChangedSoundFileInfo.exists() && focusChangedSoundFileInfo.isFile()) {
+		focusChangedSoundEffect.setSource(QUrl::fromLocalFile(focusChangedSoundFile));
+		focusChangedSoundEffect.setVolume(1.0);
+	} else {
+		LOG(ERROR) << "Could not find focus changed sound file " << focusChangedSoundFile;
+	}
+
 	// Check whether OpenVR is too outdated
 	if (!vr::VR_IsInterfaceVersionValid(vr::IVRSystem_Version)) {
 		QMessageBox::critical(nullptr, "OpenVR Input Emulator Overlay", "OpenVR version is too outdated. Please update OpenVR.");
@@ -361,6 +379,10 @@ bool OverlayController::soundDisabled() {
 	return noSound;
 }
 
+unsigned OverlayController::getNewUniqueNumber() {
+	return m_uniqueNumber.fetch_add(1);
+}
+
 
 const vr::VROverlayHandle_t& OverlayController::overlayHandle() {
 	return m_ulOverlayHandle;
@@ -376,5 +398,18 @@ void OverlayController::showKeyboard(QString existingText, unsigned long userVal
 	vr::VROverlay()->ShowKeyboardForOverlay(m_ulOverlayHandle, vr::k_EGamepadTextInputModeNormal, vr::k_EGamepadTextInputLineModeSingleLine, "Input Emulator Overlay", 1024, existingText.toStdString().c_str(), false, userValue);
 }
 
+
+void OverlayController::playActivationSound() {
+	if (!noSound) {
+		activationSoundEffect.play();
+	}
+}
+
+
+void OverlayController::playFocusChangedSound() {
+	if (!noSound) {
+		focusChangedSoundEffect.play();
+	}
+}
 
 } // namespace inputemulator

@@ -16,8 +16,6 @@ GroupBox {
     property double offsetRotationStep: 5.0
     property double offsetTranslationStep: 1.0
 
-    property int keyboardUIDBase: 200
-
     property var setTranslationOffset: function(x, y, z) {}
     property var setRotationOffset: function(yaw, pitch, roll) {}
     property var updateValues: function() {}
@@ -81,7 +79,6 @@ GroupBox {
             MyTextField {
                 id: yawInputField
                 text: "0.00"
-                keyBoardUID: keyboardUIDBase
                 Layout.preferredWidth: 140
                 Layout.leftMargin: 10
                 Layout.rightMargin: 10
@@ -138,7 +135,6 @@ GroupBox {
             MyTextField {
                 id: pitchInputField
                 text: "0.00"
-                keyBoardUID: keyboardUIDBase + 1
                 Layout.preferredWidth: 140
                 Layout.leftMargin: 10
                 Layout.rightMargin: 10
@@ -195,7 +191,6 @@ GroupBox {
             MyTextField {
                 id: rollInputField
                 text: "0.00"
-                keyBoardUID: keyboardUIDBase + 2
                 Layout.preferredWidth: 140
                 Layout.leftMargin: 10
                 Layout.rightMargin: 10
@@ -248,7 +243,6 @@ GroupBox {
             MyTextField {
                 id: xInputField
                 text: "0.00"
-                keyBoardUID: keyboardUIDBase + 3
                 Layout.preferredWidth: 140
                 Layout.leftMargin: 10
                 Layout.rightMargin: 10
@@ -294,7 +288,6 @@ GroupBox {
             MyTextField {
                 id: yInputField
                 text: "0.00"
-                keyBoardUID: keyboardUIDBase + 4
                 Layout.preferredWidth: 140
                 Layout.leftMargin: 10
                 Layout.rightMargin: 10
@@ -340,7 +333,6 @@ GroupBox {
             MyTextField {
                 id: zInputField
                 text: "0.00"
-                keyBoardUID: keyboardUIDBase + 5
                 Layout.preferredWidth: 140
                 Layout.leftMargin: 10
                 Layout.rightMargin: 10

@@ -77,7 +77,6 @@ MyStackViewPage {
                 }
                 MyTextField {
                     id: deviceManipulationNewProfileName
-                    keyBoardUID: 101
                     color: "#cccccc"
                     text: ""
                     Layout.fillWidth: true
@@ -278,34 +277,35 @@ MyStackViewPage {
 
         }
 
+
         RowLayout {
             spacing: 18
 
-            MyText {
-                text: "Render Model:"
-            }
-
-            MyComboBox {
-                id: deviceRenderModelComboBox
+            MyPushButton {
+                id: deviceRenderModelButton
                 enabled: false
-                Layout.maximumWidth: 710
-                Layout.minimumWidth: 710
-                Layout.preferredWidth: 710
-                Layout.fillWidth: true
-                model: ["<Disabled>"]
-                onCurrentIndexChanged: {
+                activationSoundEnabled: false
+                Layout.preferredWidth: 548
+                text: "Render Model"
+                onClicked: {
+                    if (deviceSelectionComboBox.currentIndex >= 0) {
+                        deviceRenderModelPage.setDeviceIndex(deviceSelectionComboBox.currentIndex)
+                        MyResources.playFocusChangedSound()
+                        var res = mainView.push(deviceRenderModelPage)
+                    }
                 }
             }
 
             MyPushButton {
-                id: deviceRenderModelButton
-                Layout.preferredWidth: 194
+                id: deviceInputRemappingButton
+                activationSoundEnabled: false
+                Layout.preferredWidth: 548
                 enabled: false
-                text: "Apply"
+                text: "Input Remapping"
                 onClicked: {
-                    DeviceManipulationTabController.setDeviceRenderModel(deviceSelectionComboBox.currentIndex, deviceRenderModelComboBox.currentIndex)
                 }
             }
+
         }
 
         Item {
@@ -398,12 +398,6 @@ MyStackViewPage {
 
         Component.onCompleted: {
             appVersionText.text = OverlayController.getVersionString()
-            var renderModelCount = DeviceManipulationTabController.getRenderModelCount()
-            var renderModels = ["<Disabled>"]
-            for (var i = 0; i < renderModelCount; i++) {
-                renderModels.push(DeviceManipulationTabController.getRenderModelName(i))
-                deviceRenderModelComboBox.model = renderModels
-            }
             reloadDeviceManipulationProfiles()
         }
 
@@ -452,19 +446,19 @@ MyStackViewPage {
             deviceModeApplyButton.enabled = false
             motionCompensationButton.enabled = false
             deviceManipulationOffsetButton.enabled = false
-            deviceIdentifyButton.enabled = false
-            deviceRenderModelComboBox.enabled = false
+            deviceInputRemappingButton.enabled = false
             deviceRenderModelButton.enabled = false
+            deviceIdentifyButton.enabled = false
             deviceManipulationNewProfileButton.enabled = false
             deviceManipulationProfileComboBox.enabled = false
         } else {
             deviceModeSelectionComboBox.enabled = true
             deviceManipulationOffsetButton.enabled = true
+            deviceRenderModelButton.enabled = true
+            deviceInputRemappingButton.enabled = true
             motionCompensationButton.enabled = true
             deviceModeApplyButton.enabled = true
             deviceIdentifyButton.enabled = true
-            deviceRenderModelComboBox.enabled = true
-            deviceRenderModelButton.enabled = true
             deviceManipulationNewProfileButton.enabled = true
             deviceManipulationProfileComboBox.enabled = true
             if (oldIndex >= 0 && oldIndex < deviceCount) {

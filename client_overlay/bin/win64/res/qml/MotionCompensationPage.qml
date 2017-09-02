@@ -92,7 +92,6 @@ MyStackViewPage {
                         id: kalmanProcessNoiseInputField
                         color: kalmanFilterParameterBox.enabled ? "white" : "gray"
                         text: "0.00"
-                        keyBoardUID: 301
                         Layout.preferredWidth: 140
                         Layout.leftMargin: 10
                         Layout.rightMargin: 10
@@ -120,7 +119,6 @@ MyStackViewPage {
                         id: kalmanObservationNoiseInputField
                         color: kalmanFilterParameterBox.enabled ? "white" : "gray"
                         text: "0.00"
-                        keyBoardUID: 302
                         Layout.preferredWidth: 140
                         Layout.leftMargin: 10
                         Layout.rightMargin: 10
@@ -213,7 +211,6 @@ MyStackViewPage {
                     MyTextField {
                         id: movingAverageWindowText
                         text: "0.00"
-                        keyBoardUID: 303
                         Layout.preferredWidth: 100
                         Layout.leftMargin: 10
                         horizontalAlignment: Text.AlignHCenter

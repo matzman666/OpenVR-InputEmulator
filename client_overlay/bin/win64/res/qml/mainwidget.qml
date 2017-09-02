@@ -21,6 +21,10 @@ Rectangle {
         stackView: mainView
     }
 
+    property DeviceRenderModelPage deviceRenderModelPage:  DeviceRenderModelPage {
+        stackView: mainView
+    }
+
     StackView {
         id: mainView
         anchors.fill: parent
