@@ -181,9 +181,11 @@ public:
 	void setDeviceFakeDisconnectedMode(uint32_t deviceId, bool modal = true);
 	void setDeviceRedictMode(uint32_t deviceId, uint32_t target, bool modal = true);
 	void setDeviceSwapMode(uint32_t deviceId, uint32_t target, bool modal = true);
-	void setDeviceMotionCompensationMode(uint32_t deviceId, uint32_t velAccMode = 0, bool modal = true);
+	void setDeviceMotionCompensationMode(uint32_t deviceId, MotionCompensationVelAccMode velAccMode = MotionCompensationVelAccMode::Disabled, bool modal = true);
 
-	void setMotionVelAccCompensationMode(uint32_t velAccMode, bool modal = true);
+	void setMotionVelAccCompensationMode(MotionCompensationVelAccMode velAccMode, bool modal = true);
+	void setMotionCompensationKalmanProcessNoise(double variance, bool modal = true);
+	void setMotionCompensationKalmanObservationNoise(double variance, bool modal = true);
 
 	void triggerHapticPulse(uint32_t deviceId, uint32_t axisId, uint16_t durationMicroseconds, bool directMode, bool modal = true);
 

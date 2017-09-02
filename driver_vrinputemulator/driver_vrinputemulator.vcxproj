@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\driver_deviceinfo.cpp" />
+    <ClCompile Include="src\driver_kalmanfilter.cpp" />
     <ClCompile Include="src\driver_virtualdevices.cpp" />
     <ClCompile Include="src\com\shm\driver_ipc_shm.cpp" />
     <ClCompile Include="src\driver_server.cpp" />

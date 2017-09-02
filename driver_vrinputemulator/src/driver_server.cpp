@@ -54,6 +54,15 @@ std::map<vr::ITrackedDeviceServerDriver*, CServerDriver::_DetourFuncInfo<_Detour
 std::vector<CServerDriver::_DetourFuncInfo<_DetourTriggerHapticPulse_t>> CServerDriver::_deviceTriggerHapticPulseDetours;
 std::map<vr::IVRControllerComponent*, std::shared_ptr<OpenvrDeviceManipulationInfo>> CServerDriver::_controllerComponentToDeviceInfos; // ControllerComponent => ManipulationInfo
 
+CServerDriver::_DetourFuncInfo<_DetourReadPropertyBatch> CServerDriver::_readPropertyBatchDetour;
+CServerDriver::_DetourFuncInfo<_DetourWritePropertyBatch> CServerDriver::_writePropertyBatchDetour;
+std::map<vr::PropertyContainerHandle_t, std::shared_ptr<OpenvrDeviceManipulationInfo>> CServerDriver::_propertyContainerToDeviceInfos; // PropertyContainerHandle => ManipulationInfo
+
+// Device Property Overrides
+std::string CServerDriver::_propertiesOverrideHmdManufacturer;
+std::string CServerDriver::_propertiesOverrideHmdModel;
+std::string CServerDriver::_propertiesOverrideHmdTrackingSystem;
+bool CServerDriver::_propertiesOverrideGenericTrackerFakeController = false;
 
 
 CServerDriver::CServerDriver() {
@@ -154,6 +163,16 @@ vr::EVRInitError CServerDriver::_deviceActivateDetourFunc(vr::ITrackedDeviceServ
 		auto info = i->second;
 		info->setOpenvrId(unObjectId);
 		_openvrIdToDeviceInfoMap[unObjectId] = info.get();
+
+		// Handle device property container
+		auto vrproperties = vr::VRPropertiesRaw();
+		if (vrproperties) {
+			info->setVrProperties(vrproperties);
+			auto container = vrproperties->TrackedDeviceToPropertyContainer(unObjectId);
+			info->setPropertyContainer(container);
+			_propertyContainerToDeviceInfos[container] = info;
+		}
+
 		LOG(INFO) << "Detour::deviceActivateDetourFunc: sucessfully added to trackedDeviceInfos";
 	}
 	auto& d = _deviceActivateDetourMap.find(_this);
@@ -177,6 +196,12 @@ bool CServerDriver::_deviceTriggerHapticPulseDetourFunc(vr::IVRControllerCompone
 
 bool CServerDriver::_deviceAddedDetourFunc(vr::IVRServerDriverHost* _this, const char *pchDeviceSerialNumber, vr::ETrackedDeviceClass eDeviceClass, vr::ITrackedDeviceServerDriver *pDriver) {
 	LOG(TRACE) << "Detour::deviceAddedDetourFunc(" << _this << ", " << pchDeviceSerialNumber << ", " << (int)eDeviceClass << ", " << pDriver << ")";
+
+	// Device Class Override
+	if (eDeviceClass == vr::TrackedDeviceClass_GenericTracker && _propertiesOverrideGenericTrackerFakeController) {
+		eDeviceClass = vr::TrackedDeviceClass_Controller;
+		LOG(INFO) << "Disguised GenericTracker " << pchDeviceSerialNumber << " as Controller.";
+	}
 
 	// Redirect activate() function
 	auto deviceActivatedOrig = (*((void***)pDriver))[0];
@@ -226,9 +251,143 @@ bool CServerDriver::_deviceAddedDetourFunc(vr::IVRServerDriverHost* _this, const
 };
 
 
+std::string _propertyValueToString(void *pvBuffer, uint32_t unBufferSize, vr::PropertyTypeTag_t unTag) {
+	switch (unTag) {
+	case vr::k_unFloatPropertyTag:
+		return std::to_string(*(float*)pvBuffer) + " [float]";
+		break;
+	case vr::k_unInt32PropertyTag:
+		return std::to_string(*(int32_t*)pvBuffer) + " [int32]";
+		break;
+	case vr::k_unUint64PropertyTag:
+		return std::to_string(*(uint64_t*)pvBuffer) + " [uint64]";
+		break;
+	case vr::k_unBoolPropertyTag:
+		return std::to_string(*(bool*)pvBuffer) + " [bool]";
+		break;
+	case vr::k_unStringPropertyTag:
+		return std::string((const char*)pvBuffer) + " [string]";
+		break;
+	case vr::k_unHmdMatrix34PropertyTag:
+		return std::string("[matrix34]");
+		break;
+	case vr::k_unHmdMatrix44PropertyTag:
+		return std::string("[matrix44]");
+		break;
+	case vr::k_unHmdVector3PropertyTag:
+		return std::string("[vector3]");
+		break;
+	case vr::k_unHmdVector4PropertyTag:
+		return std::string("[vector4]");
+		break;
+	case vr::k_unHiddenAreaPropertyTag:
+		return std::string("[HiddenAreaProperty]");
+		break;
+	case vr::k_unInvalidPropertyTag:
+		return std::string("[Invalid]");
+		break;
+	default:
+		return std::string("<Unknown>");
+		break;
+	}
+}
+
+
+vr::ETrackedPropertyError CServerDriver::_readPropertyBatchDetourFunc(vr::IVRProperties* _this, vr::PropertyContainerHandle_t ulContainerHandle, vr::PropertyRead_t* pBatch, uint32_t unBatchEntryCount) {
+	LOG(TRACE) << "_readPropertyBatchDetourFunc: " << (void*)_this << ", " << (uint64_t)ulContainerHandle << ", " << (void*)pBatch << ", " << unBatchEntryCount;
+	// Call original function
+	auto retval = _readPropertyBatchDetour.origFunc(_this, ulContainerHandle, pBatch, unBatchEntryCount);
+	/*for (uint32_t i = 0; i < unBatchEntryCount; i++) {
+		LOG(INFO) << i << ": " << (int)pBatch[i].prop << " = " << _propertyValueToString(pBatch[i].pvBuffer, pBatch[i].unBufferSize, pBatch[i].unTag);
+	}*/
+	uint32_t deviceId = vr::k_unTrackedDeviceIndexInvalid;
+	std::shared_ptr<OpenvrDeviceManipulationInfo> deviceInfo;
+	auto entryIt = _propertyContainerToDeviceInfos.find(ulContainerHandle);
+	if (entryIt != _propertyContainerToDeviceInfos.end()) {
+		deviceInfo = entryIt->second;
+		deviceId = deviceInfo->openvrId();
+	} else {
+		for (uint32_t id = 0; id < vr::k_unMaxTrackedDeviceCount; id++) {
+			auto handle = _this->TrackedDeviceToPropertyContainer(id);
+			if (handle == ulContainerHandle) {
+				deviceId = id;
+				break;
+			}
+		}
+	}
+	return retval;
+}
+
+
+vr::ETrackedPropertyError CServerDriver::_writePropertyBatchDetourFunc(vr::IVRProperties* _this, vr::PropertyContainerHandle_t ulContainerHandle, vr::PropertyWrite_t* pBatch, uint32_t unBatchEntryCount) {
+	LOG(TRACE) << "_writePropertyBatchDetourFunc: " << (void*)_this << ", " << (uint64_t)ulContainerHandle << ", " << (void*)pBatch << ", " << unBatchEntryCount;
+	uint32_t deviceId = vr::k_unTrackedDeviceIndexInvalid;
+	std::shared_ptr<OpenvrDeviceManipulationInfo> deviceInfo;
+	auto entryIt = _propertyContainerToDeviceInfos.find(ulContainerHandle);
+	if (entryIt != _propertyContainerToDeviceInfos.end()) {
+		deviceInfo = entryIt->second;
+		deviceId = deviceInfo->openvrId();
+	} else {
+		for (uint32_t id = 0; id < vr::k_unMaxTrackedDeviceCount; id++) {
+			auto handle = _this->TrackedDeviceToPropertyContainer(id);
+			if (handle == ulContainerHandle) {
+				deviceId = id;
+				break;
+			}
+		}
+	}
+	if (deviceId == vr::k_unTrackedDeviceIndex_Hmd) {
+		for (uint32_t i = 0; i < unBatchEntryCount; i++) {
+			vr::PropertyWrite_t& be = pBatch[i];
+			//LOG(INFO) << i << ": " << (int)be.prop << " = " << _propertyValueToString(be.pvBuffer, be.unBufferSize, be.unTag);
+			if (be.prop == vr::Prop_ManufacturerName_String && !_propertiesOverrideHmdManufacturer.empty()) {
+				LOG(INFO) << "Overwriting Hmd Manufacturer: " << be.pvBuffer << " => " << _propertiesOverrideHmdManufacturer;
+				be.pvBuffer = (void*)_propertiesOverrideHmdManufacturer.c_str();
+				be.unBufferSize = _propertiesOverrideHmdManufacturer.size() + 1;
+			} else if (be.prop == vr::Prop_ModelNumber_String && !_propertiesOverrideHmdModel.empty()) {
+				LOG(INFO) << "Overwriting Hmd Model: " << be.pvBuffer << " => " << _propertiesOverrideHmdModel;
+				be.pvBuffer = (void*)_propertiesOverrideHmdModel.c_str();
+				be.unBufferSize = _propertiesOverrideHmdModel.size() + 1;
+			} else if (be.prop == vr::Prop_TrackingSystemName_String && !_propertiesOverrideHmdTrackingSystem.empty()) {
+				LOG(INFO) << "Overwriting Hmd TrackingSystem: " << be.pvBuffer << " => " << _propertiesOverrideHmdTrackingSystem;
+				be.pvBuffer = (void*)_propertiesOverrideHmdTrackingSystem.c_str();
+				be.unBufferSize = _propertiesOverrideHmdTrackingSystem.size() + 1;
+			}
+		}
+	}
+	// Call original function
+	auto retval = _writePropertyBatchDetour.origFunc(_this, ulContainerHandle, pBatch, unBatchEntryCount);
+	return retval;
+}
+
+
 vr::EVRInitError CServerDriver::Init(vr::IVRDriverContext *pDriverContext) {
 	LOG(TRACE) << "CServerDriver::Init()";
 	VR_INIT_SERVER_DRIVER_CONTEXT(pDriverContext);
+
+	// Read vrsettings
+	char buffer[vr::k_unMaxPropertyStringSize];
+	vr::EVRSettingsError peError;
+	vr::VRSettings()->GetString(vrsettings_SectionName, vrsettings_overrideHmdManufacturer_string, buffer, vr::k_unMaxPropertyStringSize, &peError);
+	if (peError == vr::VRSettingsError_None) {
+		_propertiesOverrideHmdManufacturer = buffer;
+		LOG(INFO) << vrsettings_SectionName << "::" << vrsettings_overrideHmdManufacturer_string << " = " << _propertiesOverrideHmdManufacturer;
+	}
+	vr::VRSettings()->GetString(vrsettings_SectionName, vrsettings_overrideHmdModel_string, buffer, vr::k_unMaxPropertyStringSize, &peError);
+	if (peError == vr::VRSettingsError_None) {
+		_propertiesOverrideHmdModel = buffer;
+		LOG(INFO) << vrsettings_SectionName << "::" << vrsettings_overrideHmdModel_string << " = " << _propertiesOverrideHmdModel;
+	}
+	vr::VRSettings()->GetString(vrsettings_SectionName, vrsettings_overrideHmdTrackingSystem_string, buffer, vr::k_unMaxPropertyStringSize, &peError);
+	if (peError == vr::VRSettingsError_None) {
+		_propertiesOverrideHmdTrackingSystem = buffer;
+		LOG(INFO) << vrsettings_SectionName << "::" << vrsettings_overrideHmdTrackingSystem_string << " = " << _propertiesOverrideHmdTrackingSystem;
+	}
+	auto boolVal = vr::VRSettings()->GetBool(vrsettings_SectionName, vrsettings_genericTrackerFakeController_bool, &peError);
+	if (peError == vr::VRSettingsError_None) {
+		_propertiesOverrideGenericTrackerFakeController = boolVal;
+		LOG(INFO) << vrsettings_SectionName << "::" << vrsettings_genericTrackerFakeController_bool << " = " << boolVal;
+	}
 
 	auto mhError = MH_Initialize();
 	if (mhError == MH_OK) {
@@ -239,6 +398,8 @@ vr::EVRInitError CServerDriver::Init(vr::IVRDriverContext *pDriverContext) {
 		CREATE_MH_HOOK(_buttonTouchedDetour, _buttonTouchedDetourFunc, "buttonTouchedDetour", vr::VRServerDriverHost(), 5);
 		CREATE_MH_HOOK(_buttonUntouchedDetour, _buttonUntouchedDetourFunc, "buttonUntouchedDetour", vr::VRServerDriverHost(), 6);
 		CREATE_MH_HOOK(_axisUpdatedDetour, _axisUpdatedDetourFunc, "axisUpdatedDetour", vr::VRServerDriverHost(), 7);
+		CREATE_MH_HOOK(_readPropertyBatchDetour, _readPropertyBatchDetourFunc, "readPropertyBatchDetour", vr::VRPropertiesRaw(), 0);
+		CREATE_MH_HOOK(_writePropertyBatchDetour, _writePropertyBatchDetourFunc, "writePropertyBatchDetour", vr::VRPropertiesRaw(), 1);
 	} else {
 		LOG(ERROR) << "Error while initialising minHook: " << MH_StatusToString(mhError);
 	}
@@ -283,6 +444,13 @@ void CServerDriver::RunFrame() {
 		auto vd = m_virtualDevices[i];
 		if (vd && vd->published() && vd->periodicPoseUpdates()) {
 			vd->sendPoseUpdate();
+		}
+	}
+	if (_motionCompensationEnabled && _motionCompensationStatus == MotionCompensationStatus::WaitingForZeroRef) {
+		_motionCompensationZeroRefTimeout++;
+		if (_motionCompensationZeroRefTimeout >= _motionCompensationZeroRefTimeoutMax) {
+			_motionCompensationRefDevice->setDefaultMode();
+			sendReplySetMotionCompensationMode(false);
 		}
 	}
 }
@@ -450,7 +618,7 @@ CTrackedDeviceDriver* CServerDriver::virtualDevices_getDevice(uint32_t unWhichDe
 	return nullptr;
 }
 
-CTrackedDeviceDriver * CServerDriver::virtualDevices_findDevice(const std::string& serial) {
+CTrackedDeviceDriver* CServerDriver::virtualDevices_findDevice(const std::string& serial) {
 	for (uint32_t i = 0; i < this->m_virtualDeviceCount; ++i) {
 		if (this->m_virtualDevices[i]->serialNumber().compare(serial) == 0) {
 			return this->m_virtualDevices[i].get();
@@ -468,22 +636,56 @@ OpenvrDeviceManipulationInfo* CServerDriver::deviceManipulation_getInfo(uint32_t
 }
 
 void CServerDriver::enableMotionCompensation(bool enable) {
+	_motionCompensationZeroRefTimeout = 0;
 	_motionCompensationZeroPoseValid = false;
 	_motionCompensationRefPoseValid = false;
 	_motionCompensationEnabled = enable;
+	if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::KalmanFilter) {
+		for (auto d : _openvrDeviceInfos) {
+			d.second->setLastPoseTime(-1);
+		}
+	}
 }
 
-void CServerDriver::setMotionCompensationVelAccMode(uint32_t velAccMode) {
+void CServerDriver::setMotionCompensationRefDevice(OpenvrDeviceManipulationInfo* device) {
+	_motionCompensationRefDevice = device;
+}
+
+OpenvrDeviceManipulationInfo* CServerDriver::getMotionCompensationRefDevice() {
+	return _motionCompensationRefDevice;
+}
+
+void CServerDriver::setMotionCompensationVelAccMode(MotionCompensationVelAccMode velAccMode) {
 	if (_motionCompensationVelAccMode != velAccMode) {
 		_motionCompensationRefVelAccValid = false;
 		for (auto d : _openvrDeviceInfos) {
-			d.second->setLastDriverPoseValid(false);
+			d.second->setLastPoseTime(-1);
+			d.second->kalmanFilter().setProcessNoise(m_motionCompensationKalmanProcessVariance);
+			d.second->kalmanFilter().setObservationNoise(m_motionCompensationKalmanObservationVariance);
 		}
 		_motionCompensationVelAccMode = velAccMode;
 	}
 }
 
-void CServerDriver::disableMotionCompensationOnAllDevices() {
+void CServerDriver::setMotionCompensationKalmanProcessVariance(double variance) {
+	m_motionCompensationKalmanProcessVariance = variance;
+	if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::KalmanFilter) {
+		for (auto d : _openvrDeviceInfos) {
+			d.second->kalmanFilter().setProcessNoise(variance);
+		}
+	}
+}
+
+void CServerDriver::setMotionCompensationKalmanObservationVariance(double variance) {
+	m_motionCompensationKalmanObservationVariance = variance;
+	if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::KalmanFilter) {
+		for (auto d : _openvrDeviceInfos) {
+			d.second->kalmanFilter().setObservationNoise(variance);
+		}
+	}
+}
+
+void CServerDriver::_disableMotionCompensationOnAllDevices() {
 	for (auto d : _openvrDeviceInfos) {
 		if (d.second->deviceMode() == 5) {
 			d.second->setDefaultMode();
@@ -515,7 +717,7 @@ void CServerDriver::_updateMotionCompensationRefPose(const vr::DriverPose_t& pos
 	_motionCompensationRotDiffInv = vrmath::quaternionConjugate(_motionCompensationRotDiff);
 
 	// Convert velocity and acceleration values into app space and undo device rotation
-	if (_motionCompensationVelAccMode == 2) {
+	if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::SubstractMotionRef) {
 		auto tmpRot = tmpConj * vrmath::quaternionConjugate(pose.qRotation);
 		auto tmpRotInv = vrmath::quaternionConjugate(tmpRot);
 		_motionCompensationRefPosVel = vrmath::quaternionRotateVector(tmpRot, tmpRotInv, { pose.vecVelocity[0], pose.vecVelocity[1], pose.vecVelocity[2] });
@@ -539,15 +741,10 @@ bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDevic
 		auto compensatedPoseWorldPos = _motionCompensationZeroPos + vrmath::quaternionRotateVector(_motionCompensationRotDiff, _motionCompensationRotDiffInv, poseWorldPos - _motionCompensationRefPos, true);
 		auto compensatedPoseWorldRot = _motionCompensationRotDiffInv * poseWorldRot;
 
-		// convert back to driver space
-		pose.qRotation = pose.qWorldFromDriverRotation * compensatedPoseWorldRot;
-		auto adjPoseDriverPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, compensatedPoseWorldPos + pose.vecWorldFromDriverTranslation);
-		pose.vecPosition[0] = adjPoseDriverPos.v[0];
-		pose.vecPosition[1] = adjPoseDriverPos.v[1];
-		pose.vecPosition[2] = adjPoseDriverPos.v[2];
-
 		// Velocity / Acceleration Compensation
-		if (_motionCompensationVelAccMode == 1) { // Set Zero
+		vr::HmdVector3d_t compensatedPoseWorldVel;
+		bool compensatedPoseWorldVelValid = false;
+		if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::SetZero) {
 			pose.vecVelocity[0] = 0.0;
 			pose.vecVelocity[1] = 0.0;
 			pose.vecVelocity[2] = 0.0;
@@ -560,7 +757,7 @@ bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDevic
 			pose.vecAngularAcceleration[0] = 0.0;
 			pose.vecAngularAcceleration[1] = 0.0;
 			pose.vecAngularAcceleration[2] = 0.0;
-		} else if (_motionCompensationVelAccMode == 2) { // Substract Motion Ref
+		} else if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::SubstractMotionRef) {
 			if (_motionCompensationRefVelAccValid) {
 				auto tmpRot = pose.qWorldFromDriverRotation * pose.qRotation;
 				auto tmpRotInv = vrmath::quaternionConjugate(tmpRot);
@@ -581,57 +778,54 @@ bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDevic
 				pose.vecAngularAcceleration[1] -= tmpRotAcc.v[1];
 				pose.vecAngularAcceleration[2] -= tmpRotAcc.v[2];
 			}
-		} else if (_motionCompensationVelAccMode == 3) { // Linear Approximation
+		} else if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::KalmanFilter) {
 			auto now = std::chrono::duration_cast <std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-			if (deviceInfo->lastDriverPoseValid()) {
-				auto& lastPose = deviceInfo->lastDriverPose();
-				double tdiff = ((double)(now - deviceInfo->lastDriverPoseTime()) / 1.0E6) + (pose.poseTimeOffset - lastPose.poseTimeOffset);
-				tdiff *= 4; // To reduce jitter
-				if (tdiff < 0.0001) { // Sometimes we get a very small or even negative time difference between current and last pose
-					// In this case we just take the velocities and accelerations from last time
-					pose.vecVelocity[0] = lastPose.vecVelocity[0];
-					pose.vecVelocity[1] = lastPose.vecVelocity[1];
-					pose.vecVelocity[2] = lastPose.vecVelocity[2];
-					pose.vecAcceleration[0] = lastPose.vecAcceleration[0];
-					pose.vecAcceleration[1] = lastPose.vecAcceleration[1];
-					pose.vecAcceleration[2] = lastPose.vecAcceleration[2];
+			auto lastTime = deviceInfo->getLastPoseTime();
+			if (lastTime >= 0.0) {
+				double tdiff = ((double)(now - lastTime) / 1.0E6) + (pose.poseTimeOffset - deviceInfo->getLastPoseTimeOffset());
+				if (tdiff > 0.0001) {
+					deviceInfo->kalmanFilter().update(compensatedPoseWorldPos, tdiff);
+					compensatedPoseWorldPos = deviceInfo->kalmanFilter().getUpdatedPositionEstimate();
+					compensatedPoseWorldVel = deviceInfo->kalmanFilter().getUpdatedVelocityEstimate();
+					compensatedPoseWorldVelValid = true;
 				} else {
-					pose.vecVelocity[0] = (pose.vecPosition[0] - lastPose.vecPosition[0]) / tdiff;
-					// Set very small values to zero to avoid jitter
-					if (pose.vecVelocity[0] > -0.01 && pose.vecVelocity[0] < 0.01) {
-						pose.vecVelocity[0] = 0.0;
-					}
-					pose.vecVelocity[1] = (pose.vecPosition[1] - lastPose.vecPosition[1]) / tdiff;
-					if (pose.vecVelocity[1] > -0.01 && pose.vecVelocity[1] < 0.01) {
-						pose.vecVelocity[1] = 0.0;
-					}
-					pose.vecVelocity[2] = (pose.vecPosition[2] - lastPose.vecPosition[2]) / tdiff;
-					if (pose.vecVelocity[2] > -0.01 && pose.vecVelocity[2] < 0.01) {
-						pose.vecVelocity[2] = 0.0;
-					}
-
-					// Predicting acceleration values leads to a very jittery experience,
-					// furthermore the pose updates coming from the lighthouse driver do no have acceleration set in the first place.
-					/*pose.vecAcceleration[0] = (pose.vecVelocity[0] - lastPose.vecVelocity[0]) / tdiff;
-					if (pose.vecAcceleration[0] > -0.01 && pose.vecAcceleration[0] < 0.01) {
-						pose.vecAcceleration[0] = 0.0;
-					}
-					pose.vecAcceleration[1] = (pose.vecVelocity[1] - lastPose.vecVelocity[1]) / tdiff;
-					if (pose.vecAcceleration[1] > -0.01 && pose.vecAcceleration[1] < 0.01) {
-						pose.vecAcceleration[1] = 0.0;
-					}
-					pose.vecAcceleration[2] = (pose.vecVelocity[2] - lastPose.vecVelocity[2]) / tdiff;
-					if (pose.vecAcceleration[2] > -0.01 && pose.vecAcceleration[2] < 0.01) {
-						pose.vecAcceleration[2] = 0.0;
-					}*/
+					// Ignore pose when timediff is very small or even negative
+					return false;
 				}
+			} else {
+				deviceInfo->kalmanFilter().init(
+					compensatedPoseWorldPos,
+					{0.0, 0.0, 0.0},
+					{ {0.0, 0.0}, {0.0, 0.0} }
+				);
+				deviceInfo->kalmanFilter().setProcessNoise(m_motionCompensationKalmanProcessVariance);
+				deviceInfo->kalmanFilter().setObservationNoise(m_motionCompensationKalmanObservationVariance);
 			}
-			deviceInfo->setLastDriverPose(pose, now);
+			deviceInfo->setLastPoseTime(now);
+			deviceInfo->setLastPoseTimeOffset(pose.poseTimeOffset);
 		}
+
+		// convert back to driver space
+		pose.qRotation = pose.qWorldFromDriverRotation * compensatedPoseWorldRot;
+		auto adjPoseDriverPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, compensatedPoseWorldPos + pose.vecWorldFromDriverTranslation);
+		pose.vecPosition[0] = adjPoseDriverPos.v[0];
+		pose.vecPosition[1] = adjPoseDriverPos.v[1];
+		pose.vecPosition[2] = adjPoseDriverPos.v[2];
+		if (compensatedPoseWorldVelValid) {
+			auto adjPoseDriverVel = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, compensatedPoseWorldVel);
+			pose.vecVelocity[0] = adjPoseDriverVel.v[0];
+			pose.vecVelocity[1] = adjPoseDriverVel.v[1];
+			pose.vecVelocity[2] = adjPoseDriverVel.v[2];
+		}
+
 		return true;
 	} else {
-		return false;
+		return true;
 	}
+}
+
+void CServerDriver::sendReplySetMotionCompensationMode(bool success) {
+	shmCommunicator.sendReplySetMotionCompensationMode(success);
 }
 
 } // end namespace driver

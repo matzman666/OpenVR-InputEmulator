@@ -60,7 +60,9 @@ private:
 
 	std::vector<DeviceManipulationProfile> deviceManipulationProfiles;
 
-	uint32_t motionCompensationVelAccMode = 0;
+	vrinputemulator::MotionCompensationVelAccMode motionCompensationVelAccMode = vrinputemulator::MotionCompensationVelAccMode::Disabled;
+	double motionCompensationKalmanProcessNoise = 0.1;
+	double motionCompensationKalmanObservationNoise = 0.1;
 
 	unsigned settingsUpdateCounter = 0;
 
@@ -88,6 +90,8 @@ public:
 	Q_INVOKABLE double getDriverRotationOffset(unsigned index, unsigned axis);
 	Q_INVOKABLE double getDriverTranslationOffset(unsigned index, unsigned axis);
 	Q_INVOKABLE unsigned getMotionCompensationVelAccMode();
+	Q_INVOKABLE double getMotionCompensationKalmanProcessNoise();
+	Q_INVOKABLE double getMotionCompensationKalmanObservationNoise();
 
 	void reloadDeviceManipulationSettings();
 	void reloadDeviceManipulationProfiles();
@@ -120,6 +124,8 @@ public slots:
 	void deleteDeviceManipulationProfile(unsigned index);
 
 	void setMotionCompensationVelAccMode(unsigned mode, bool notify = true);
+	void setMotionCompensationKalmanProcessNoise(double variance, bool notify = true);
+	void setMotionCompensationKalmanObservationNoise(double variance, bool notify = true);
 
 signals:
 	void deviceCountChanged(unsigned deviceCount);
@@ -127,6 +133,8 @@ signals:
 	void motionCompensationSettingsChanged();
 	void deviceManipulationProfilesChanged();
 	void motionCompensationVelAccModeChanged(unsigned mode);
+	void motionCompensationKalmanProcessNoiseChanged(double variance);
+	void motionCompensationKalmanObservationNoiseChanged(double variance);
 };
 
 } // namespace inputemulator

@@ -83,7 +83,8 @@ enum class ReplyStatus : uint32_t {
 	TooManyDevices,
 	InvalidVersion,
 	MissingProperty,
-	InvalidOperation
+	InvalidOperation,
+	NotTracking
 };
 
 
@@ -264,7 +265,7 @@ struct Request_DeviceManipulation_MotionCompensationMode {
 	uint32_t clientId;
 	uint32_t messageId; // Used to associate with Reply
 	uint32_t deviceId;
-	uint32_t velAccCompensationMode;
+	MotionCompensationVelAccMode velAccCompensationMode;
 };
 
 struct Request_DeviceManipulation_TriggerHapticPulse {
@@ -279,7 +280,12 @@ struct Request_DeviceManipulation_TriggerHapticPulse {
 struct Request_DeviceManipulation_SetMotionCompensationProperties {
 	uint32_t clientId;
 	uint32_t messageId; // Used to associate with Reply
-	uint32_t velAccCompensationMode;
+	bool velAccCompensationModeValid;
+	MotionCompensationVelAccMode velAccCompensationMode;
+	bool kalmanFilterProcessNoiseValid;
+	double kalmanFilterProcessNoise;
+	bool kalmanFilterObservationNoiseValid;
+	double kalmanFilterObservationNoise;
 };
 
 

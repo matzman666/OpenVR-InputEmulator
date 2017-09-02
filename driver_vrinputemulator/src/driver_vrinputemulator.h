@@ -35,6 +35,8 @@ typedef void(*_DetourTrackedDeviceButtonUnpressed_t)(vr::IVRServerDriverHost*, u
 typedef void(*_DetourTrackedDeviceButtonPressed_t)(vr::IVRServerDriverHost*, uint32_t, vr::EVRButtonId, double);
 typedef void(*_DetourTrackedDevicePoseUpdated_t)(vr::IVRServerDriverHost*, uint32_t, const vr::DriverPose_t&, uint32_t);
 typedef bool(*_DetourTrackedDeviceAdded_t)(vr::IVRServerDriverHost*, const char*, vr::ETrackedDeviceClass, vr::ITrackedDeviceServerDriver*);
+typedef vr::ETrackedPropertyError(*_DetourReadPropertyBatch)(vr::IVRProperties*, vr::PropertyContainerHandle_t, vr::PropertyRead_t*, uint32_t);
+typedef vr::ETrackedPropertyError(*_DetourWritePropertyBatch)(vr::IVRProperties*, vr::PropertyContainerHandle_t, vr::PropertyWrite_t*, uint32_t);
 
 
 /**
@@ -53,6 +55,122 @@ public:
 	virtual void Cleanup() override;
 };
 
+
+
+// Kalman filter to filter device positions (and get their velocity at the same time)
+class PosKalmanFilter {
+private:
+	// last a posteriori state estimate
+	vr::HmdVector3d_t lastPos = {0.0, 0.0, 0.0};
+	vr::HmdVector3d_t lastVel = { 0.0, 0.0, 0.0 };
+	// last a posteriori estimate covariance matrix
+	double lastCovariance[2][2] = {0.0, 0.0, 0.0, 0.0};
+	// process noise variance
+	double processNoise = 0.0;
+	// observation noise variance
+	double observationNoise = 0.0;
+public:
+	void init(const vr::HmdVector3d_t& initPos = {0, 0, 0}, const vr::HmdVector3d_t& initVel = { 0, 0, 0 }, const double(&initCovariance)[2][2] = { {100.0, 0.0}, {0.0, 100.0} });
+	void setProcessNoise(double variance) { processNoise = variance; }
+	void setObservationNoise(double variance) { observationNoise = variance; }
+
+	void update(const vr::HmdVector3d_t& devicePos, double dt);
+
+	const vr::HmdVector3d_t& getUpdatedPositionEstimate() { return lastPos; }
+	const vr::HmdVector3d_t& getUpdatedVelocityEstimate() { return lastVel; }
+};
+
+enum class DeviceInputMappingMode : uint32_t {
+	Normal = 0,
+	AutoTrigger = 1,
+	Toggle = 2,
+	HybridToggle = 3
+};
+
+enum class DeviceInputMappingType : uint32_t {
+	OpenVR = 0,
+	Keyboard = 1
+};
+
+struct DeviceInputMapping {
+	uint32_t targetDeviceId = vr::k_unTrackedDeviceIndexInvalid;
+	DeviceInputMappingMode mode = DeviceInputMappingMode::Normal;
+	DeviceInputMappingType type = DeviceInputMappingType::OpenVR;
+	union {
+		vr::EVRButtonId openvrButton = vr::k_EButton_System;
+	} data;
+};
+
+
+
+template<typename T>
+class RingBuffer {
+public:
+	RingBuffer() noexcept : _buffer(nullptr), _bufferSize(0) {}
+	RingBuffer(unsigned size) noexcept : _buffer(new T[size]), _bufferSize(size) {}
+	~RingBuffer() noexcept {
+		std::lock_guard<std::mutex> lock(_mutex);
+		if (_buffer) {
+			delete[] _buffer;
+			_buffer = nullptr;
+			_bufferSize = 0;
+			_dataStart = 0;
+			_dataSize = 0;
+		}
+	}
+
+	void resize(unsigned size) noexcept {
+		std::lock_guard<std::mutex> lock(_mutex);
+		if (_buffer) {
+			delete[] _buffer;
+		}
+		_buffer = new T[size];
+		_bufferSize = size;
+		_dataStart = 0;
+		_dataSize = 0;
+	}
+
+	unsigned bufferSize() noexcept { return _bufferSize; }
+	
+	unsigned dataSize() noexcept { return _dataSize; }
+
+	const T& operator[](unsigned index) noexcept {
+		if (index < _dataSize) {
+			return _buffer[(_dataStart + _index) % _bufferSize];
+		} else {
+			return T();
+		}
+	}
+
+	void push(const T& value) {
+		if (_dataSize < _bufferSize) {
+			_buffer[(_dataStart + _dataSize) % _bufferSize] = value;
+			_dataSize++;
+		} else {
+			_buffer[_dataStart] = value;
+			dataStart++;
+		}
+	}
+
+	const T& average() {
+		if (_dataSize > 0) {
+			T sum = T();
+			for (unsigned i = 0; i < _dataSize; i++) {
+				sum += _buffer[(_dataStart + i) % _bufferSize];
+			}
+			return sum / _dataSize;
+		} else {
+			return T();
+		}
+	}
+
+private:
+	std::mutex _mutex;
+	T* _buffer;
+	unsigned _bufferSize;
+	unsigned _dataStart = 0;
+	unsigned _dataSize = 0;
+};
 
 
 
@@ -86,11 +204,15 @@ private:
 	bool m_redirectSuspended = false;
 	OpenvrDeviceManipulationInfo* m_redirectRef = nullptr;
 
-	bool m_lastDriverPoseValid = false;
-	vr::DriverPose_t m_lastDriverPose;
-	long long m_lastDriverPoseTime = 0;
+	long long m_lastPoseTime = -1;
+	bool m_lastPoseValid = false;
+	vr::DriverPose_t m_lastPose;
+	RingBuffer<vr::HmdVector3d_t> m_velMovingAverageBuffer;
+	double m_lastPoseTimeOffset = 0.0;
+	PosKalmanFilter m_kalmanFilter;
 
-
+	vr::IVRProperties* m_vrproperties = nullptr;
+	vr::PropertyContainerHandle_t m_propertyContainerHandle = vr::k_ulInvalidPropertyContainer;
 
 public:
 	OpenvrDeviceManipulationInfo() {}
@@ -149,17 +271,32 @@ public:
 
 	bool triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds, bool directMode = false);
 
-	bool lastDriverPoseValid() { return m_lastDriverPoseValid; }
-	vr::DriverPose_t& lastDriverPose() { return m_lastDriverPose; }
-	long long lastDriverPoseTime() { return m_lastDriverPoseTime; }
-	void setLastDriverPoseValid(bool valid) { m_lastDriverPoseValid = valid; }
+	PosKalmanFilter& kalmanFilter() { return m_kalmanFilter; }
+	long long getLastPoseTime() { return m_lastPoseTime; }
+	void setLastPoseTime(long long time) { m_lastPoseTime = time; }
+	double getLastPoseTimeOffset() { return m_lastPoseTimeOffset; }
+	void setLastPoseTimeOffset(double offset) { m_lastPoseTimeOffset = offset; }
+	bool lastDriverPoseValid() { return m_lastPoseValid; }
+	vr::DriverPose_t& lastDriverPose() { return m_lastPose; }
+	void setLastDriverPoseValid(bool valid) { m_lastPoseValid = valid; }
 	void setLastDriverPose(const vr::DriverPose_t& pose, long long time) {
-		m_lastDriverPose = pose;
-		m_lastDriverPoseTime = time;
-		m_lastDriverPoseValid = true;
+		m_lastPose = pose;
+		m_lastPoseTime = time;
+		m_lastPoseValid = true;
 	}
+
+	void setVrProperties(vr::IVRProperties* props) { m_vrproperties = props;  }
+	vr::IVRProperties* vrProperties() { return m_vrproperties; }
+	void setPropertyContainer(vr::PropertyContainerHandle_t container) { m_propertyContainerHandle = container; }
+	vr::PropertyContainerHandle_t propertyContainer() { return m_propertyContainerHandle; }
 };
 
+
+enum class MotionCompensationStatus : uint32_t {
+	WaitingForZeroRef = 0,
+	Running = 1,
+	MotionRefNotTracking = 2
+};
 
 /**
 * Implements the IServerTrackedDeviceProvider interface.
@@ -236,12 +373,19 @@ public:
 
 	/* Motion Compensation API */
 	void enableMotionCompensation(bool enable);
-	void setMotionCompensationVelAccMode(uint32_t velAccMode);
-	void disableMotionCompensationOnAllDevices();
+	void setMotionCompensationRefDevice(OpenvrDeviceManipulationInfo* device);
+	OpenvrDeviceManipulationInfo* getMotionCompensationRefDevice();
+	void setMotionCompensationVelAccMode(MotionCompensationVelAccMode velAccMode);
+	double motionCompensationKalmanProcessVariance() { return m_motionCompensationKalmanProcessVariance; }
+	void setMotionCompensationKalmanProcessVariance(double variance);
+	double motionCompensationKalmanObservationVariance() { return m_motionCompensationKalmanObservationVariance; }
+	void setMotionCompensationKalmanObservationVariance(double variance);
+	void _disableMotionCompensationOnAllDevices();
 	bool _isMotionCompensationZeroPoseValid();
 	void _setMotionCompensationZeroPose(const vr::DriverPose_t& pose);
 	void _updateMotionCompensationRefPose(const vr::DriverPose_t& pose);
 	bool _applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDeviceManipulationInfo* deviceInfo);
+	void sendReplySetMotionCompensationMode(bool success);
 
 
 private:
@@ -264,7 +408,13 @@ private:
 
 	//// motion compensation related ////
 	bool _motionCompensationEnabled = false;
-	int _motionCompensationVelAccMode = 0; // 0 .. Disabled, 1 .. Set Zero, 2 .. Substract Motion Ref, 3 .. Linear Approximation
+	OpenvrDeviceManipulationInfo* _motionCompensationRefDevice = nullptr;
+	MotionCompensationStatus _motionCompensationStatus = MotionCompensationStatus::WaitingForZeroRef;
+	constexpr static uint32_t _motionCompensationZeroRefTimeoutMax = 20;
+	uint32_t _motionCompensationZeroRefTimeout = 0;
+	MotionCompensationVelAccMode _motionCompensationVelAccMode = MotionCompensationVelAccMode::Disabled;
+	double m_motionCompensationKalmanProcessVariance = 0.1;
+	double m_motionCompensationKalmanObservationVariance = 0.1;
 
 	bool _motionCompensationZeroPoseValid = false;
 	vr::HmdVector3d_t _motionCompensationZeroPos;
@@ -318,6 +468,20 @@ private:
 	static std::vector<_DetourFuncInfo<_DetourTriggerHapticPulse_t>> _deviceTriggerHapticPulseDetours;
 	static bool _deviceTriggerHapticPulseDetourFunc(vr::IVRControllerComponent* _this, uint32_t unAxisId, uint16_t usPulseDurationMicroseconds);
 	static std::map<vr::IVRControllerComponent*, std::shared_ptr<OpenvrDeviceManipulationInfo>> _controllerComponentToDeviceInfos; // ControllerComponent => ManipulationInfo
+
+	static _DetourFuncInfo<_DetourReadPropertyBatch> _readPropertyBatchDetour;
+	static vr::ETrackedPropertyError _readPropertyBatchDetourFunc(vr::IVRProperties* _this, vr::PropertyContainerHandle_t ulContainerHandle, vr::PropertyRead_t* pBatch, uint32_t unBatchEntryCount);
+
+	static _DetourFuncInfo<_DetourWritePropertyBatch> _writePropertyBatchDetour;
+	static vr::ETrackedPropertyError _writePropertyBatchDetourFunc(vr::IVRProperties* _this, vr::PropertyContainerHandle_t ulContainerHandle, vr::PropertyWrite_t* pBatch, uint32_t unBatchEntryCount);
+
+	static std::map<vr::PropertyContainerHandle_t, std::shared_ptr<OpenvrDeviceManipulationInfo>> _propertyContainerToDeviceInfos; // PropertyContainerHandle => ManipulationInfo
+
+	// Device Property Overrides
+	static std::string _propertiesOverrideHmdManufacturer;
+	static std::string _propertiesOverrideHmdModel;
+	static std::string _propertiesOverrideHmdTrackingSystem;
+	static bool _propertiesOverrideGenericTrackerFakeController;
 };
 
 

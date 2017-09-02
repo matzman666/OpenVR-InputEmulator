@@ -33,18 +33,15 @@ void OpenvrDeviceManipulationInfo::handleNewDevicePose(vr::IVRServerDriverHost* 
 			if (pose.poseIsValid && pose.result == vr::TrackingResult_Running_OK) {
 				if (!serverDriver->_isMotionCompensationZeroPoseValid()) {
 					serverDriver->_setMotionCompensationZeroPose(pose);
+					serverDriver->sendReplySetMotionCompensationMode(true);
 				} else {
 					serverDriver->_updateMotionCompensationRefPose(pose);
 				}
+			} else {
+				if (!serverDriver->_isMotionCompensationZeroPoseValid()) {
+					serverDriver->sendReplySetMotionCompensationMode(false);
+				}
 			}
-		}
-		if (!_disconnectedMsgSend) {
-			vr::DriverPose_t newPose = pose;
-			newPose.poseIsValid = false;
-			newPose.deviceIsConnected = false;
-			newPose.result = vr::TrackingResult_Uninitialized;
-			_disconnectedMsgSend = true;
-			origFunc(driver, unWhichDevice, newPose, sizeof(vr::DriverPose_t));
 		}
 	} else {
 		vr::DriverPose_t newPose = pose;
@@ -73,7 +70,9 @@ void OpenvrDeviceManipulationInfo::handleNewDevicePose(vr::IVRServerDriverHost* 
 		}
 		auto serverDriver = CServerDriver::getInstance();
 		if (serverDriver) {
-			serverDriver->_applyMotionCompensation(newPose, this);
+			if (!serverDriver->_applyMotionCompensation(newPose, this)) {
+				return;
+			}
 		}
 		if (m_deviceMode == 2 && !m_redirectSuspended) { // redirect source
 			if (!_disconnectedMsgSend) {
@@ -210,8 +209,8 @@ int OpenvrDeviceManipulationInfo::setMotionCompensationMode() {
 	auto res = _disableOldMode(5);
 	auto serverDriver = CServerDriver::getInstance();
 	if (res == 0 && serverDriver) {
-		_disconnectedMsgSend = false;
 		serverDriver->enableMotionCompensation(true);
+		serverDriver->setMotionCompensationRefDevice(this);
 		m_deviceMode = 5;
 	}
 	return 0;
@@ -233,6 +232,7 @@ int OpenvrDeviceManipulationInfo::_disableOldMode(int newMode) {
 			auto serverDriver = CServerDriver::getInstance();
 			if (serverDriver) {
 				serverDriver->enableMotionCompensation(false);
+				serverDriver->setMotionCompensationRefDevice(nullptr);
 			}
 		} else if (m_deviceMode == 3 || m_deviceMode == 2 || m_deviceMode == 4) {
 			m_redirectRef->m_deviceMode = 0;
@@ -240,8 +240,9 @@ int OpenvrDeviceManipulationInfo::_disableOldMode(int newMode) {
 		if (newMode == 5) {
 			auto serverDriver = CServerDriver::getInstance();
 			if (serverDriver) {
-				serverDriver->disableMotionCompensationOnAllDevices();
+				serverDriver->_disableMotionCompensationOnAllDevices();
 				serverDriver->enableMotionCompensation(false);
+				serverDriver->setMotionCompensationRefDevice(nullptr);
 			}
 		} 
 	}

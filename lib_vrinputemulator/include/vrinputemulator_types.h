@@ -5,6 +5,12 @@
 
 namespace vrinputemulator {
 
+	static const char* const vrsettings_SectionName = "driver_00vrinputemulator";
+	static const char* const vrsettings_overrideHmdManufacturer_string = "overrideHmdManufacturer";
+	static const char* const vrsettings_overrideHmdModel_string = "overrideHmdModel";
+	static const char* const vrsettings_overrideHmdTrackingSystem_string = "overrideHmdTrackingSystem";
+	static const char* const vrsettings_genericTrackerFakeController_bool = "genericTrackerFakeController";
+
 	enum class VirtualDeviceType : uint32_t {
 		None = 0,
 		TrackedController = 1
@@ -53,6 +59,14 @@ namespace vrinputemulator {
 		bool offsetsEnabled;
 		bool buttonMappingEnabled;
 		bool redirectSuspended;
+	};
+
+	enum class MotionCompensationVelAccMode : uint32_t {
+		Disabled = 0,
+		SetZero = 1,
+		SubstractMotionRef = 2,
+		LinearApproximation = 3,
+		KalmanFilter = 4
 	};
 
 } // end namespace vrinputemulator

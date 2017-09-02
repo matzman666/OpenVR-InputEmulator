@@ -66,6 +66,24 @@ inline vr::HmdVector3d_t operator-(const vr::HmdVector3d_t& lhs, const double (&
 }
 
 
+inline vr::HmdVector3d_t operator*(const vr::HmdVector3d_t& lhs, const double rhs) {
+	return{
+		lhs.v[0] * rhs,
+		lhs.v[1] * rhs,
+		lhs.v[2] * rhs
+	};
+}
+
+
+inline vr::HmdVector3d_t operator/(const vr::HmdVector3d_t& lhs, const double rhs) {
+	return{
+		lhs.v[0] / rhs,
+		lhs.v[1] / rhs,
+		lhs.v[2] / rhs
+	};
+}
+
+
 namespace vrmath {
 
 	inline vr::HmdQuaternion_t quaternionFromRotationAxis(double rot, double ux, double uy, double uz) {

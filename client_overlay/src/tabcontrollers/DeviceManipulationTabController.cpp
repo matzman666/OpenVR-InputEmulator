@@ -3,6 +3,7 @@
 #include <QApplication>
 #include "../overlaycontroller.h"
 #include <openvr_math.h>
+#include <vrinputemulator_types.h>
 #include <chrono>
 
 // application namespace
@@ -240,7 +241,15 @@ double DeviceManipulationTabController::getDriverTranslationOffset(unsigned inde
 }
 
 unsigned DeviceManipulationTabController::getMotionCompensationVelAccMode() {
-	return motionCompensationVelAccMode;
+	return (unsigned)motionCompensationVelAccMode;
+}
+
+double DeviceManipulationTabController::getMotionCompensationKalmanProcessNoise() {
+	return motionCompensationKalmanProcessNoise;
+}
+
+double DeviceManipulationTabController::getMotionCompensationKalmanObservationNoise() {
+	return motionCompensationKalmanObservationNoise;
 }
 
 
@@ -261,7 +270,9 @@ unsigned DeviceManipulationTabController::getMotionCompensationVelAccMode() {
 void DeviceManipulationTabController::reloadDeviceManipulationSettings() {
 	auto settings = OverlayController::appSettings();
 	settings->beginGroup("deviceManipulationSettings");
-	motionCompensationVelAccMode = settings->value("motionCompensationVelAccMode").toUInt();
+	motionCompensationVelAccMode = (vrinputemulator::MotionCompensationVelAccMode)settings->value("motionCompensationVelAccMode", 0).toUInt();
+	motionCompensationKalmanProcessNoise = settings->value("motionCompensationKalmanProcessNoise", 0.1).toDouble();
+	motionCompensationKalmanObservationNoise = settings->value("motionCompensationKalmanObservationNoise", 0.1).toDouble();
 	settings->endGroup();
 }
 
@@ -293,7 +304,9 @@ void DeviceManipulationTabController::reloadDeviceManipulationProfiles() {
 void DeviceManipulationTabController::saveDeviceManipulationSettings() {
 	auto settings = OverlayController::appSettings();
 	settings->beginGroup("deviceManipulationSettings");
-	settings->setValue("motionCompensationVelAccMode", motionCompensationVelAccMode);
+	settings->setValue("motionCompensationVelAccMode", (unsigned)motionCompensationVelAccMode);
+	settings->setValue("motionCompensationKalmanProcessNoise", motionCompensationKalmanProcessNoise);
+	settings->setValue("motionCompensationKalmanObservationNoise", motionCompensationKalmanObservationNoise);
 	settings->endGroup();
 	settings->sync();
 }
@@ -417,12 +430,35 @@ void DeviceManipulationTabController::deleteDeviceManipulationProfile(unsigned i
 }
 
 void DeviceManipulationTabController::setMotionCompensationVelAccMode(unsigned mode, bool notify) {
-	if (motionCompensationVelAccMode != mode) {
-		motionCompensationVelAccMode = mode;
-		vrInputEmulator.setMotionVelAccCompensationMode(mode);
+	vrinputemulator::MotionCompensationVelAccMode newMode = (vrinputemulator::MotionCompensationVelAccMode)mode;
+	if (motionCompensationVelAccMode != newMode) {
+		motionCompensationVelAccMode = newMode;
+		vrInputEmulator.setMotionVelAccCompensationMode(newMode);
 		saveDeviceManipulationSettings();
 		if (notify) {
 			emit motionCompensationVelAccModeChanged(mode);
+		}
+	}
+}
+
+void DeviceManipulationTabController::setMotionCompensationKalmanProcessNoise(double variance, bool notify) {
+	if (motionCompensationKalmanProcessNoise != variance) {
+		motionCompensationKalmanProcessNoise = variance;
+		vrInputEmulator.setMotionCompensationKalmanProcessNoise(motionCompensationKalmanProcessNoise);
+		saveDeviceManipulationSettings();
+		if (notify) {
+			emit motionCompensationKalmanProcessNoiseChanged(motionCompensationKalmanProcessNoise);
+		}
+	}
+}
+
+void DeviceManipulationTabController::setMotionCompensationKalmanObservationNoise(double variance, bool notify) {
+	if (motionCompensationKalmanObservationNoise != variance) {
+		motionCompensationKalmanObservationNoise = variance;
+		vrInputEmulator.setMotionCompensationKalmanObservationNoise(motionCompensationKalmanObservationNoise);
+		saveDeviceManipulationSettings();
+		if (notify) {
+			emit motionCompensationKalmanObservationNoiseChanged(motionCompensationKalmanObservationNoise);
 		}
 	}
 }
@@ -572,6 +608,10 @@ void DeviceManipulationTabController::setDeviceMode(unsigned index, unsigned mod
 			vrInputEmulator.setDeviceSwapMode(deviceInfos[index]->openvrId, deviceInfos[targedIndex]->openvrId);
 			break;
 		case 4:
+			if (motionCompensationVelAccMode == vrinputemulator::MotionCompensationVelAccMode::KalmanFilter) {
+				vrInputEmulator.setMotionCompensationKalmanProcessNoise(motionCompensationKalmanProcessNoise);
+				vrInputEmulator.setMotionCompensationKalmanObservationNoise(motionCompensationKalmanObservationNoise);
+			}
 			vrInputEmulator.setDeviceMotionCompensationMode(deviceInfos[index]->openvrId, motionCompensationVelAccMode);
 			break;
 		default:
