@@ -49,7 +49,10 @@ enum class RequestType : uint32_t {
 	DeviceManipulation_MotionCompensationMode,
 	DeviceManipulation_FakeDisconnectedMode,
 	DeviceManipulation_TriggerHapticPulse,
-	DeviceManipulation_SetMotionCompensationProperties
+	DeviceManipulation_SetMotionCompensationProperties,
+
+	InputRemapping_SetDigitalRemapping,
+	InputRemapping_GetDigitalRemapping
 };
 
 
@@ -68,7 +71,9 @@ enum class ReplyType : uint32_t {
 	VirtualDevices_AddDevice,
 
 	DeviceManipulation_GetDeviceInfo,
-	DeviceManipulation_GetDeviceOffsets
+	DeviceManipulation_GetDeviceOffsets,
+
+	InputRemapping_GetDigitalRemapping
 };
 
 
@@ -288,6 +293,22 @@ struct Request_DeviceManipulation_SetMotionCompensationProperties {
 	double kalmanFilterObservationNoise;
 };
 
+struct Request_InputRemapping_SetDigitalRemapping {
+	uint32_t clientId;
+	uint32_t messageId; // Used to associate with Reply
+	uint32_t controllerId;
+	uint32_t buttonId;
+	DigitalInputRemapping remapData;
+};
+
+struct Request_InputRemapping_GetDigitalRemapping {
+	uint32_t clientId;
+	uint32_t messageId; // Used to associate with Reply
+	uint32_t controllerId;
+	uint32_t buttonId;
+};
+
+
 
 struct Request {
 	Request() {}
@@ -302,7 +323,7 @@ struct Request {
 
 	RequestType type = RequestType::None;
 	int64_t timestamp = 0; // milliseconds since epoch
-	union {
+	union MsgUnion {
 		Request_IPC_ClientConnect ipc_ClientConnect;
 		Request_IPC_ClientDisconnect ipc_ClientDisconnect;
 		Request_IPC_Ping ipc_Ping;
@@ -325,6 +346,9 @@ struct Request {
 		Request_DeviceManipulation_MotionCompensationMode dm_MotionCompensationMode;
 		Request_DeviceManipulation_TriggerHapticPulse dm_triggerHapticPulse;
 		Request_DeviceManipulation_SetMotionCompensationProperties dm_SetMotionCompensationProperties;
+		Request_InputRemapping_SetDigitalRemapping ir_SetDigitalRemapping;
+		Request_InputRemapping_GetDigitalRemapping ir_GetDigitalRemapping;
+		MsgUnion() {}
 	} msg;
 };
 
@@ -368,7 +392,6 @@ struct Reply_DeviceManipulation_GetDeviceInfo {
 	vr::ETrackedDeviceClass deviceClass;
 	int deviceMode;
 	bool offsetsEnabled;
-	bool buttonMappingEnabled;
 	bool redirectSuspended;
 };
 
@@ -385,6 +408,12 @@ struct Reply_DeviceManipulation_GetDeviceOffsets {
 	vr::HmdVector3d_t deviceTranslationOffset;
 };
 
+struct Reply_InputRemapping_GetDigitalRemapping {
+	uint32_t deviceId;
+	uint32_t buttonId;
+	DigitalInputRemapping remapData;
+};
+
 
 struct Reply {
 	Reply() {}
@@ -397,7 +426,7 @@ struct Reply {
 	uint64_t timestamp = 0; // milliseconds since epoch
 	uint32_t messageId;
 	ReplyStatus status;
-	union {
+	union MsgUnion {
 		Reply_IPC_ClientConnect ipc_ClientConnect;
 		Reply_IPC_Ping ipc_Ping;
 		Reply_VirtualDevices_GetDeviceCount vd_GetDeviceCount;
@@ -407,6 +436,8 @@ struct Reply {
 		Reply_VirtualDevices_AddDevice vd_AddDevice;
 		Reply_DeviceManipulation_GetDeviceInfo dm_deviceInfo;
 		Reply_DeviceManipulation_GetDeviceOffsets dm_deviceOffsets;
+		Reply_InputRemapping_GetDigitalRemapping ir_getDigitalRemapping;
+		MsgUnion() {}
 	} msg;
 };
 

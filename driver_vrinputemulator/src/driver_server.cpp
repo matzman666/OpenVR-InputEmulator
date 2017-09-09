@@ -114,16 +114,17 @@ void CServerDriver::_poseUpatedDetourFunc(vr::IVRServerDriverHost* _this, uint32
 void CServerDriver::_buttonPressedDetourFunc(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
 	LOG(TRACE) << "Detour::buttonPressedDetourFunc(" << _this << ", " << unWhichDevice << ", " << (int)eButtonId << ", " << eventTimeOffset << ")";
 	if (_openvrIdToDeviceInfoMap[unWhichDevice] && _openvrIdToDeviceInfoMap[unWhichDevice]->isValid()) {
-		_openvrIdToDeviceInfoMap[unWhichDevice]->handleButtonEvent(_this, _buttonPressedDetour.origFunc, unWhichDevice, ButtonEventType::ButtonPressed, eButtonId, eventTimeOffset);
+		_openvrIdToDeviceInfoMap[unWhichDevice]->handleButtonEvent(_this, unWhichDevice, ButtonEventType::ButtonPressed, eButtonId, eventTimeOffset);
 	} else {
 		_buttonPressedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
 	}
+	auto test = std::chrono::system_clock::now();
 }
 
 void CServerDriver::_buttonUnpressedDetourFunc(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
 	LOG(TRACE) << "Detour::buttonUnpressedDetourFunc(" << _this << ", " << unWhichDevice << ", " << (int)eButtonId << ", " << eventTimeOffset << ")";
 	if (_openvrIdToDeviceInfoMap[unWhichDevice] && _openvrIdToDeviceInfoMap[unWhichDevice]->isValid()) {
-		_openvrIdToDeviceInfoMap[unWhichDevice]->handleButtonEvent(_this, _buttonUnpressedDetour.origFunc, unWhichDevice, ButtonEventType::ButtonUnpressed, eButtonId, eventTimeOffset);
+		_openvrIdToDeviceInfoMap[unWhichDevice]->handleButtonEvent(_this, unWhichDevice, ButtonEventType::ButtonUnpressed, eButtonId, eventTimeOffset);
 	} else {
 		_buttonUnpressedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
 	}
@@ -132,7 +133,7 @@ void CServerDriver::_buttonUnpressedDetourFunc(vr::IVRServerDriverHost* _this, u
 void CServerDriver::_buttonTouchedDetourFunc(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
 	LOG(TRACE) << "Detour::buttonTouchedDetourFunc(" << _this << ", " << unWhichDevice << ", " << (int)eButtonId << ", " << eventTimeOffset << ")";
 	if (_openvrIdToDeviceInfoMap[unWhichDevice] && _openvrIdToDeviceInfoMap[unWhichDevice]->isValid()) {
-		_openvrIdToDeviceInfoMap[unWhichDevice]->handleButtonEvent(_this, _buttonTouchedDetour.origFunc, unWhichDevice, ButtonEventType::ButtonTouched, eButtonId, eventTimeOffset);
+		_openvrIdToDeviceInfoMap[unWhichDevice]->handleButtonEvent(_this, unWhichDevice, ButtonEventType::ButtonTouched, eButtonId, eventTimeOffset);
 	} else {
 		_buttonTouchedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
 	}
@@ -141,7 +142,7 @@ void CServerDriver::_buttonTouchedDetourFunc(vr::IVRServerDriverHost* _this, uin
 void CServerDriver::_buttonUntouchedDetourFunc(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
 	LOG(TRACE) << "Detour::buttonUntouchedDetourFunc(" << _this << ", " << unWhichDevice << ", " << (int)eButtonId << ", " << eventTimeOffset << ")";
 	if (_openvrIdToDeviceInfoMap[unWhichDevice] && _openvrIdToDeviceInfoMap[unWhichDevice]->isValid()) {
-		_openvrIdToDeviceInfoMap[unWhichDevice]->handleButtonEvent(_this, _buttonUntouchedDetour.origFunc, unWhichDevice, ButtonEventType::ButtonUntouched, eButtonId, eventTimeOffset);
+		_openvrIdToDeviceInfoMap[unWhichDevice]->handleButtonEvent(_this, unWhichDevice, ButtonEventType::ButtonUntouched, eButtonId, eventTimeOffset);
 	} else {
 		_buttonUntouchedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
 	}
@@ -343,15 +344,15 @@ vr::ETrackedPropertyError CServerDriver::_writePropertyBatchDetourFunc(vr::IVRPr
 			if (be.prop == vr::Prop_ManufacturerName_String && !_propertiesOverrideHmdManufacturer.empty()) {
 				LOG(INFO) << "Overwriting Hmd Manufacturer: " << be.pvBuffer << " => " << _propertiesOverrideHmdManufacturer;
 				be.pvBuffer = (void*)_propertiesOverrideHmdManufacturer.c_str();
-				be.unBufferSize = _propertiesOverrideHmdManufacturer.size() + 1;
+				be.unBufferSize = (uint32_t)_propertiesOverrideHmdManufacturer.size() + 1;
 			} else if (be.prop == vr::Prop_ModelNumber_String && !_propertiesOverrideHmdModel.empty()) {
 				LOG(INFO) << "Overwriting Hmd Model: " << be.pvBuffer << " => " << _propertiesOverrideHmdModel;
 				be.pvBuffer = (void*)_propertiesOverrideHmdModel.c_str();
-				be.unBufferSize = _propertiesOverrideHmdModel.size() + 1;
+				be.unBufferSize = (uint32_t)_propertiesOverrideHmdModel.size() + 1;
 			} else if (be.prop == vr::Prop_TrackingSystemName_String && !_propertiesOverrideHmdTrackingSystem.empty()) {
 				LOG(INFO) << "Overwriting Hmd TrackingSystem: " << be.pvBuffer << " => " << _propertiesOverrideHmdTrackingSystem;
 				be.pvBuffer = (void*)_propertiesOverrideHmdTrackingSystem.c_str();
-				be.unBufferSize = _propertiesOverrideHmdTrackingSystem.size() + 1;
+				be.unBufferSize = (uint32_t)_propertiesOverrideHmdTrackingSystem.size() + 1;
 			}
 		}
 	}
@@ -445,6 +446,9 @@ void CServerDriver::RunFrame() {
 		if (vd && vd->published() && vd->periodicPoseUpdates()) {
 			vd->sendPoseUpdate();
 		}
+	}
+	for (auto d : _openvrDeviceInfos) {
+		d.second->RunFrame();
 	}
 	if (_motionCompensationEnabled && _motionCompensationStatus == MotionCompensationStatus::WaitingForZeroRef) {
 		_motionCompensationZeroRefTimeout++;

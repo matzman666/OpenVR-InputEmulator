@@ -1,6 +1,7 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.0
+import QtQuick 2.9
+import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.0
+import "." // QTBUG-34418, singletons require explicit import to load qmldir file
 
 
 Rectangle {
@@ -24,6 +25,19 @@ Rectangle {
     property DeviceRenderModelPage deviceRenderModelPage:  DeviceRenderModelPage {
         stackView: mainView
     }
+
+    property DeviceInputRemappingPage deviceInputRemappingPage:  DeviceInputRemappingPage {
+        stackView: mainView
+    }
+
+    property DeviceDigitalInputRemappingPage deviceDigitalInputRemappingPage:  DeviceDigitalInputRemappingPage {
+        stackView: mainView
+    }
+
+    property DeviceDigitalBindingPage deviceDigitalBindingPage:  DeviceDigitalBindingPage {
+        stackView: mainView
+    }
+
 
     StackView {
         id: mainView

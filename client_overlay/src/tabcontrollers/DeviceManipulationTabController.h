@@ -53,7 +53,6 @@ class DeviceManipulationTabController : public QObject {
 private:
 	OverlayController* parent;
 	QQuickWindow* widget;
-	vrinputemulator::VRInputEmulator vrInputEmulator;
 
 	std::vector<std::shared_ptr<DeviceInfo>> deviceInfos;
 	uint32_t maxValidDeviceId = 0;
@@ -105,6 +104,19 @@ public:
 	Q_INVOKABLE QString getRenderModelName(unsigned index);
 	Q_INVOKABLE bool updateDeviceInfo(unsigned index);
 
+	Q_INVOKABLE unsigned getDigitalButtonCount(unsigned deviceIndex);
+	Q_INVOKABLE int getDigitalButtonId(unsigned deviceIndex, unsigned buttonIndex);
+	Q_INVOKABLE QString getDigitalButtonName(unsigned deviceIndex, unsigned buttonId);
+	Q_INVOKABLE QString getDigitalButtonStatus(unsigned deviceIndex, unsigned buttonId);
+
+
+	Q_INVOKABLE unsigned getAnalogAxisCount(unsigned deviceIndex);
+	Q_INVOKABLE int getAnalogAxisId(unsigned deviceIndex, unsigned axisIndex);
+	Q_INVOKABLE QString getAnalogAxisName(unsigned deviceIndex, unsigned axisId);
+	Q_INVOKABLE QString getAnalogAxisStatus(unsigned deviceIndex, unsigned axisId);
+
+	Q_INVOKABLE void startConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId);
+	Q_INVOKABLE void finishConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId, bool touchAsClick, bool longPress, int longPressThreshold, bool doublePress, int doublePressThreshold);
 
 
 public slots:
@@ -135,6 +147,8 @@ signals:
 	void motionCompensationVelAccModeChanged(unsigned mode);
 	void motionCompensationKalmanProcessNoiseChanged(double variance);
 	void motionCompensationKalmanObservationNoiseChanged(double variance);
+
+	void configureDigitalInputRemappingFinished();
 };
 
 } // namespace inputemulator

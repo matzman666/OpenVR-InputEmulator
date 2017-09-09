@@ -9,7 +9,6 @@
 // application namespace
 namespace inputemulator {
 
-
 DeviceManipulationTabController::~DeviceManipulationTabController() {
 	if (identifyThread.joinable()) {
 		identifyThread.join();
@@ -27,11 +26,10 @@ void DeviceManipulationTabController::initStage2(OverlayController * parent, QQu
 	this->parent = parent;
 	this->widget = widget;
 	try {
-		vrInputEmulator.connect();
 		for (uint32_t id = 0; id < vr::k_unMaxTrackedDeviceCount; ++id) {
 			auto deviceClass = vr::VRSystem()->GetTrackedDeviceClass(id);
 			if (deviceClass != vr::TrackedDeviceClass_Invalid) {
-				if (deviceClass == vr::TrackedDeviceClass_Controller || deviceClass == vr::TrackedDeviceClass_GenericTracker) {
+				if (deviceClass == vr::TrackedDeviceClass_HMD || deviceClass == vr::TrackedDeviceClass_Controller || deviceClass == vr::TrackedDeviceClass_GenericTracker) {
 					auto info = std::make_shared<DeviceInfo>();
 					info->openvrId = id;
 					info->deviceClass = deviceClass;
@@ -47,7 +45,7 @@ void DeviceManipulationTabController::initStage2(OverlayController * parent, QQu
 
 					try {
 						vrinputemulator::DeviceInfo info2;
-						vrInputEmulator.getDeviceInfo(info->openvrId, info2);
+						parent->vrInputEmulator().getDeviceInfo(info->openvrId, info2);
 						info->deviceMode = info2.deviceMode;
 						info->deviceOffsetsEnabled = info2.offsetsEnabled;
 						if (info->deviceMode == 2 || info->deviceMode == 3) {
@@ -65,7 +63,7 @@ void DeviceManipulationTabController::initStage2(OverlayController * parent, QQu
 		}
 		emit deviceCountChanged((unsigned)deviceInfos.size());
 	} catch (const std::exception& e) {
-		LOG(ERROR) << "Could not connect to driver component: " << e.what();
+		LOG(ERROR) << "Could not get device infos: " << e.what();
 	}
 }
 
@@ -107,7 +105,7 @@ void DeviceManipulationTabController::eventLoopTick(vr::TrackedDevicePose_t* dev
 
 						try {
 							vrinputemulator::DeviceInfo info2;
-							vrInputEmulator.getDeviceInfo(info->openvrId, info2);
+							parent->vrInputEmulator().getDeviceInfo(info->openvrId, info2);
 							info->deviceMode = info2.deviceMode;
 							info->deviceOffsetsEnabled = info2.offsetsEnabled;
 							if (info->deviceMode == 2 || info->deviceMode == 3) {
@@ -433,7 +431,7 @@ void DeviceManipulationTabController::setMotionCompensationVelAccMode(unsigned m
 	vrinputemulator::MotionCompensationVelAccMode newMode = (vrinputemulator::MotionCompensationVelAccMode)mode;
 	if (motionCompensationVelAccMode != newMode) {
 		motionCompensationVelAccMode = newMode;
-		vrInputEmulator.setMotionVelAccCompensationMode(newMode);
+		parent->vrInputEmulator().setMotionVelAccCompensationMode(newMode);
 		saveDeviceManipulationSettings();
 		if (notify) {
 			emit motionCompensationVelAccModeChanged(mode);
@@ -444,7 +442,7 @@ void DeviceManipulationTabController::setMotionCompensationVelAccMode(unsigned m
 void DeviceManipulationTabController::setMotionCompensationKalmanProcessNoise(double variance, bool notify) {
 	if (motionCompensationKalmanProcessNoise != variance) {
 		motionCompensationKalmanProcessNoise = variance;
-		vrInputEmulator.setMotionCompensationKalmanProcessNoise(motionCompensationKalmanProcessNoise);
+		parent->vrInputEmulator().setMotionCompensationKalmanProcessNoise(motionCompensationKalmanProcessNoise);
 		saveDeviceManipulationSettings();
 		if (notify) {
 			emit motionCompensationKalmanProcessNoiseChanged(motionCompensationKalmanProcessNoise);
@@ -455,12 +453,180 @@ void DeviceManipulationTabController::setMotionCompensationKalmanProcessNoise(do
 void DeviceManipulationTabController::setMotionCompensationKalmanObservationNoise(double variance, bool notify) {
 	if (motionCompensationKalmanObservationNoise != variance) {
 		motionCompensationKalmanObservationNoise = variance;
-		vrInputEmulator.setMotionCompensationKalmanObservationNoise(motionCompensationKalmanObservationNoise);
+		parent->vrInputEmulator().setMotionCompensationKalmanObservationNoise(motionCompensationKalmanObservationNoise);
 		saveDeviceManipulationSettings();
 		if (notify) {
 			emit motionCompensationKalmanObservationNoiseChanged(motionCompensationKalmanObservationNoise);
 		}
 	}
+}
+
+unsigned DeviceManipulationTabController::getDigitalButtonCount(unsigned deviceIndex) {
+	unsigned count = 0;
+	if (deviceIndex < deviceInfos.size()) {
+		vr::ETrackedPropertyError pError;
+		auto supportedButtons = vr::VRSystem()->GetUint64TrackedDeviceProperty(deviceInfos[deviceIndex]->openvrId, vr::Prop_SupportedButtons_Uint64, &pError);
+		if (pError == vr::TrackedProp_Success) {
+			// This is not the most efficient.
+			// ToDo: Replace with a proper SWAR popcount algorithm for uint64_t
+			for (int i = 0; i < vr::k_EButton_Max; i++) {
+				auto buttonMask = vr::ButtonMaskFromId((vr::EVRButtonId)i);
+				if (supportedButtons & buttonMask) {
+					count++;
+				}
+			}
+		} else {
+			LOG(ERROR) << "Could not get supported buttons for device " << deviceInfos[deviceIndex]->serial;
+		}
+	}
+	return count;
+}
+
+int DeviceManipulationTabController::getDigitalButtonId(unsigned deviceIndex, unsigned buttonIndex) {
+	int buttonId = -1;
+	if (deviceIndex < deviceInfos.size()) {
+		vr::ETrackedPropertyError pError;
+		auto supportedButtons = vr::VRSystem()->GetUint64TrackedDeviceProperty(deviceInfos[deviceIndex]->openvrId, vr::Prop_SupportedButtons_Uint64, &pError);
+		if (pError == vr::TrackedProp_Success) {
+			// This is not the most efficient.
+			// ToDo: Replace with a proper SWAR popcount algorithm for uint64_t
+			for (int i = 0; i < vr::k_EButton_Max; i++) {
+				auto buttonMask = vr::ButtonMaskFromId((vr::EVRButtonId)i);
+				if (supportedButtons & buttonMask) {
+					if (buttonIndex <= 0) {
+						buttonId = i;
+						break;
+					} else {
+						buttonIndex--;
+					}
+				}
+			}
+		} else {
+			LOG(ERROR) << "Could not get supported buttons for device " << deviceInfos[deviceIndex]->serial;
+		}
+	}
+	return buttonId;
+}
+
+QString DeviceManipulationTabController::getDigitalButtonName(unsigned deviceIndex, unsigned buttonId) {
+	if (deviceIndex < deviceInfos.size()) {
+		return parent->openvrButtonToString(deviceInfos[deviceIndex]->openvrId, buttonId);
+	} else {
+		return parent->openvrButtonToString(vr::k_unTrackedDeviceIndexInvalid, buttonId);
+	}
+}
+
+QString DeviceManipulationTabController::getDigitalButtonStatus(unsigned deviceIndex, unsigned buttonId) {
+	QString status = -1;
+	if (deviceIndex < deviceInfos.size()) {
+		auto remapping = parent->vrInputEmulator().getDigitalInputRemapping(deviceInfos[deviceIndex]->openvrId, buttonId);
+		status = parent->digitalBindingToString(remapping.binding, remapping.binding.binding.openvr.controllerId != deviceInfos[deviceIndex]->openvrId);
+		if (remapping.longPressEnabled) {
+			status.append(" [LP]");
+		}
+		if (remapping.doublePressEnabled) {
+			status.append(" [DP]");
+		}
+	}
+	return status;
+}
+
+unsigned DeviceManipulationTabController::getAnalogAxisCount(unsigned deviceIndex) {
+	unsigned count = 0;
+	if (deviceIndex < deviceInfos.size()) {
+		for (int i = 0; i < 5; i++) {
+			vr::ETrackedPropertyError pError;
+			auto axisType = vr::VRSystem()->GetInt32TrackedDeviceProperty(deviceInfos[deviceIndex]->openvrId, (vr::ETrackedDeviceProperty)((int)vr::Prop_Axis0Type_Int32 + i), &pError);
+			if (pError == vr::TrackedProp_Success) {
+				if (axisType != vr::k_eControllerAxis_None) {
+					count++;
+				}
+			} else {
+				LOG(ERROR) << "Could not get axis types for device " << deviceInfos[deviceIndex]->serial;
+				break;
+			}
+		}
+	}
+	return count;
+}
+
+int DeviceManipulationTabController::getAnalogAxisId(unsigned deviceIndex, unsigned axisIndex) {
+	int axisId = -1;
+	if (deviceIndex < deviceInfos.size()) {
+		for (int i = 0; i < 5; i++) {
+			vr::ETrackedPropertyError pError;
+			auto axisType = vr::VRSystem()->GetInt32TrackedDeviceProperty(deviceInfos[deviceIndex]->openvrId, (vr::ETrackedDeviceProperty)((int)vr::Prop_Axis0Type_Int32 + i), &pError);
+			if (pError == vr::TrackedProp_Success) {
+				if (axisType != vr::k_eControllerAxis_None) {
+					if (axisIndex <= 0) {
+						axisId = i;
+						break;
+					} else {
+						axisIndex--;
+					}
+				}
+			} else {
+				LOG(ERROR) << "Could not get axis types for device " << deviceInfos[deviceIndex]->serial;
+				break;
+			}
+		}
+	}
+	return axisId;
+}
+
+QString DeviceManipulationTabController::getAnalogAxisName(unsigned deviceIndex, unsigned axisId) {
+	QString name("Axis");
+	name.append(QString::number(axisId)).append(" (");
+	vr::ETrackedPropertyError pError;
+	auto axisType = vr::VRSystem()->GetInt32TrackedDeviceProperty(deviceInfos[deviceIndex]->openvrId, (vr::ETrackedDeviceProperty)((int)vr::Prop_Axis0Type_Int32 + axisId), &pError);
+	if (pError == vr::TrackedProp_Success) {
+		switch (axisType) {
+		case vr::k_eControllerAxis_Trigger:
+			name.append("Trigger)");
+			break;
+		case vr::k_eControllerAxis_TrackPad:
+			name.append("TrackPad)");
+			break;
+		case vr::k_eControllerAxis_Joystick:
+			name.append("Joystick)");
+			break;
+		default:
+			name.append("<unknown>)");
+			break;
+		}
+	} else {
+		LOG(ERROR) << "Could not get axis type for device " << deviceInfos[deviceIndex]->serial;
+	}
+	return name;
+}
+
+QString DeviceManipulationTabController::getAnalogAxisStatus(unsigned deviceIndex, unsigned axisId) {
+	QString status = -1;
+	if (deviceIndex < deviceInfos.size()) {
+		status = "<STATUS>";
+	}
+	return status;
+}
+
+Q_INVOKABLE void DeviceManipulationTabController::startConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId) {
+	if (deviceIndex < deviceInfos.size()) {
+		auto remapping  = parent->vrInputEmulator().getDigitalInputRemapping(deviceInfos[deviceIndex]->openvrId, buttonId);
+		if (!remapping.valid) {
+			remapping = vrinputemulator::DigitalInputRemapping(true);
+		}
+		parent->digitalInputRemappingController.startConfigureRemapping(remapping, deviceIndex, deviceInfos[deviceIndex]->openvrId, buttonId);
+	}
+}
+
+void DeviceManipulationTabController::finishConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId, bool touchAsClick, bool longPress, int longPressThreshold, bool doublePress, int doublePressThreshold) {
+	auto remapping = parent->digitalInputRemappingController.currentRemapping();
+	remapping.touchAsClick = touchAsClick;
+	remapping.longPressEnabled = longPress;
+	remapping.longPressThreshold = longPressThreshold;
+	remapping.doublePressEnabled = doublePress;
+	remapping.doublePressThreshold = doublePressThreshold;
+	parent->vrInputEmulator().setDigitalInputRemapping(deviceInfos[deviceIndex]->openvrId, buttonId, remapping);
+	emit configureDigitalInputRemappingFinished();
 }
 
 unsigned DeviceManipulationTabController::getRenderModelCount() {
@@ -477,7 +643,7 @@ QString DeviceManipulationTabController::getRenderModelName(unsigned index) {
 void DeviceManipulationTabController::enableDeviceOffsets(unsigned index, bool enable, bool notify) {
 	if (index < deviceInfos.size()) {
 		try {
-			vrInputEmulator.enableDeviceOffsets(deviceInfos[index]->openvrId, enable);
+			parent->vrInputEmulator().enableDeviceOffsets(deviceInfos[index]->openvrId, enable);
 			deviceInfos[index]->deviceOffsetsEnabled = enable;
 		} catch (const std::exception& e) {
 			LOG(ERROR) << "Exception caught while setting translation offset: " << e.what();
@@ -492,7 +658,7 @@ void DeviceManipulationTabController::enableDeviceOffsets(unsigned index, bool e
 void DeviceManipulationTabController::setWorldFromDriverRotationOffset(unsigned index, double yaw, double pitch, double roll, bool notify) {
 	if (index < deviceInfos.size()) {
 		try {
-			vrInputEmulator.setWorldFromDriverRotationOffset(deviceInfos[index]->openvrId, vrmath::quaternionFromYawPitchRoll(yaw * 0.01745329252, pitch * 0.01745329252, roll * 0.01745329252));
+			parent->vrInputEmulator().setWorldFromDriverRotationOffset(deviceInfos[index]->openvrId, vrmath::quaternionFromYawPitchRoll(yaw * 0.01745329252, pitch * 0.01745329252, roll * 0.01745329252));
 			deviceInfos[index]->worldFromDriverRotationOffset.v[0] = yaw;
 			deviceInfos[index]->worldFromDriverRotationOffset.v[1] = pitch;
 			deviceInfos[index]->worldFromDriverRotationOffset.v[2] = roll;
@@ -509,7 +675,7 @@ void DeviceManipulationTabController::setWorldFromDriverRotationOffset(unsigned 
 void DeviceManipulationTabController::setWorldFromDriverTranslationOffset(unsigned index, double x, double y, double z, bool notify) {
 	if (index < deviceInfos.size()) {
 		try {
-			vrInputEmulator.setWorldFromDriverTranslationOffset(deviceInfos[index]->openvrId, { x * 0.01, y * 0.01, z * 0.01 });
+			parent->vrInputEmulator().setWorldFromDriverTranslationOffset(deviceInfos[index]->openvrId, { x * 0.01, y * 0.01, z * 0.01 });
 			deviceInfos[index]->worldFromDriverTranslationOffset.v[0] = x;
 			deviceInfos[index]->worldFromDriverTranslationOffset.v[1] = y;
 			deviceInfos[index]->worldFromDriverTranslationOffset.v[2] = z;
@@ -526,7 +692,7 @@ void DeviceManipulationTabController::setWorldFromDriverTranslationOffset(unsign
 void DeviceManipulationTabController::setDriverFromHeadRotationOffset(unsigned index, double yaw, double pitch, double roll, bool notify) {
 	if (index < deviceInfos.size()) {
 		try {
-			vrInputEmulator.setDriverFromHeadRotationOffset(deviceInfos[index]->openvrId, vrmath::quaternionFromYawPitchRoll(yaw * 0.01745329252, pitch * 0.01745329252, roll * 0.01745329252));
+			parent->vrInputEmulator().setDriverFromHeadRotationOffset(deviceInfos[index]->openvrId, vrmath::quaternionFromYawPitchRoll(yaw * 0.01745329252, pitch * 0.01745329252, roll * 0.01745329252));
 			deviceInfos[index]->driverFromHeadRotationOffset.v[0] = yaw;
 			deviceInfos[index]->driverFromHeadRotationOffset.v[1] = pitch;
 			deviceInfos[index]->driverFromHeadRotationOffset.v[2] = roll;
@@ -543,7 +709,7 @@ void DeviceManipulationTabController::setDriverFromHeadRotationOffset(unsigned i
 void DeviceManipulationTabController::setDriverFromHeadTranslationOffset(unsigned index, double x, double y, double z, bool notify) {
 	if (index < deviceInfos.size()) {
 		try {
-			vrInputEmulator.setDriverFromHeadTranslationOffset(deviceInfos[index]->openvrId, { x * 0.01, y * 0.01, z * 0.01 });
+			parent->vrInputEmulator().setDriverFromHeadTranslationOffset(deviceInfos[index]->openvrId, { x * 0.01, y * 0.01, z * 0.01 });
 			deviceInfos[index]->driverFromHeadTranslationOffset.v[0] = x;
 			deviceInfos[index]->driverFromHeadTranslationOffset.v[1] = y;
 			deviceInfos[index]->driverFromHeadTranslationOffset.v[2] = z;
@@ -560,7 +726,7 @@ void DeviceManipulationTabController::setDriverFromHeadTranslationOffset(unsigne
 void DeviceManipulationTabController::setDriverRotationOffset(unsigned index, double yaw, double pitch, double roll, bool notify) {
 	if (index < deviceInfos.size()) {
 		try {
-			vrInputEmulator.setDriverRotationOffset(deviceInfos[index]->openvrId, vrmath::quaternionFromYawPitchRoll(yaw * 0.01745329252, pitch * 0.01745329252, roll * 0.01745329252));
+			parent->vrInputEmulator().setDriverRotationOffset(deviceInfos[index]->openvrId, vrmath::quaternionFromYawPitchRoll(yaw * 0.01745329252, pitch * 0.01745329252, roll * 0.01745329252));
 			deviceInfos[index]->deviceRotationOffset.v[0] = yaw;
 			deviceInfos[index]->deviceRotationOffset.v[1] = pitch;
 			deviceInfos[index]->deviceRotationOffset.v[2] = roll;
@@ -577,7 +743,7 @@ void DeviceManipulationTabController::setDriverRotationOffset(unsigned index, do
 void DeviceManipulationTabController::setDriverTranslationOffset(unsigned index, double x, double y, double z, bool notify) {
 	if (index < deviceInfos.size()) {
 		try {
-			vrInputEmulator.setDriverTranslationOffset(deviceInfos[index]->openvrId, { x * 0.01, y * 0.01, z * 0.01 });
+			parent->vrInputEmulator().setDriverTranslationOffset(deviceInfos[index]->openvrId, { x * 0.01, y * 0.01, z * 0.01 });
 			deviceInfos[index]->deviceTranslationOffset.v[0] = x;
 			deviceInfos[index]->deviceTranslationOffset.v[1] = y;
 			deviceInfos[index]->deviceTranslationOffset.v[2] = z;
@@ -596,23 +762,23 @@ void DeviceManipulationTabController::setDeviceMode(unsigned index, unsigned mod
 	try {
 		switch (mode) {
 		case 0:
-			vrInputEmulator.setDeviceNormalMode(deviceInfos[index]->openvrId);
+			parent->vrInputEmulator().setDeviceNormalMode(deviceInfos[index]->openvrId);
 			break;
 		case 1:
-			vrInputEmulator.setDeviceFakeDisconnectedMode(deviceInfos[index]->openvrId);
+			parent->vrInputEmulator().setDeviceFakeDisconnectedMode(deviceInfos[index]->openvrId);
 			break;
 		case 2:
-			vrInputEmulator.setDeviceRedictMode(deviceInfos[index]->openvrId, deviceInfos[targedIndex]->openvrId);
+			parent->vrInputEmulator().setDeviceRedictMode(deviceInfos[index]->openvrId, deviceInfos[targedIndex]->openvrId);
 			break;
 		case 3:
-			vrInputEmulator.setDeviceSwapMode(deviceInfos[index]->openvrId, deviceInfos[targedIndex]->openvrId);
+			parent->vrInputEmulator().setDeviceSwapMode(deviceInfos[index]->openvrId, deviceInfos[targedIndex]->openvrId);
 			break;
 		case 4:
 			if (motionCompensationVelAccMode == vrinputemulator::MotionCompensationVelAccMode::KalmanFilter) {
-				vrInputEmulator.setMotionCompensationKalmanProcessNoise(motionCompensationKalmanProcessNoise);
-				vrInputEmulator.setMotionCompensationKalmanObservationNoise(motionCompensationKalmanObservationNoise);
+				parent->vrInputEmulator().setMotionCompensationKalmanProcessNoise(motionCompensationKalmanProcessNoise);
+				parent->vrInputEmulator().setMotionCompensationKalmanObservationNoise(motionCompensationKalmanObservationNoise);
 			}
-			vrInputEmulator.setDeviceMotionCompensationMode(deviceInfos[index]->openvrId, motionCompensationVelAccMode);
+			parent->vrInputEmulator().setDeviceMotionCompensationMode(deviceInfos[index]->openvrId, motionCompensationVelAccMode);
 			break;
 		default:
 			LOG(ERROR) << "Unkown device mode";
@@ -633,7 +799,7 @@ bool DeviceManipulationTabController::updateDeviceInfo(unsigned index) {
 	if (index < deviceInfos.size()) {
 		try {
 			vrinputemulator::DeviceInfo info;
-			vrInputEmulator.getDeviceInfo(deviceInfos[index]->openvrId, info);
+			parent->vrInputEmulator().getDeviceInfo(deviceInfos[index]->openvrId, info);
 			if (deviceInfos[index]->deviceMode != info.deviceMode) {
 				deviceInfos[index]->deviceMode = info.deviceMode;
 				retval = true;
@@ -661,7 +827,7 @@ void DeviceManipulationTabController::triggerHapticPulse(unsigned index) {
 		// When I use a thread everything works in debug modus, but as soon as I switch to release mode I get a segmentation fault
 		// Hard to debug since it works in debug modus and therefore I cannot use a debugger :-(
 		for (unsigned i = 0; i < 50; ++i) {
-			vrInputEmulator.triggerHapticPulse(deviceInfos[index]->openvrId, 0, 2000, true);
+			parent->vrInputEmulator().triggerHapticPulse(deviceInfos[index]->openvrId, 0, 2000, true);
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 		/*if (identifyThread.joinable()) {

@@ -1,12 +1,16 @@
-import QtQuick 2.7
+import QtQuick 2.9
 import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.2
 import "." // QTBUG-34418, singletons require explicit import to load qmldir file
 
 Rectangle {
+    id: myStackViewPage
+
     color: "#1b2939"
     width: 1200
     height: 800
+
+    signal pageBackButtonClicked
 
     property StackView stackView
 
@@ -43,6 +47,7 @@ Rectangle {
                     }
                 }
                 onClicked: {
+                    myStackViewPage.pageBackButtonClicked()
 					MyResources.playFocusChangedSound()
                     stackView.pop()
                 }

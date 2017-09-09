@@ -174,6 +174,7 @@ private:
 
 
 
+
 // Stores manipulation information about an openvr device
 class OpenvrDeviceManipulationInfo {
 private:
@@ -198,8 +199,19 @@ private:
 	vr::HmdQuaternion_t m_deviceRotationOffset = { 1.0, 0.0, 0.0, 0.0 };
 	vr::HmdVector3d_t m_deviceTranslationOffset = { 0.0, 0.0, 0.0 };
 
-	bool m_enableButtonMapping = false;
-	std::map<vr::EVRButtonId, vr::EVRButtonId> m_buttonMapping;
+	struct DigitalInputRemappingInfo  {
+		int state = 0;
+		std::chrono::system_clock::time_point timeout;
+		struct BindingInfo {
+			int state = 0;
+			std::chrono::system_clock::time_point timeout;
+			bool pressedState = false;
+			bool touchedState = false;
+			bool touchedAutoset = false;
+		} bindings[3]; // 0 .. normal, 1 .. long press, 2 .. double press
+		DigitalInputRemapping remapping;
+	};
+	std::map<uint32_t, DigitalInputRemappingInfo> m_digitalInputRemapping;
 
 	bool m_redirectSuspended = false;
 	OpenvrDeviceManipulationInfo* m_redirectRef = nullptr;
@@ -213,6 +225,8 @@ private:
 
 	vr::IVRProperties* m_vrproperties = nullptr;
 	vr::PropertyContainerHandle_t m_propertyContainerHandle = vr::k_ulInvalidPropertyContainer;
+
+	void sendDigitalBinding(vrinputemulator::DigitalBinding& binding, DigitalInputRemappingInfo::BindingInfo& bindingInfo, uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset);
 
 public:
 	OpenvrDeviceManipulationInfo() {}
@@ -255,19 +269,18 @@ public:
 	const vr::HmdVector3d_t& deviceTranslationOffset() const { return m_deviceTranslationOffset; }
 	vr::HmdVector3d_t& deviceTranslationOffset() { return m_deviceTranslationOffset; }
 
-	bool buttonMappingEnabled() const { return m_enableButtonMapping; }
-	void setButtonMappingEnabled(bool enable) { m_enableButtonMapping = enable; }
-	void addButtonMapping(vr::EVRButtonId button, vr::EVRButtonId mappedButton);
-	bool getButtonMapping(vr::EVRButtonId button, vr::EVRButtonId& mappedButton);
-	void eraseButtonMapping(vr::EVRButtonId button);
-	void eraseAllButtonMappings();
+	void setDigitalInputRemapping(uint32_t buttonId, const DigitalInputRemapping& remapping);
+	DigitalInputRemapping getDigitalInputRemapping(uint32_t buttonId);
 
 	bool redirectSuspended() const { return m_redirectSuspended; }
 	OpenvrDeviceManipulationInfo* redirectRef() const { return m_redirectRef; }
 
 	void handleNewDevicePose(vr::IVRServerDriverHost* driver, _DetourTrackedDevicePoseUpdated_t origFunc, uint32_t& unWhichDevice, const vr::DriverPose_t& newPose);
-	void handleButtonEvent(vr::IVRServerDriverHost* driver, void* origFunc, uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset);
+	void handleButtonEvent(vr::IVRServerDriverHost* driver, uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset);
 	void handleAxisEvent(vr::IVRServerDriverHost* driver, _DetourTrackedDeviceAxisUpdated_t origFunc, uint32_t& unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState);
+
+	void sendButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode = false, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
+	void sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
 
 	bool triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds, bool directMode = false);
 
@@ -289,6 +302,11 @@ public:
 	vr::IVRProperties* vrProperties() { return m_vrproperties; }
 	void setPropertyContainer(vr::PropertyContainerHandle_t container) { m_propertyContainerHandle = container; }
 	vr::PropertyContainerHandle_t propertyContainer() { return m_propertyContainerHandle; }
+
+	void RunFrame();
+	void RunFrameDigitalBinding(vrinputemulator::DigitalBinding& binding, DigitalInputRemappingInfo::BindingInfo& bindingInfo);
+
+	void suspendRedirectMode();
 };
 
 
@@ -482,6 +500,28 @@ private:
 	static std::string _propertiesOverrideHmdModel;
 	static std::string _propertiesOverrideHmdTrackingSystem;
 	static bool _propertiesOverrideGenericTrackerFakeController;
+
+public:
+	static void openvrTrackedDeviceButtonPressed(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
+		return _buttonPressedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
+	}
+	static void openvrTrackedDeviceButtonUnpressed(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
+		return _buttonUnpressedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
+	}
+	static void openvrTrackedDeviceButtonTouched(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
+		return _buttonTouchedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
+	}
+	static void openvrTrackedDeviceButtonUntouched(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
+		return _buttonUntouchedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
+	}
+
+	static OpenvrDeviceManipulationInfo* getDeviceInfo(uint32_t id) {
+		if (id < vr::k_unMaxTrackedDeviceCount) {
+			return _openvrIdToDeviceInfoMap[id];
+		} else {
+			return nullptr;
+		}
+	}
 };
 
 

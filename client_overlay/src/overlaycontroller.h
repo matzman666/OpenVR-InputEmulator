@@ -25,6 +25,7 @@
 #include "logging.h"
 
 #include "tabcontrollers/DeviceManipulationTabController.h"
+#include "tabcontrollers/DigitalInputRemappingController.h"
 
 
 
@@ -57,6 +58,8 @@ private:
 	QPoint m_ptLastMouse;
 	Qt::MouseButtons m_lastMouseButtons = 0;
 
+	vrinputemulator::VRInputEmulator m_vrInputEmulator;
+
 	bool desktopMode;
 	bool noSound;
 
@@ -67,8 +70,12 @@ private:
 	QSoundEffect activationSoundEffect;
 	QSoundEffect focusChangedSoundEffect;
 
+	static std::map<int, const char*> _openVRButtonNames;
+	static std::vector<std::pair<std::string, WORD>> _keyboardVirtualCodes;
+
 public: // I know it's an ugly hack to make them public to enable external access, but I am too lazy to implement getters.
 	DeviceManipulationTabController deviceManipulationTabController;
+	DigitalInputRemappingController digitalInputRemappingController;
 
 private:
     OverlayController(bool desktopMode, bool noSound) : QObject(), desktopMode(desktopMode), noSound(noSound) {}
@@ -78,6 +85,8 @@ public:
 
 	void Init(QQmlEngine* qmlEngine);
 	void Shutdown();
+
+	vrinputemulator::VRInputEmulator& vrInputEmulator() { return m_vrInputEmulator; }
 
 	bool isDashboardVisible() {
 		return dashboardVisible;
@@ -97,6 +106,15 @@ public:
 	const vr::VROverlayHandle_t& overlayHandle();
 	const vr::VROverlayHandle_t& overlayThumbnailHandle();
 	bool getOverlayTexture(vr::Texture_t& texture);
+
+
+	QString digitalBindingToString(const vrinputemulator::DigitalBinding& binding, bool printOptController);
+	QString openvrButtonToString(unsigned deviceId, unsigned buttonId);
+
+	Q_INVOKABLE unsigned keyboardVirtualCodeCount();
+	Q_INVOKABLE QString keyboardVirtualCodeNameFromIndex(unsigned index);
+	Q_INVOKABLE unsigned keyboardVirtualCodeIdFromIndex(unsigned index);
+	Q_INVOKABLE unsigned keyboardVirtualCodeIndexFromId(unsigned id);
 
 public slots:
 	void renderOverlay();

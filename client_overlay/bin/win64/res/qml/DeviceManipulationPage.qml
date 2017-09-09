@@ -1,5 +1,5 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.0
+import QtQuick 2.9
+import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 import QtQuick.Dialogs 1.2
 import matzman666.inputemulator 1.0
@@ -303,6 +303,11 @@ MyStackViewPage {
                 enabled: false
                 text: "Input Remapping"
                 onClicked: {
+                    if (deviceSelectionComboBox.currentIndex >= 0) {
+                        deviceInputRemappingPage.setDeviceIndex(deviceSelectionComboBox.currentIndex)
+                        MyResources.playFocusChangedSound()
+                        var res = mainView.push(deviceInputRemappingPage)
+                    }
                 }
             }
 

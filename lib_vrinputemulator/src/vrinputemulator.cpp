@@ -1289,7 +1289,6 @@ void VRInputEmulator::getDeviceInfo(uint32_t deviceId, DeviceInfo & info) {
 			info.deviceClass = resp.msg.dm_deviceInfo.deviceClass;
 			info.deviceMode = resp.msg.dm_deviceInfo.deviceMode;
 			info.offsetsEnabled = resp.msg.dm_deviceInfo.offsetsEnabled;
-			info.buttonMappingEnabled = resp.msg.dm_deviceInfo.buttonMappingEnabled;
 			info.redirectSuspended = resp.msg.dm_deviceInfo.redirectSuspended;
 		} else if (resp.status == ipc::ReplyStatus::InvalidId) {
 			ss << "Invalid device id";
@@ -1701,6 +1700,83 @@ void VRInputEmulator::triggerHapticPulse(uint32_t deviceId, uint32_t axisId, uin
 		throw vrinputemulator_connectionerror("No active connection.");
 	}
 }
+
+void VRInputEmulator::setDigitalInputRemapping(uint32_t deviceId, uint32_t buttonId, const DigitalInputRemapping & remapping, bool modal) {
+	if (_ipcServerQueue) {
+		ipc::Request message(ipc::RequestType::InputRemapping_SetDigitalRemapping);
+		memset(&message.msg, 0, sizeof(message.msg));
+		message.msg.ir_SetDigitalRemapping.clientId = m_clientId;
+		message.msg.ir_SetDigitalRemapping.messageId = 0;
+		message.msg.ir_SetDigitalRemapping.controllerId = deviceId;
+		message.msg.ir_SetDigitalRemapping.buttonId = buttonId;
+		message.msg.ir_SetDigitalRemapping.remapData = remapping;
+		if (modal) {
+			uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
+			message.msg.ir_SetDigitalRemapping.messageId = messageId;
+			std::promise<ipc::Reply> respPromise;
+			auto respFuture = respPromise.get_future();
+			{
+				std::lock_guard<std::recursive_mutex> lock(_mutex);
+				_ipcPromiseMap.insert({ messageId, std::move(respPromise) });
+			}
+			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+			auto resp = respFuture.get();
+			{
+				std::lock_guard<std::recursive_mutex> lock(_mutex);
+				_ipcPromiseMap.erase(messageId);
+			}
+			std::stringstream ss;
+			ss << "Error while setting digital input remapping: ";
+			if (resp.status == ipc::ReplyStatus::InvalidId) {
+				ss << "Invalid device id";
+				throw vrinputemulator_invalidid(ss.str());
+			} else if (resp.status == ipc::ReplyStatus::NotFound) {
+				ss << "Device not found";
+				throw vrinputemulator_notfound(ss.str());
+			} else if (resp.status != ipc::ReplyStatus::Ok) {
+				ss << "Error code " << (int)resp.status;
+				throw vrinputemulator_exception(ss.str());
+			}
+		} else {
+			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+		}
+	} else {
+		throw vrinputemulator_connectionerror("No active connection.");
+	}
+}
+
+DigitalInputRemapping VRInputEmulator::getDigitalInputRemapping(uint32_t deviceId, uint32_t buttonId) {
+	if (_ipcServerQueue) {
+		uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
+		ipc::Request message(ipc::RequestType::InputRemapping_GetDigitalRemapping);
+		message.msg.ir_GetDigitalRemapping.clientId = m_clientId;
+		message.msg.ir_GetDigitalRemapping.messageId = messageId;
+		message.msg.ir_GetDigitalRemapping.controllerId = deviceId;
+		message.msg.ir_GetDigitalRemapping.buttonId = buttonId;
+		std::promise<ipc::Reply> respPromise;
+		auto respFuture = respPromise.get_future();
+		{
+			std::lock_guard<std::recursive_mutex> lock(_mutex);
+			_ipcPromiseMap.insert({ messageId, std::move(respPromise) });
+		}
+		_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+		auto resp = respFuture.get();
+		{
+			std::lock_guard<std::recursive_mutex> lock(_mutex);
+			_ipcPromiseMap.erase(messageId);
+		}
+		if (resp.status != ipc::ReplyStatus::Ok) {
+			std::stringstream ss;
+			ss << "Error while getting digital input remapping: Error code " << (int)resp.status;
+			throw vrinputemulator_exception(ss.str());
+		}
+		return resp.msg.ir_getDigitalRemapping.remapData;
+	} else {
+		throw vrinputemulator_connectionerror("No active connection.");
+	}
+}
+
+
 
 
 } // end namespace vrinputemulator

@@ -473,7 +473,6 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 										resp.msg.dm_deviceInfo.deviceMode = info->deviceMode();
 										resp.msg.dm_deviceInfo.deviceClass = info->deviceClass();
 										resp.msg.dm_deviceInfo.offsetsEnabled = info->areOffsetsEnabled();
-										resp.msg.dm_deviceInfo.buttonMappingEnabled = info->buttonMappingEnabled();
 										resp.msg.dm_deviceInfo.redirectSuspended = info->redirectSuspended();
 									}
 								}
@@ -485,52 +484,52 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								}
 							}
 							break;
-							
-						case ipc::RequestType::DeviceManipulation_ButtonMapping:
-							{
-								ipc::Reply resp(ipc::ReplyType::GenericReply);
-								resp.messageId = message.msg.dm_ButtonMapping.messageId;
-								if (message.msg.dm_ButtonMapping.deviceId >= vr::k_unMaxTrackedDeviceCount) {
-									resp.status = ipc::ReplyStatus::InvalidId;
+
+						case ipc::RequestType::InputRemapping_SetDigitalRemapping: {
+							ipc::Reply resp(ipc::ReplyType::GenericReply);
+							resp.messageId = message.msg.ir_SetDigitalRemapping.messageId;
+							if (message.msg.ir_SetDigitalRemapping.controllerId >= vr::k_unMaxTrackedDeviceCount) {
+								resp.status = ipc::ReplyStatus::InvalidId;
+							} else {
+								OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.ir_SetDigitalRemapping.controllerId);
+								if (!info) {
+									resp.status = ipc::ReplyStatus::NotFound;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.dm_ButtonMapping.deviceId);
-									if (!info) {
-										resp.status = ipc::ReplyStatus::NotFound;
-									} else {
-										resp.status = ipc::ReplyStatus::Ok;
-										if (message.msg.dm_ButtonMapping.enableMapping > 0) {
-											info->setButtonMappingEnabled(message.msg.dm_ButtonMapping.enableMapping == 1 ? true : false);
-										}
-										switch (message.msg.dm_ButtonMapping.mappingOperation) {
-											case 0:
-												break;
-											case 1:
-												for (unsigned i = 0; i < message.msg.dm_ButtonMapping.mappingCount; ++i) {
-													info->addButtonMapping(message.msg.dm_ButtonMapping.buttonMappings[i * 2], message.msg.dm_ButtonMapping.buttonMappings[i * 2 + 1]);
-												}
-												break;
-											case 2:
-												for (unsigned i = 0; i < message.msg.dm_ButtonMapping.mappingCount; ++i) {
-													info->eraseButtonMapping(message.msg.dm_ButtonMapping.buttonMappings[i]);
-												}
-												break;
-											case 3:
-												info->eraseAllButtonMappings();
-												break;
-											default:
-												resp.status = ipc::ReplyStatus::InvalidOperation;
-												break;
-										}
-									}
-								}
-								if (resp.status != ipc::ReplyStatus::Ok) {
-									LOG(ERROR) << "Error while updating device button mapping: Error code " << (int)resp.status;
-								}
-								if (resp.messageId != 0) {
-									_this->sendReply(message.msg.dm_ButtonMapping.clientId, resp);
+									resp.status = ipc::ReplyStatus::Ok;
+									info->setDigitalInputRemapping(message.msg.ir_SetDigitalRemapping.buttonId, message.msg.ir_SetDigitalRemapping.remapData);
 								}
 							}
-							break;
+							if (resp.status != ipc::ReplyStatus::Ok) {
+								LOG(ERROR) << "Error while setting digital input remapping: Error code " << (int)resp.status;
+							}
+							if (resp.messageId != 0) {
+								_this->sendReply(message.msg.ir_SetDigitalRemapping.clientId, resp);
+							}
+						} break;
+
+						case ipc::RequestType::InputRemapping_GetDigitalRemapping: {
+							ipc::Reply resp(ipc::ReplyType::InputRemapping_GetDigitalRemapping);
+							resp.messageId = message.msg.ir_GetDigitalRemapping.messageId;
+							if (message.msg.ir_GetDigitalRemapping.controllerId >= vr::k_unMaxTrackedDeviceCount) {
+								resp.status = ipc::ReplyStatus::InvalidId;
+							} else {
+								OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.ir_GetDigitalRemapping.controllerId);
+								if (!info) {
+									resp.status = ipc::ReplyStatus::NotFound;
+								} else {
+									resp.status = ipc::ReplyStatus::Ok;
+									resp.msg.ir_getDigitalRemapping.deviceId = message.msg.ir_GetDigitalRemapping.controllerId;
+									resp.msg.ir_getDigitalRemapping.buttonId = message.msg.ir_GetDigitalRemapping.buttonId;
+									resp.msg.ir_getDigitalRemapping.remapData = info->getDigitalInputRemapping(message.msg.ir_GetDigitalRemapping.buttonId);
+								}
+							}
+							if (resp.status != ipc::ReplyStatus::Ok) {
+								LOG(ERROR) << "Error while getting digital input remapping: Error code " << (int)resp.status;
+							}
+							if (resp.messageId != 0) {
+								_this->sendReply(message.msg.ir_GetDigitalRemapping.clientId, resp);
+							}
+						} break;
 
 						case ipc::RequestType::DeviceManipulation_GetDeviceOffsets:
 							{

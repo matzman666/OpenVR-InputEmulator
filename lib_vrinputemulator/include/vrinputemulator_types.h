@@ -57,9 +57,9 @@ namespace vrinputemulator {
 		vr::ETrackedDeviceClass deviceClass;
 		int deviceMode;
 		bool offsetsEnabled;
-		bool buttonMappingEnabled;
 		bool redirectSuspended;
 	};
+
 
 	enum class MotionCompensationVelAccMode : uint32_t {
 		Disabled = 0,
@@ -68,5 +68,114 @@ namespace vrinputemulator {
 		LinearApproximation = 3,
 		KalmanFilter = 4
 	};
+
+
+	enum class DigitalBindingType : uint32_t {
+		NoRemapping = 0,
+		Disabled = 1,
+		OpenVR = 2,
+		Keyboard = 3,
+		SuspendRedirectMode = 4
+	};
+
+
+	struct DigitalBinding {
+		DigitalBindingType type = DigitalBindingType::NoRemapping;
+		
+		union BindingUnion {
+			struct {
+				uint32_t controllerId;
+				uint32_t buttonId;
+			} openvr;
+
+			struct {
+				bool shiftPressed = false;
+				bool ctrlPressed = false;
+				bool altPressed = false;
+				uint32_t keyCode = 0x00;
+			} keyboard;
+
+			BindingUnion() {}
+		} binding;
+		
+		bool toggleEnabled;
+		uint32_t toggleDelay;
+		
+		bool autoTriggerEnabled;
+		uint32_t autoTriggerFrequency;
+
+		DigitalBinding() {}
+	};
+
+
+	struct DigitalInputRemapping {
+		bool valid;
+		DigitalBinding binding;
+
+		bool touchAsClick = false;
+
+		bool longPressEnabled = false;
+		uint32_t longPressThreshold = 1000;
+		DigitalBinding longPressBinding;
+
+		bool doublePressEnabled = false;
+		uint32_t doublePressThreshold = 300;
+		DigitalBinding doublePressBinding;
+
+		DigitalInputRemapping(bool valid = false) : valid(valid) {}
+	};
+
+
+	enum class AnalogBindingType : uint32_t {
+		NoRemapping,
+		Disabled,
+		OpenVR
+	};
+
+
+	struct AnalogBinding {
+		AnalogBindingType type;
+
+		union {
+			struct {
+				uint32_t controllerId;
+				uint32_t axisId;
+				uint32_t axisDimId;
+			} openvr;
+		} binding;
+		bool invertAxis;
+		float lowerDeadzone = 0.0;
+		float upperDeadzone = 1.0;
+		bool autoTriggerEnabled;
+		uint32_t autoTriggerFrequency;
+	};
+
+
+	enum class AnalogInputRemappingMode : uint32_t {
+		Normal,
+		ButtonField
+	};
+
+
+	enum class AnalogInputButtonPattern : uint32_t {
+		DPAD
+	};
+
+
+	struct AnalogInputRemapping {
+		AnalogInputRemappingMode mode;
+
+		union {
+			struct {
+				AnalogBinding bindings[2];
+			} normalMode;
+
+			struct {
+				AnalogInputButtonPattern pattern;
+				float deadzone;
+			} buttonMode;
+		} data;
+	};
+
 
 } // end namespace vrinputemulator
