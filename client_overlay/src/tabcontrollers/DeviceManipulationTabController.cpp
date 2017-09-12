@@ -601,6 +601,19 @@ QString DeviceManipulationTabController::getAnalogAxisName(unsigned deviceIndex,
 }
 
 QString DeviceManipulationTabController::getAnalogAxisStatus(unsigned deviceIndex, unsigned axisId) {
+	/*ÜQString status = "";
+	if (deviceIndex < deviceInfos.size()) {
+		auto remapping = parent->vrInputEmulator().getAnalogInputRemapping(deviceInfos[deviceIndex]->openvrId, buttonId);
+		status = parent->digitalBindingToString(remapping.binding, remapping.binding.binding.openvr.controllerId != deviceInfos[deviceIndex]->openvrId);
+		if (remapping.longPressEnabled) {
+			status.append(" [LP]");
+		}
+		if (remapping.doublePressEnabled) {
+			status.append(" [DP]");
+		}
+	}
+	return status;*/
+
 	QString status = -1;
 	if (deviceIndex < deviceInfos.size()) {
 		status = "<STATUS>";
@@ -608,7 +621,7 @@ QString DeviceManipulationTabController::getAnalogAxisStatus(unsigned deviceInde
 	return status;
 }
 
-Q_INVOKABLE void DeviceManipulationTabController::startConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId) {
+void DeviceManipulationTabController::startConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId) {
 	if (deviceIndex < deviceInfos.size()) {
 		auto remapping  = parent->vrInputEmulator().getDigitalInputRemapping(deviceInfos[deviceIndex]->openvrId, buttonId);
 		if (!remapping.valid) {
@@ -627,6 +640,22 @@ void DeviceManipulationTabController::finishConfigureDigitalInputRemapping(unsig
 	remapping.doublePressThreshold = doublePressThreshold;
 	parent->vrInputEmulator().setDigitalInputRemapping(deviceInfos[deviceIndex]->openvrId, buttonId, remapping);
 	emit configureDigitalInputRemappingFinished();
+}
+
+void DeviceManipulationTabController::startConfigureAnalogInputRemapping(unsigned deviceIndex, unsigned axisId) {
+	if (deviceIndex < deviceInfos.size()) {
+		auto remapping = parent->vrInputEmulator().getAnalogInputRemapping(deviceInfos[deviceIndex]->openvrId, axisId);
+		if (!remapping.valid) {
+			remapping = vrinputemulator::AnalogInputRemapping(true);
+		}
+		parent->analogInputRemappingController.startConfigureRemapping(remapping, deviceIndex, deviceInfos[deviceIndex]->openvrId, axisId);
+	}
+}
+
+void DeviceManipulationTabController::finishConfigureAnalogInputRemapping(unsigned deviceIndex, unsigned axisId) {
+	auto remapping = parent->analogInputRemappingController.currentRemapping();
+	parent->vrInputEmulator().setAnalogInputRemapping(deviceInfos[deviceIndex]->openvrId, axisId, remapping);
+	emit configureAnalogInputRemappingFinished();
 }
 
 unsigned DeviceManipulationTabController::getRenderModelCount() {

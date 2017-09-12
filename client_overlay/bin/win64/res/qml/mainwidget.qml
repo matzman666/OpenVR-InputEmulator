@@ -38,6 +38,10 @@ Rectangle {
         stackView: mainView
     }
 
+    property DeviceAnalogInputRemappingPage deviceAnalogInputRemappingPage:  DeviceAnalogInputRemappingPage {
+        stackView: mainView
+    }
+
 
     StackView {
         id: mainView

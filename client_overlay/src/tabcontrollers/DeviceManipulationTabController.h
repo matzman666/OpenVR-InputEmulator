@@ -109,7 +109,6 @@ public:
 	Q_INVOKABLE QString getDigitalButtonName(unsigned deviceIndex, unsigned buttonId);
 	Q_INVOKABLE QString getDigitalButtonStatus(unsigned deviceIndex, unsigned buttonId);
 
-
 	Q_INVOKABLE unsigned getAnalogAxisCount(unsigned deviceIndex);
 	Q_INVOKABLE int getAnalogAxisId(unsigned deviceIndex, unsigned axisIndex);
 	Q_INVOKABLE QString getAnalogAxisName(unsigned deviceIndex, unsigned axisId);
@@ -117,6 +116,9 @@ public:
 
 	Q_INVOKABLE void startConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId);
 	Q_INVOKABLE void finishConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId, bool touchAsClick, bool longPress, int longPressThreshold, bool doublePress, int doublePressThreshold);
+
+	Q_INVOKABLE void startConfigureAnalogInputRemapping(unsigned deviceIndex, unsigned axisId);
+	Q_INVOKABLE void finishConfigureAnalogInputRemapping(unsigned deviceIndex, unsigned axisId);
 
 
 public slots:
@@ -149,6 +151,7 @@ signals:
 	void motionCompensationKalmanObservationNoiseChanged(double variance);
 
 	void configureDigitalInputRemappingFinished();
+	void configureAnalogInputRemappingFinished();
 };
 
 } // namespace inputemulator

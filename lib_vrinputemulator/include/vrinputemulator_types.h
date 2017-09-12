@@ -132,49 +132,30 @@ namespace vrinputemulator {
 		OpenVR
 	};
 
-
 	struct AnalogBinding {
 		AnalogBindingType type;
-
-		union {
+		union BindingUnion {
 			struct {
-				uint32_t controllerId;
-				uint32_t axisId;
-				uint32_t axisDimId;
+				uint32_t controllerId = vr::k_unTrackedDeviceIndexInvalid;
+				uint32_t axisId = 0;
 			} openvr;
-		} binding;
-		bool invertAxis;
+			BindingUnion() {}
+		} data;
+		bool invertXAxis = false;
+		bool invertYAxis = false;
+		bool swapAxes = false;
 		float lowerDeadzone = 0.0;
 		float upperDeadzone = 1.0;
-		bool autoTriggerEnabled;
-		uint32_t autoTriggerFrequency;
-	};
 
-
-	enum class AnalogInputRemappingMode : uint32_t {
-		Normal,
-		ButtonField
-	};
-
-
-	enum class AnalogInputButtonPattern : uint32_t {
-		DPAD
+		AnalogBinding(AnalogBindingType type = AnalogBindingType::NoRemapping) : type(type) {}
 	};
 
 
 	struct AnalogInputRemapping {
-		AnalogInputRemappingMode mode;
+		bool valid;
+		AnalogBinding binding;
 
-		union {
-			struct {
-				AnalogBinding bindings[2];
-			} normalMode;
-
-			struct {
-				AnalogInputButtonPattern pattern;
-				float deadzone;
-			} buttonMode;
-		} data;
+		AnalogInputRemapping(bool valid = false) : valid(valid) {}
 	};
 
 

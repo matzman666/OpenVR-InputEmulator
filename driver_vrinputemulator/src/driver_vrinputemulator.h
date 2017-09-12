@@ -213,6 +213,14 @@ private:
 	};
 	std::map<uint32_t, DigitalInputRemappingInfo> m_digitalInputRemapping;
 
+	struct AnalogInputRemappingInfo {
+		// currently no internal state needed
+		struct BindingInfo {
+		} bindings[1];
+		AnalogInputRemapping remapping;
+	};
+	std::map<uint32_t, AnalogInputRemappingInfo> m_analogInputRemapping;
+
 	bool m_redirectSuspended = false;
 	OpenvrDeviceManipulationInfo* m_redirectRef = nullptr;
 
@@ -227,6 +235,7 @@ private:
 	vr::PropertyContainerHandle_t m_propertyContainerHandle = vr::k_ulInvalidPropertyContainer;
 
 	void sendDigitalBinding(vrinputemulator::DigitalBinding& binding, DigitalInputRemappingInfo::BindingInfo& bindingInfo, uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset);
+	void sendAnalogBinding(vrinputemulator::AnalogBinding& binding, AnalogInputRemappingInfo::BindingInfo& bindingInfo, uint32_t unWhichDevice, uint32_t axisId, const vr::VRControllerAxis_t& axisState);
 
 public:
 	OpenvrDeviceManipulationInfo() {}
@@ -272,6 +281,9 @@ public:
 	void setDigitalInputRemapping(uint32_t buttonId, const DigitalInputRemapping& remapping);
 	DigitalInputRemapping getDigitalInputRemapping(uint32_t buttonId);
 
+	void setAnalogInputRemapping(uint32_t axisId, const AnalogInputRemapping& remapping);
+	AnalogInputRemapping getAnalogInputRemapping(uint32_t axisId);
+
 	bool redirectSuspended() const { return m_redirectSuspended; }
 	OpenvrDeviceManipulationInfo* redirectRef() const { return m_redirectRef; }
 
@@ -281,6 +293,7 @@ public:
 
 	void sendButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode = false, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
 	void sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
+	void sendAxisEvent(uint32_t& unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState, bool directMode = false, AnalogInputRemappingInfo::BindingInfo* binding = nullptr);
 
 	bool triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds, bool directMode = false);
 
@@ -513,6 +526,9 @@ public:
 	}
 	static void openvrTrackedDeviceButtonUntouched(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, vr::EVRButtonId eButtonId, double eventTimeOffset) {
 		return _buttonUntouchedDetour.origFunc(_this, unWhichDevice, eButtonId, eventTimeOffset);
+	}
+	static void openvrTrackedDeviceAxisUpdated(vr::IVRServerDriverHost* _this, uint32_t unWhichDevice, uint32_t axisId, const vr::VRControllerAxis_t& axisState) {
+		return _axisUpdatedDetour.origFunc(_this, unWhichDevice, axisId, axisState);
 	}
 
 	static OpenvrDeviceManipulationInfo* getDeviceInfo(uint32_t id) {

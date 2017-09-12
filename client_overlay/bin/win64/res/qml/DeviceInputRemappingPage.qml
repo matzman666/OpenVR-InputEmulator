@@ -37,6 +37,8 @@ MyStackViewPage {
         var obj = _analogAxisComponent.createObject(analogAxisContainer, {
             "axisName": axisName,
             "axisStatus": axisStatus,
+            "deviceIndex": deviceIndex,
+            "axisId": axisId
         });
         if (obj == null) {
             console.log("Error creating object");

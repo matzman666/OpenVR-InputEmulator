@@ -200,28 +200,6 @@ QString DigitalInputRemappingController::getButtonName(int id, bool withDefaults
 	return name;
 }
 
-int DigitalInputRemappingController::getAxisMaxCount() {
-	return vr::k_unControllerStateAxisCount;
-}
-
-QString DigitalInputRemappingController::getAxisName(int id, bool withDefaults) {
-	QString name("Axis");
-	name.append(QString::number(id));
-	if (withDefaults) {
-		switch (id) {
-		case 0:
-			name.append(" (TrackPad)");
-			break;
-		case 1:
-			name.append(" (Trigger)");
-			break;
-		default:
-			break;
-		}
-	}
-	return name;
-}
-
 
 void DigitalInputRemappingController::enableLongPress(bool enable, bool notify) {
 	if (m_currentRemapping.longPressEnabled != enable) {

@@ -58,7 +58,7 @@ MyStackViewPage {
                 RowLayout {
                     MyText {
                         Layout.preferredWidth: 270
-                        text: "Binding:"
+                        text: "Normal Press:"
                     }
                     MyText {
                         id: normalBindingStatusText

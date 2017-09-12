@@ -192,6 +192,9 @@ public:
 	void setDigitalInputRemapping(uint32_t deviceId, uint32_t buttonId, const DigitalInputRemapping& remapping, bool modal = true);
 	DigitalInputRemapping getDigitalInputRemapping(uint32_t deviceId, uint32_t buttonId);
 
+	void setAnalogInputRemapping(uint32_t deviceId, uint32_t axisId, const AnalogInputRemapping& remapping, bool modal = true);
+	AnalogInputRemapping getAnalogInputRemapping(uint32_t deviceId, uint32_t axisId);
+
 private:
 	std::recursive_mutex _mutex;
 	uint32_t m_clientId = 0;

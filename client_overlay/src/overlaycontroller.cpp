@@ -193,7 +193,6 @@ void OverlayController::Init(QQmlEngine* qmlEngine) {
 
 	LOG(INFO) << "sizeof(DigitalBinding) = " << sizeof(vrinputemulator::DigitalBinding);
 	LOG(INFO) << "sizeof(DigitalInputRemapping) = " << sizeof(vrinputemulator::DigitalInputRemapping);
-	LOG(INFO) << "sizeof(AnalogBinding) = " << sizeof(vrinputemulator::AnalogBinding);
 	LOG(INFO) << "sizeof(AnalogInputRemapping) = " << sizeof(vrinputemulator::AnalogInputRemapping);
 	LOG(INFO) << "sizeof(ipc::Request) = " << sizeof(vrinputemulator::ipc::Request);
 	LOG(INFO) << "sizeof(ipc::Request::msg) = " << sizeof(vrinputemulator::ipc::Request::msg);
@@ -276,6 +275,7 @@ void OverlayController::Init(QQmlEngine* qmlEngine) {
 	// Init controllers
 	deviceManipulationTabController.initStage1();
 	digitalInputRemappingController.initStage1();
+	analogInputRemappingController.initStage1();
 
 	// Set qml context
 	qmlEngine->rootContext()->setContextProperty("applicationVersion", getVersionString());
@@ -294,6 +294,11 @@ void OverlayController::Init(QQmlEngine* qmlEngine) {
 	});
 	qmlRegisterSingletonType<DigitalInputRemappingController>("matzman666.inputemulator", 1, 0, "DigitalInputRemappingController", [](QQmlEngine*, QJSEngine*) {
 		QObject* obj = &getInstance()->digitalInputRemappingController;
+		QQmlEngine::setObjectOwnership(obj, QQmlEngine::CppOwnership);
+		return obj;
+	});
+	qmlRegisterSingletonType<DigitalInputRemappingController>("matzman666.inputemulator", 1, 0, "AnalogInputRemappingController", [](QQmlEngine*, QJSEngine*) {
+		QObject* obj = &getInstance()->analogInputRemappingController;
 		QQmlEngine::setObjectOwnership(obj, QQmlEngine::CppOwnership);
 		return obj;
 	});
@@ -381,6 +386,7 @@ void OverlayController::SetWidget(QQuickItem* quickItem, const std::string& name
 
 	deviceManipulationTabController.initStage2(this, m_pWindow.get());
 	digitalInputRemappingController.initStage2(this, m_pWindow.get());
+	analogInputRemappingController.initStage2(this, m_pWindow.get());
 }
 
 
@@ -511,6 +517,7 @@ void OverlayController::OnTimeoutPumpEvents() {
 			default:
 				deviceManipulationTabController.handleEvent(vrEvent);
 				digitalInputRemappingController.handleEvent(vrEvent);
+				analogInputRemappingController.handleEvent(vrEvent);
 				break;
 		}
 	}
@@ -519,6 +526,7 @@ void OverlayController::OnTimeoutPumpEvents() {
 	vr::VRSystem()->GetDeviceToAbsoluteTrackingPose(vr::TrackingUniverseStanding, 0.0f, devicePoses, vr::k_unMaxTrackedDeviceCount);
 	deviceManipulationTabController.eventLoopTick(devicePoses);
 	digitalInputRemappingController.eventLoopTick(devicePoses);
+	analogInputRemappingController.eventLoopTick(devicePoses);
 
 	if (m_ulOverlayThumbnailHandle != vr::k_ulOverlayHandleInvalid) {
 		while (vr::VROverlay()->PollNextOverlayEvent(m_ulOverlayThumbnailHandle, &vrEvent, sizeof(vrEvent))) {
@@ -638,7 +646,7 @@ QString OverlayController::openvrButtonToString(unsigned deviceId, unsigned butt
 }
 
 unsigned OverlayController::keyboardVirtualCodeCount() {
-	return _keyboardVirtualCodes.size();
+	return (unsigned)_keyboardVirtualCodes.size();
 }
 
 QString OverlayController::keyboardVirtualCodeNameFromIndex(unsigned index) {

@@ -52,7 +52,9 @@ enum class RequestType : uint32_t {
 	DeviceManipulation_SetMotionCompensationProperties,
 
 	InputRemapping_SetDigitalRemapping,
-	InputRemapping_GetDigitalRemapping
+	InputRemapping_GetDigitalRemapping,
+	InputRemapping_SetAnalogRemapping,
+	InputRemapping_GetAnalogRemapping
 };
 
 
@@ -73,7 +75,8 @@ enum class ReplyType : uint32_t {
 	DeviceManipulation_GetDeviceInfo,
 	DeviceManipulation_GetDeviceOffsets,
 
-	InputRemapping_GetDigitalRemapping
+	InputRemapping_GetDigitalRemapping,
+	InputRemapping_GetAnalogRemapping
 };
 
 
@@ -308,6 +311,21 @@ struct Request_InputRemapping_GetDigitalRemapping {
 	uint32_t buttonId;
 };
 
+struct Request_InputRemapping_SetAnalogRemapping {
+	uint32_t clientId;
+	uint32_t messageId; // Used to associate with Reply
+	uint32_t controllerId;
+	uint32_t axisId;
+	AnalogInputRemapping remapData;
+};
+
+struct Request_InputRemapping_GetAnalogRemapping {
+	uint32_t clientId;
+	uint32_t messageId; // Used to associate with Reply
+	uint32_t controllerId;
+	uint32_t axisId;
+};
+
 
 
 struct Request {
@@ -348,6 +366,8 @@ struct Request {
 		Request_DeviceManipulation_SetMotionCompensationProperties dm_SetMotionCompensationProperties;
 		Request_InputRemapping_SetDigitalRemapping ir_SetDigitalRemapping;
 		Request_InputRemapping_GetDigitalRemapping ir_GetDigitalRemapping;
+		Request_InputRemapping_SetAnalogRemapping ir_SetAnalogRemapping;
+		Request_InputRemapping_GetAnalogRemapping ir_GetAnalogRemapping;
 		MsgUnion() {}
 	} msg;
 };
@@ -414,6 +434,12 @@ struct Reply_InputRemapping_GetDigitalRemapping {
 	DigitalInputRemapping remapData;
 };
 
+struct Reply_InputRemapping_GetAnalogRemapping {
+	uint32_t deviceId;
+	uint32_t axisId;
+	AnalogInputRemapping remapData;
+};
+
 
 struct Reply {
 	Reply() {}
@@ -437,6 +463,7 @@ struct Reply {
 		Reply_DeviceManipulation_GetDeviceInfo dm_deviceInfo;
 		Reply_DeviceManipulation_GetDeviceOffsets dm_deviceOffsets;
 		Reply_InputRemapping_GetDigitalRemapping ir_getDigitalRemapping;
+		Reply_InputRemapping_GetAnalogRemapping ir_getAnalogRemapping;
 		MsgUnion() {}
 	} msg;
 };

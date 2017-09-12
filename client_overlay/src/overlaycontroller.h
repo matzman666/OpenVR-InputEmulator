@@ -26,6 +26,7 @@
 
 #include "tabcontrollers/DeviceManipulationTabController.h"
 #include "tabcontrollers/DigitalInputRemappingController.h"
+#include "tabcontrollers/AnalogInputRemappingController.h"
 
 
 
@@ -76,6 +77,7 @@ private:
 public: // I know it's an ugly hack to make them public to enable external access, but I am too lazy to implement getters.
 	DeviceManipulationTabController deviceManipulationTabController;
 	DigitalInputRemappingController digitalInputRemappingController;
+	AnalogInputRemappingController analogInputRemappingController;
 
 private:
     OverlayController(bool desktopMode, bool noSound) : QObject(), desktopMode(desktopMode), noSound(noSound) {}

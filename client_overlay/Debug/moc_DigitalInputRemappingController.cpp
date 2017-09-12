@@ -21,8 +21,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_inputemulator__DigitalInputRemappingController_t {
-    QByteArrayData data[59];
-    char stringdata0[1194];
+    QByteArrayData data[57];
+    char stringdata0[1166];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -76,20 +76,18 @@ QT_MOC_LITERAL(41, 870, 17), // "getButtonMaxCount"
 QT_MOC_LITERAL(42, 888, 13), // "getButtonName"
 QT_MOC_LITERAL(43, 902, 2), // "id"
 QT_MOC_LITERAL(44, 905, 12), // "withDefaults"
-QT_MOC_LITERAL(45, 918, 15), // "getAxisMaxCount"
-QT_MOC_LITERAL(46, 934, 11), // "getAxisName"
-QT_MOC_LITERAL(47, 946, 14), // "getBindingType"
-QT_MOC_LITERAL(48, 961, 28), // "getBindingOpenVRControllerId"
-QT_MOC_LITERAL(49, 990, 24), // "getBindingOpenVRButtonId"
-QT_MOC_LITERAL(50, 1015, 19), // "touchAsClickEnabled"
-QT_MOC_LITERAL(51, 1035, 19), // "isToggleModeEnabled"
-QT_MOC_LITERAL(52, 1055, 19), // "toggleModeThreshold"
-QT_MOC_LITERAL(53, 1075, 20), // "isAutoTriggerEnabled"
-QT_MOC_LITERAL(54, 1096, 20), // "autoTriggerFrequency"
-QT_MOC_LITERAL(55, 1117, 20), // "keyboardShiftEnabled"
-QT_MOC_LITERAL(56, 1138, 19), // "keyboardCtrlEnabled"
-QT_MOC_LITERAL(57, 1158, 18), // "keyboardAltEnabled"
-QT_MOC_LITERAL(58, 1177, 16) // "keyboardKeyIndex"
+QT_MOC_LITERAL(45, 918, 14), // "getBindingType"
+QT_MOC_LITERAL(46, 933, 28), // "getBindingOpenVRControllerId"
+QT_MOC_LITERAL(47, 962, 24), // "getBindingOpenVRButtonId"
+QT_MOC_LITERAL(48, 987, 19), // "touchAsClickEnabled"
+QT_MOC_LITERAL(49, 1007, 19), // "isToggleModeEnabled"
+QT_MOC_LITERAL(50, 1027, 19), // "toggleModeThreshold"
+QT_MOC_LITERAL(51, 1047, 20), // "isAutoTriggerEnabled"
+QT_MOC_LITERAL(52, 1068, 20), // "autoTriggerFrequency"
+QT_MOC_LITERAL(53, 1089, 20), // "keyboardShiftEnabled"
+QT_MOC_LITERAL(54, 1110, 19), // "keyboardCtrlEnabled"
+QT_MOC_LITERAL(55, 1130, 18), // "keyboardAltEnabled"
+QT_MOC_LITERAL(56, 1149, 16) // "keyboardKeyIndex"
 
     },
     "inputemulator::DigitalInputRemappingController\0"
@@ -116,8 +114,8 @@ QT_MOC_LITERAL(58, 1177, 16) // "keyboardKeyIndex"
     "isDoublePressEnabled\0getDoublePressThreshold\0"
     "getDoublePressBindingStatus\0"
     "getButtonMaxCount\0getButtonName\0id\0"
-    "withDefaults\0getAxisMaxCount\0getAxisName\0"
-    "getBindingType\0getBindingOpenVRControllerId\0"
+    "withDefaults\0getBindingType\0"
+    "getBindingOpenVRControllerId\0"
     "getBindingOpenVRButtonId\0touchAsClickEnabled\0"
     "isToggleModeEnabled\0toggleModeThreshold\0"
     "isAutoTriggerEnabled\0autoTriggerFrequency\0"
@@ -132,7 +130,7 @@ static const uint qt_meta_data_inputemulator__DigitalInputRemappingController[] 
        7,       // revision
        0,       // classname
        0,    0, // classinfo
-      49,   14, // methods
+      46,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -140,59 +138,56 @@ static const uint qt_meta_data_inputemulator__DigitalInputRemappingController[] 
        6,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    1,  259,    2, 0x06 /* Public */,
-       4,    1,  262,    2, 0x06 /* Public */,
-       6,    1,  265,    2, 0x06 /* Public */,
-       7,    1,  268,    2, 0x06 /* Public */,
-       8,    1,  271,    2, 0x06 /* Public */,
-       9,    0,  274,    2, 0x06 /* Public */,
+       1,    1,  244,    2, 0x06 /* Public */,
+       4,    1,  247,    2, 0x06 /* Public */,
+       6,    1,  250,    2, 0x06 /* Public */,
+       7,    1,  253,    2, 0x06 /* Public */,
+       8,    1,  256,    2, 0x06 /* Public */,
+       9,    0,  259,    2, 0x06 /* Public */,
 
  // slots: name, argc, parameters, tag, flags
-      10,    2,  275,    2, 0x0a /* Public */,
-      10,    1,  280,    2, 0x2a /* Public | MethodCloned */,
-      12,    2,  283,    2, 0x0a /* Public */,
-      12,    1,  288,    2, 0x2a /* Public | MethodCloned */,
-      13,    2,  291,    2, 0x0a /* Public */,
-      13,    1,  296,    2, 0x2a /* Public | MethodCloned */,
-      14,    2,  299,    2, 0x0a /* Public */,
-      14,    1,  304,    2, 0x2a /* Public | MethodCloned */,
-      15,    2,  307,    2, 0x0a /* Public */,
-      15,    1,  312,    2, 0x2a /* Public | MethodCloned */,
-      16,    0,  315,    2, 0x0a /* Public */,
-      17,    0,  316,    2, 0x0a /* Public */,
-      18,    6,  317,    2, 0x0a /* Public */,
-      25,    8,  330,    2, 0x0a /* Public */,
-      30,    0,  347,    2, 0x0a /* Public */,
+      10,    2,  260,    2, 0x0a /* Public */,
+      10,    1,  265,    2, 0x2a /* Public | MethodCloned */,
+      12,    2,  268,    2, 0x0a /* Public */,
+      12,    1,  273,    2, 0x2a /* Public | MethodCloned */,
+      13,    2,  276,    2, 0x0a /* Public */,
+      13,    1,  281,    2, 0x2a /* Public | MethodCloned */,
+      14,    2,  284,    2, 0x0a /* Public */,
+      14,    1,  289,    2, 0x2a /* Public | MethodCloned */,
+      15,    2,  292,    2, 0x0a /* Public */,
+      15,    1,  297,    2, 0x2a /* Public | MethodCloned */,
+      16,    0,  300,    2, 0x0a /* Public */,
+      17,    0,  301,    2, 0x0a /* Public */,
+      18,    6,  302,    2, 0x0a /* Public */,
+      25,    8,  315,    2, 0x0a /* Public */,
+      30,    0,  332,    2, 0x0a /* Public */,
 
  // methods: name, argc, parameters, tag, flags
-      31,    0,  348,    2, 0x02 /* Public */,
-      32,    0,  349,    2, 0x02 /* Public */,
-      33,    0,  350,    2, 0x02 /* Public */,
-      34,    0,  351,    2, 0x02 /* Public */,
-      35,    0,  352,    2, 0x02 /* Public */,
-      36,    0,  353,    2, 0x02 /* Public */,
-      37,    0,  354,    2, 0x02 /* Public */,
-      38,    0,  355,    2, 0x02 /* Public */,
-      39,    0,  356,    2, 0x02 /* Public */,
-      40,    0,  357,    2, 0x02 /* Public */,
-      41,    0,  358,    2, 0x02 /* Public */,
-      42,    2,  359,    2, 0x02 /* Public */,
-      42,    1,  364,    2, 0x22 /* Public | MethodCloned */,
-      45,    0,  367,    2, 0x02 /* Public */,
-      46,    2,  368,    2, 0x02 /* Public */,
-      46,    1,  373,    2, 0x22 /* Public | MethodCloned */,
-      47,    0,  376,    2, 0x02 /* Public */,
-      48,    0,  377,    2, 0x02 /* Public */,
-      49,    0,  378,    2, 0x02 /* Public */,
-      50,    0,  379,    2, 0x02 /* Public */,
-      51,    0,  380,    2, 0x02 /* Public */,
-      52,    0,  381,    2, 0x02 /* Public */,
-      53,    0,  382,    2, 0x02 /* Public */,
-      54,    0,  383,    2, 0x02 /* Public */,
-      55,    0,  384,    2, 0x02 /* Public */,
-      56,    0,  385,    2, 0x02 /* Public */,
-      57,    0,  386,    2, 0x02 /* Public */,
-      58,    0,  387,    2, 0x02 /* Public */,
+      31,    0,  333,    2, 0x02 /* Public */,
+      32,    0,  334,    2, 0x02 /* Public */,
+      33,    0,  335,    2, 0x02 /* Public */,
+      34,    0,  336,    2, 0x02 /* Public */,
+      35,    0,  337,    2, 0x02 /* Public */,
+      36,    0,  338,    2, 0x02 /* Public */,
+      37,    0,  339,    2, 0x02 /* Public */,
+      38,    0,  340,    2, 0x02 /* Public */,
+      39,    0,  341,    2, 0x02 /* Public */,
+      40,    0,  342,    2, 0x02 /* Public */,
+      41,    0,  343,    2, 0x02 /* Public */,
+      42,    2,  344,    2, 0x02 /* Public */,
+      42,    1,  349,    2, 0x22 /* Public | MethodCloned */,
+      45,    0,  352,    2, 0x02 /* Public */,
+      46,    0,  353,    2, 0x02 /* Public */,
+      47,    0,  354,    2, 0x02 /* Public */,
+      48,    0,  355,    2, 0x02 /* Public */,
+      49,    0,  356,    2, 0x02 /* Public */,
+      50,    0,  357,    2, 0x02 /* Public */,
+      51,    0,  358,    2, 0x02 /* Public */,
+      52,    0,  359,    2, 0x02 /* Public */,
+      53,    0,  360,    2, 0x02 /* Public */,
+      54,    0,  361,    2, 0x02 /* Public */,
+      55,    0,  362,    2, 0x02 /* Public */,
+      56,    0,  363,    2, 0x02 /* Public */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::Bool,    3,
@@ -230,9 +225,6 @@ static const uint qt_meta_data_inputemulator__DigitalInputRemappingController[] 
     QMetaType::Bool,
     QMetaType::UInt,
     QMetaType::QString,
-    QMetaType::Int,
-    QMetaType::QString, QMetaType::Int, QMetaType::Bool,   43,   44,
-    QMetaType::QString, QMetaType::Int,   43,
     QMetaType::Int,
     QMetaType::QString, QMetaType::Int, QMetaType::Bool,   43,   44,
     QMetaType::QString, QMetaType::Int,   43,
@@ -302,35 +294,29 @@ void inputemulator::DigitalInputRemappingController::qt_static_metacall(QObject 
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
         case 33: { QString _r = _t->getButtonName((*reinterpret_cast< int(*)>(_a[1])));
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
-        case 34: { int _r = _t->getAxisMaxCount();
+        case 34: { int _r = _t->getBindingType();
             if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
-        case 35: { QString _r = _t->getAxisName((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< bool(*)>(_a[2])));
-            if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
-        case 36: { QString _r = _t->getAxisName((*reinterpret_cast< int(*)>(_a[1])));
-            if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
-        case 37: { int _r = _t->getBindingType();
+        case 35: { int _r = _t->getBindingOpenVRControllerId();
             if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
-        case 38: { int _r = _t->getBindingOpenVRControllerId();
+        case 36: { int _r = _t->getBindingOpenVRButtonId();
             if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
-        case 39: { int _r = _t->getBindingOpenVRButtonId();
+        case 37: { bool _r = _t->touchAsClickEnabled();
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 38: { bool _r = _t->isToggleModeEnabled();
+            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
+        case 39: { int _r = _t->toggleModeThreshold();
             if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
-        case 40: { bool _r = _t->touchAsClickEnabled();
+        case 40: { bool _r = _t->isAutoTriggerEnabled();
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 41: { bool _r = _t->isToggleModeEnabled();
-            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 42: { int _r = _t->toggleModeThreshold();
+        case 41: { int _r = _t->autoTriggerFrequency();
             if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
-        case 43: { bool _r = _t->isAutoTriggerEnabled();
+        case 42: { bool _r = _t->keyboardShiftEnabled();
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 44: { int _r = _t->autoTriggerFrequency();
-            if (_a[0]) *reinterpret_cast< int*>(_a[0]) = std::move(_r); }  break;
-        case 45: { bool _r = _t->keyboardShiftEnabled();
+        case 43: { bool _r = _t->keyboardCtrlEnabled();
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 46: { bool _r = _t->keyboardCtrlEnabled();
+        case 44: { bool _r = _t->keyboardAltEnabled();
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 47: { bool _r = _t->keyboardAltEnabled();
-            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 48: { uint _r = _t->keyboardKeyIndex();
+        case 45: { uint _r = _t->keyboardKeyIndex();
             if (_a[0]) *reinterpret_cast< uint*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
@@ -407,13 +393,13 @@ int inputemulator::DigitalInputRemappingController::qt_metacall(QMetaObject::Cal
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 49)
+        if (_id < 46)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 49;
+        _id -= 46;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 49)
+        if (_id < 46)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 49;
+        _id -= 46;
     }
     return _id;
 }

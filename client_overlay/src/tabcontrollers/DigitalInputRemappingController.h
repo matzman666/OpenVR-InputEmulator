@@ -39,8 +39,6 @@ public:
 
 	Q_INVOKABLE int getButtonMaxCount();
 	Q_INVOKABLE QString getButtonName(int id, bool withDefaults = true);
-	Q_INVOKABLE int getAxisMaxCount();
-	Q_INVOKABLE QString getAxisName(int id, bool withDefaults = true);
 
 	Q_INVOKABLE int getBindingType();
 

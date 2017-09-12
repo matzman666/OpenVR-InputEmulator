@@ -531,6 +531,52 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							}
 						} break;
 
+						case ipc::RequestType::InputRemapping_SetAnalogRemapping: {
+							ipc::Reply resp(ipc::ReplyType::GenericReply);
+							resp.messageId = message.msg.ir_SetAnalogRemapping.messageId;
+							if (message.msg.ir_SetAnalogRemapping.controllerId >= vr::k_unMaxTrackedDeviceCount) {
+								resp.status = ipc::ReplyStatus::InvalidId;
+							} else {
+								OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.ir_SetAnalogRemapping.controllerId);
+								if (!info) {
+									resp.status = ipc::ReplyStatus::NotFound;
+								} else {
+									resp.status = ipc::ReplyStatus::Ok;
+									info->setAnalogInputRemapping(message.msg.ir_SetAnalogRemapping.axisId, message.msg.ir_SetAnalogRemapping.remapData);
+								}
+							}
+							if (resp.status != ipc::ReplyStatus::Ok) {
+								LOG(ERROR) << "Error while setting analog input remapping: Error code " << (int)resp.status;
+							}
+							if (resp.messageId != 0) {
+								_this->sendReply(message.msg.ir_SetAnalogRemapping.clientId, resp);
+							}
+						} break;
+
+						case ipc::RequestType::InputRemapping_GetAnalogRemapping: {
+							ipc::Reply resp(ipc::ReplyType::InputRemapping_GetAnalogRemapping);
+							resp.messageId = message.msg.ir_GetAnalogRemapping.messageId;
+							if (message.msg.ir_GetAnalogRemapping.controllerId >= vr::k_unMaxTrackedDeviceCount) {
+								resp.status = ipc::ReplyStatus::InvalidId;
+							} else {
+								OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.ir_GetAnalogRemapping.controllerId);
+								if (!info) {
+									resp.status = ipc::ReplyStatus::NotFound;
+								} else {
+									resp.status = ipc::ReplyStatus::Ok;
+									resp.msg.ir_getAnalogRemapping.deviceId = message.msg.ir_GetAnalogRemapping.controllerId;
+									resp.msg.ir_getAnalogRemapping.axisId = message.msg.ir_GetAnalogRemapping.axisId;
+									resp.msg.ir_getAnalogRemapping.remapData = info->getAnalogInputRemapping(message.msg.ir_GetAnalogRemapping.axisId);
+								}
+							}
+							if (resp.status != ipc::ReplyStatus::Ok) {
+								LOG(ERROR) << "Error while getting analog input remapping: Error code " << (int)resp.status;
+							}
+							if (resp.messageId != 0) {
+								_this->sendReply(message.msg.ir_GetAnalogRemapping.clientId, resp);
+							}
+						} break;
+
 						case ipc::RequestType::DeviceManipulation_GetDeviceOffsets:
 							{
 								ipc::Reply resp(ipc::ReplyType::DeviceManipulation_GetDeviceOffsets);

@@ -1776,6 +1776,81 @@ DigitalInputRemapping VRInputEmulator::getDigitalInputRemapping(uint32_t deviceI
 	}
 }
 
+void VRInputEmulator::setAnalogInputRemapping(uint32_t deviceId, uint32_t axisId, const AnalogInputRemapping & remapping, bool modal) {
+	if (_ipcServerQueue) {
+		ipc::Request message(ipc::RequestType::InputRemapping_SetAnalogRemapping);
+		memset(&message.msg, 0, sizeof(message.msg));
+		message.msg.ir_SetAnalogRemapping.clientId = m_clientId;
+		message.msg.ir_SetAnalogRemapping.messageId = 0;
+		message.msg.ir_SetAnalogRemapping.controllerId = deviceId;
+		message.msg.ir_SetAnalogRemapping.axisId = axisId;
+		message.msg.ir_SetAnalogRemapping.remapData = remapping;
+		if (modal) {
+			uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
+			message.msg.ir_SetAnalogRemapping.messageId = messageId;
+			std::promise<ipc::Reply> respPromise;
+			auto respFuture = respPromise.get_future();
+			{
+				std::lock_guard<std::recursive_mutex> lock(_mutex);
+				_ipcPromiseMap.insert({ messageId, std::move(respPromise) });
+			}
+			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+			auto resp = respFuture.get();
+			{
+				std::lock_guard<std::recursive_mutex> lock(_mutex);
+				_ipcPromiseMap.erase(messageId);
+			}
+			std::stringstream ss;
+			ss << "Error while setting analog input remapping: ";
+			if (resp.status == ipc::ReplyStatus::InvalidId) {
+				ss << "Invalid device id";
+				throw vrinputemulator_invalidid(ss.str());
+			} else if (resp.status == ipc::ReplyStatus::NotFound) {
+				ss << "Device not found";
+				throw vrinputemulator_notfound(ss.str());
+			} else if (resp.status != ipc::ReplyStatus::Ok) {
+				ss << "Error code " << (int)resp.status;
+				throw vrinputemulator_exception(ss.str());
+			}
+		} else {
+			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+		}
+	} else {
+		throw vrinputemulator_connectionerror("No active connection.");
+	}
+}
+
+AnalogInputRemapping VRInputEmulator::getAnalogInputRemapping(uint32_t deviceId, uint32_t axisId) {
+	if (_ipcServerQueue) {
+		uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
+		ipc::Request message(ipc::RequestType::InputRemapping_GetAnalogRemapping);
+		message.msg.ir_GetAnalogRemapping.clientId = m_clientId;
+		message.msg.ir_GetAnalogRemapping.messageId = messageId;
+		message.msg.ir_GetAnalogRemapping.controllerId = deviceId;
+		message.msg.ir_GetAnalogRemapping.axisId = axisId;
+		std::promise<ipc::Reply> respPromise;
+		auto respFuture = respPromise.get_future();
+		{
+			std::lock_guard<std::recursive_mutex> lock(_mutex);
+			_ipcPromiseMap.insert({ messageId, std::move(respPromise) });
+		}
+		_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+		auto resp = respFuture.get();
+		{
+			std::lock_guard<std::recursive_mutex> lock(_mutex);
+			_ipcPromiseMap.erase(messageId);
+		}
+		if (resp.status != ipc::ReplyStatus::Ok) {
+			std::stringstream ss;
+			ss << "Error while getting analog input remapping: Error code " << (int)resp.status;
+			throw vrinputemulator_exception(ss.str());
+		}
+		return resp.msg.ir_getAnalogRemapping.remapData;
+	} else {
+		throw vrinputemulator_connectionerror("No active connection.");
+	}
+}
+
 
 
 
