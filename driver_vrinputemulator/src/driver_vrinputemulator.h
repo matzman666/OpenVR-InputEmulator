@@ -208,6 +208,11 @@ private:
 			bool pressedState = false;
 			bool touchedState = false;
 			bool touchedAutoset = false;
+			bool autoTriggerEnabled = false;
+			bool autoTriggerState = false;
+			std::chrono::system_clock::time_point autoTriggerTimeout;
+			std::chrono::system_clock::time_point autoTriggerUnpressTimeout;
+			uint32_t autoTriggerTimeoutTime;
 		} bindings[3]; // 0 .. normal, 1 .. long press, 2 .. double press
 		DigitalInputRemapping remapping;
 	};
@@ -234,8 +239,8 @@ private:
 	vr::IVRProperties* m_vrproperties = nullptr;
 	vr::PropertyContainerHandle_t m_propertyContainerHandle = vr::k_ulInvalidPropertyContainer;
 
-	void sendDigitalBinding(vrinputemulator::DigitalBinding& binding, DigitalInputRemappingInfo::BindingInfo& bindingInfo, uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset);
-	void sendAnalogBinding(vrinputemulator::AnalogBinding& binding, AnalogInputRemappingInfo::BindingInfo& bindingInfo, uint32_t unWhichDevice, uint32_t axisId, const vr::VRControllerAxis_t& axisState);
+	void sendDigitalBinding(vrinputemulator::DigitalBinding& binding, uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, DigitalInputRemappingInfo::BindingInfo* bindingInfo = nullptr);
+	void sendAnalogBinding(vrinputemulator::AnalogBinding& binding, uint32_t unWhichDevice, uint32_t axisId, const vr::VRControllerAxis_t& axisState, AnalogInputRemappingInfo::BindingInfo* bindingInfo = nullptr);
 
 public:
 	OpenvrDeviceManipulationInfo() {}
@@ -317,7 +322,7 @@ public:
 	vr::PropertyContainerHandle_t propertyContainer() { return m_propertyContainerHandle; }
 
 	void RunFrame();
-	void RunFrameDigitalBinding(vrinputemulator::DigitalBinding& binding, DigitalInputRemappingInfo::BindingInfo& bindingInfo);
+	void RunFrameDigitalBinding(vrinputemulator::DigitalBinding& binding, vr::EVRButtonId eButtonId, DigitalInputRemappingInfo::BindingInfo& bindingInfo);
 
 	void suspendRedirectMode();
 };

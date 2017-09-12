@@ -328,7 +328,7 @@ MyStackViewPage {
                 MySlider {
                     id: triggerFrequencySlider
                     from: 0.1
-                    to: 90.0
+                    to: 45.0
                     stepSize: 0.1
                     value: 1.0
                     snapMode: Slider.SnapAlways
