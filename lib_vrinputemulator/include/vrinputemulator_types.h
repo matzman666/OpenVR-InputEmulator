@@ -117,10 +117,12 @@ namespace vrinputemulator {
 		bool longPressEnabled = false;
 		uint32_t longPressThreshold = 1000;
 		DigitalBinding longPressBinding;
+		bool longPressImmediateRelease = false;
 
 		bool doublePressEnabled = false;
 		uint32_t doublePressThreshold = 300;
 		DigitalBinding doublePressBinding;
+		bool doublePressImmediateRelease = false;
 
 		DigitalInputRemapping(bool valid = false) : valid(valid) {}
 	};

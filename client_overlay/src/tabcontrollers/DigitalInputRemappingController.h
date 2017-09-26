@@ -33,9 +33,12 @@ public:
 	Q_INVOKABLE bool isLongPressEnabled();
 	Q_INVOKABLE unsigned getLongPressThreshold();
 	Q_INVOKABLE QString getLongPressBindingStatus();
+	Q_INVOKABLE bool isLongPressImmediateRelease();
+
 	Q_INVOKABLE bool isDoublePressEnabled();
 	Q_INVOKABLE unsigned getDoublePressThreshold();
 	Q_INVOKABLE QString getDoublePressBindingStatus();
+	Q_INVOKABLE bool isDoublePressImmediateRelease();
 
 	Q_INVOKABLE int getButtonMaxCount();
 	Q_INVOKABLE QString getButtonName(int id, bool withDefaults = true);
@@ -61,12 +64,14 @@ public:
 
 
 public slots:
-	void enableLongPress(bool enable, bool notify = true);
+	/*void enableLongPress(bool enable, bool notify = true);
 	void setLongPressThreshold(unsigned value, bool notify = true);
+	void setLongPressImmediateRelease(unsigned value, bool notify = true);
 	void enableDoublePress(bool enable, bool notify = true);
 	void setDoublePressThreshold(unsigned value, bool notify = true);
+	void setDoublePressImmediateRelease(unsigned value, bool notify = true);
 	
-	void enableTouchAsClick(bool enable, bool notify = true);
+	void enableTouchAsClick(bool enable, bool notify = true);*/
 
 	void finishConfigureBinding_Original();
 	void finishConfigureBinding_Disabled();
@@ -75,12 +80,14 @@ public slots:
 	void finishConfigureBinding_suspendRedirectMode();
 
 signals:
-	void longPressEnabledChanged(bool enable);
+	/*void longPressEnabledChanged(bool enable);
 	void longPressThresholdChanged(unsigned value);
+	void longPressImmediateReleaseChanged(unsigned value);
 	void doublePressEnabledChanged(bool enable);
 	void doublePressThresholdChanged(unsigned value);
+	void doublePressImmediateReleaseChanged(unsigned value);
 
-	void touchAsClickChanged(bool value);
+	void touchAsClickChanged(bool value);*/
 
 	void configureDigitalBindingFinished();
 

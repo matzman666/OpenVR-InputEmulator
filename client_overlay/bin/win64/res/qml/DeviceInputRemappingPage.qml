@@ -55,17 +55,31 @@ MyStackViewPage {
 
     function setDeviceIndex(index) {
         deviceIndex = index
-
         deleteObjects()
         var buttonCount = DeviceManipulationTabController.getDigitalButtonCount(index);
-        for (var i = 0; i < buttonCount; i++) {
-            var buttonId = DeviceManipulationTabController.getDigitalButtonId(index, i);
-            createDigitalButton(i, buttonId)
+        if (buttonCount > 0) {
+            digitalInputHeader.visible = true
+            for (var i = 0; i < buttonCount; i++) {
+                var buttonId = DeviceManipulationTabController.getDigitalButtonId(index, i);
+                createDigitalButton(i, buttonId)
+            }
+        } else {
+            digitalInputHeader.visible = false
         }
         var axisCount = DeviceManipulationTabController.getAnalogAxisCount(index);
-        for (var i = 0; i < axisCount; i++) {
-            var axisId = DeviceManipulationTabController.getAnalogAxisId(index, i);
-            createAnalogAxis(i, axisId)
+        if (axisCount > 0) {
+            analogInputHeader.visible = true
+            for (var i = 0; i < axisCount; i++) {
+                var axisId = DeviceManipulationTabController.getAnalogAxisId(index, i);
+                createAnalogAxis(i, axisId)
+            }
+        } else {
+            analogInputHeader.visible = false
+        }
+        if (buttonCount == 0 && axisCount == 0) {
+            noInputsLabel.visible = true
+        } else {
+            noInputsLabel.visible = false
         }
     }
 
@@ -75,6 +89,12 @@ MyStackViewPage {
 
     content: ColumnLayout {
         spacing: 18
+
+        MyText {
+            id: noInputsLabel
+            visible: false
+            text: "No Inputs"
+        }
 
         ScrollView {
             ScrollBar.vertical.policy: ScrollBar.AsNeeded
@@ -86,6 +106,8 @@ MyStackViewPage {
                 spacing: 24
 
                 RowLayout {
+                    id: digitalInputHeader
+                    visible: false
                     Layout.topMargin: 32
                     Layout.leftMargin: 250
                     Rectangle {
@@ -111,6 +133,8 @@ MyStackViewPage {
                 }
 
                 RowLayout {
+                    id: analogInputHeader
+                    visible: false
                     Layout.topMargin: 32
                     Layout.leftMargin: 250
                     Rectangle {

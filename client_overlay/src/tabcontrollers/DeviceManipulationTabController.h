@@ -115,7 +115,8 @@ public:
 	Q_INVOKABLE QString getAnalogAxisStatus(unsigned deviceIndex, unsigned axisId);
 
 	Q_INVOKABLE void startConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId);
-	Q_INVOKABLE void finishConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId, bool touchAsClick, bool longPress, int longPressThreshold, bool doublePress, int doublePressThreshold);
+	Q_INVOKABLE void finishConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId, bool touchAsClick, 
+		bool longPress, int longPressThreshold, bool longPressImmediateRelease, bool doublePress, int doublePressThreshold, bool doublePressImmediateRelease);
 
 	Q_INVOKABLE void startConfigureAnalogInputRemapping(unsigned deviceIndex, unsigned axisId);
 	Q_INVOKABLE void finishConfigureAnalogInputRemapping(unsigned deviceIndex, unsigned axisId);

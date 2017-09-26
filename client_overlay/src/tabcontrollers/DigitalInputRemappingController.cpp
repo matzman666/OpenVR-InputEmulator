@@ -71,6 +71,10 @@ QString DigitalInputRemappingController::getLongPressBindingStatus() {
 	return parent->digitalBindingToString(m_currentRemapping.longPressBinding, m_currentRemapping.longPressBinding.binding.openvr.controllerId != m_currentDeviceId);
 }
 
+bool DigitalInputRemappingController::isLongPressImmediateRelease() {
+	return m_currentRemapping.longPressImmediateRelease;
+}
+
 bool DigitalInputRemappingController::isDoublePressEnabled() {
 	return m_currentRemapping.doublePressEnabled;
 }
@@ -81,6 +85,10 @@ unsigned DigitalInputRemappingController::getDoublePressThreshold() {
 
 QString DigitalInputRemappingController::getDoublePressBindingStatus() {
 	return parent->digitalBindingToString(m_currentRemapping.doublePressBinding, m_currentRemapping.doublePressBinding.binding.openvr.controllerId != m_currentDeviceId);
+}
+
+bool DigitalInputRemappingController::isDoublePressImmediateRelease() {
+	return m_currentRemapping.doublePressImmediateRelease;
 }
 
 int DigitalInputRemappingController::getBindingType() {
@@ -201,7 +209,7 @@ QString DigitalInputRemappingController::getButtonName(int id, bool withDefaults
 }
 
 
-void DigitalInputRemappingController::enableLongPress(bool enable, bool notify) {
+/*void DigitalInputRemappingController::enableLongPress(bool enable, bool notify) {
 	if (m_currentRemapping.longPressEnabled != enable) {
 		m_currentRemapping.longPressEnabled = enable;
 		if (notify) {
@@ -215,6 +223,15 @@ void DigitalInputRemappingController::setLongPressThreshold(unsigned value, bool
 		m_currentRemapping.longPressThreshold = value;
 		if (notify) {
 			emit longPressThresholdChanged(m_currentRemapping.longPressThreshold);
+		}
+	}
+}
+
+void DigitalInputRemappingController::setLongPressImmediateRelease(unsigned value, bool notify) {
+	if (m_currentRemapping.longPressImmediateRelease != value) {
+		m_currentRemapping.longPressImmediateRelease = value;
+		if (notify) {
+			emit longPressImmediateReleaseChanged(m_currentRemapping.longPressImmediateRelease);
 		}
 	}
 }
@@ -237,6 +254,15 @@ void DigitalInputRemappingController::setDoublePressThreshold(unsigned value, bo
 	}
 }
 
+void DigitalInputRemappingController::setDoublePressImmediateRelease(unsigned value, bool notify) {
+	if (m_currentRemapping.doublePressImmediateRelease != value) {
+		m_currentRemapping.doublePressImmediateRelease = value;
+		if (notify) {
+			emit doublePressImmediateReleaseChanged(m_currentRemapping.doublePressImmediateRelease);
+		}
+	}
+}
+
 void DigitalInputRemappingController::enableTouchAsClick(bool enable, bool notify) {
 	if (m_currentRemapping.touchAsClick != enable) {
 		m_currentRemapping.touchAsClick = enable;
@@ -245,7 +271,7 @@ void DigitalInputRemappingController::enableTouchAsClick(bool enable, bool notif
 		}
 	}
 
-}
+}*/
 
 void DigitalInputRemappingController::finishConfigureBinding_Original() {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::NoRemapping;

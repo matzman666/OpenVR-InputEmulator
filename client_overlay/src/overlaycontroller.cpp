@@ -22,6 +22,8 @@
 #include "logging.h"
 #include <vrinputemulator_types.h>
 #include <ipc_protocol.h>
+#include <locale>
+#include <codecvt>
 
 
 
@@ -166,6 +168,24 @@ std::vector<std::pair<std::string, WORD>> OverlayController::_keyboardVirtualCod
 	{ "Media Previous Track", VK_MEDIA_PREV_TRACK },
 	{ "Media Stop", VK_MEDIA_STOP },
 	{ "Media Play/Pause", VK_MEDIA_PLAY_PAUSE },
+	{ "+", VK_OEM_PLUS },
+	{ "-", VK_OEM_MINUS },
+	{ ",", VK_OEM_COMMA },
+	{ ".", VK_OEM_PERIOD },
+};
+
+
+/* These key codes have different meaning depending on the active keyboard layout, or may not exist at all */
+std::vector<WORD> OverlayController::_keyboardVaryingVirtualCodes = {
+	VK_OEM_1,
+	VK_OEM_2,
+	VK_OEM_3,
+	VK_OEM_4,
+	VK_OEM_5,
+	VK_OEM_6,
+	VK_OEM_7,
+	VK_OEM_8,
+	VK_OEM_102,
 };
 
 
@@ -198,6 +218,17 @@ void OverlayController::Init(QQmlEngine* qmlEngine) {
 	LOG(INFO) << "sizeof(ipc::Request::msg) = " << sizeof(vrinputemulator::ipc::Request::msg);
 	LOG(INFO) << "sizeof(ipc::Reply) = " << sizeof(vrinputemulator::ipc::Reply);
 	LOG(INFO) << "sizeof(ipc::Reply::msg) = " << sizeof(vrinputemulator::ipc::Reply::msg);
+
+	/* Handle keyboard layout dependent virtual key codes */
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	for (auto vc : _keyboardVaryingVirtualCodes) {
+		auto raw = MapVirtualKey(vc, MAPVK_VK_TO_CHAR);
+		if (raw != 0) {
+			auto lc = (wchar_t)(raw & 0xFFFF);
+			std::string name = converter.to_bytes(std::wstring(1, lc));
+			_keyboardVirtualCodes.push_back({ name, vc });
+		}
+	}
 
 	QString activationSoundFile = m_runtimePathUrl.toLocalFile().append("/content/panorama/sounds/activation.wav");
 	QFileInfo activationSoundFileInfo(activationSoundFile);
@@ -592,19 +623,51 @@ QString OverlayController::digitalBindingToString(const vrinputemulator::Digital
 	QString status;
 	switch (binding.type) {
 	case vrinputemulator::DigitalBindingType::NoRemapping:
-		status = "<Original>";
+		status = "No Remapping";
 		break;
 	case vrinputemulator::DigitalBindingType::Disabled:
-		status = "<Disabled>";
+		status = "Disabled";
 		break;
 	case vrinputemulator::DigitalBindingType::OpenVR:
 		status = openvrButtonToString(binding.binding.openvr.controllerId, binding.binding.openvr.buttonId);
 		if (printOptController && binding.binding.openvr.controllerId != vr::k_unTrackedDeviceIndexInvalid) {
-			status.append(" on ").append(QString::number(binding.binding.openvr.controllerId));
+			status.append(" [R:").append(QString::number(binding.binding.openvr.controllerId)).append("]");
+		}
+		if (binding.toggleEnabled) {
+			status.append(" [T]");
+		}
+		if (binding.autoTriggerEnabled) {
+			status.append(" [A]");
 		}
 		break;
+	case vrinputemulator::DigitalBindingType::Keyboard:
+		if (binding.binding.keyboard.shiftPressed) {
+			status.append("SHIFT + ");
+		}
+		if (binding.binding.keyboard.altPressed) {
+			status.append("ALT + ");
+		}
+		if (binding.binding.keyboard.ctrlPressed) {
+			status.append("CTRL + ");
+		}
+		for (auto& k : _keyboardVirtualCodes) {
+			if (k.second == binding.binding.keyboard.keyCode) {
+				status.append(QString::fromStdString(k.first));
+				break;
+			}
+		}
+		if (binding.toggleEnabled) {
+			status.append(" [T]");
+		}
+		if (binding.autoTriggerEnabled) {
+			status.append(" [A]");
+		}
+		break;
+	case vrinputemulator::DigitalBindingType::SuspendRedirectMode:
+		status = "Suspend Redirect Mode";
+		break;
 	default:
-		status = "<ToDo>";
+		status = "<Unknown>";
 		break;
 	}
 	return status;

@@ -14,14 +14,10 @@ RowLayout {
         Layout.preferredWidth: 270
         text: buttonName
     }
-    MyText {
-        id: buttonStatusText
-        Layout.preferredWidth: 650
-        text: buttonStatus
-    }
     MyPushButton {
-        Layout.preferredWidth: 150
-        text: "Configure"
+        id: configButton
+        Layout.preferredWidth: 840
+        text: buttonStatus
         onClicked: {
             DeviceManipulationTabController.startConfigureDigitalInputRemapping(deviceIndex, buttonId)
             deviceDigitalInputRemappingPage.setDeviceIndex(deviceIndex, buttonId)
@@ -33,8 +29,8 @@ RowLayout {
     Connections {
         target: DeviceManipulationTabController
         onConfigureDigitalInputRemappingFinished: {
-            var buttonStatus = DeviceManipulationTabController.getDigitalButtonStatus(deviceIndex, buttonId);
-            buttonStatusText.text = buttonStatus
+            buttonStatus = DeviceManipulationTabController.getDigitalButtonStatus(deviceIndex, buttonId);
+            configButton.text = buttonStatus
         }
     }
 }

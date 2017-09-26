@@ -14,14 +14,10 @@ RowLayout {
         Layout.preferredWidth: 270
         text: axisName
     }
-    MyText {
-        id: axisStatusText
-        Layout.preferredWidth: 650
-        text: axisStatus
-    }
     MyPushButton {
-        Layout.preferredWidth: 150
-        text: "Configure"
+        id: configButton
+        Layout.preferredWidth: 840
+        text: axisStatus
         onClicked: {
             DeviceManipulationTabController.startConfigureAnalogInputRemapping(deviceIndex, axisId)
             deviceAnalogInputRemappingPage.setDeviceIndex(deviceIndex, axisId)
@@ -33,8 +29,8 @@ RowLayout {
     Connections {
         target: DeviceManipulationTabController
         onConfigureAnalogInputRemappingFinished: {
-            var axisStatus = DeviceManipulationTabController.getAnalogAxisName(deviceIndex, axisId);
-            axisStatusText.text = axisStatus
+            axisStatus = DeviceManipulationTabController.getAnalogAxisName(deviceIndex, axisId);
+            configButton.text = axisStatus
         }
     }
 }

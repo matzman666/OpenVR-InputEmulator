@@ -48,8 +48,7 @@ Rectangle {
                 }
                 onClicked: {
                     myStackViewPage.pageBackButtonClicked()
-					MyResources.playFocusChangedSound()
-                    stackView.pop()
+                    goBack()
                 }
             }
             MyText {
@@ -73,6 +72,11 @@ Rectangle {
         MyText {
             text: "Content"
         }
+    }
+
+    function goBack() {
+        MyResources.playFocusChangedSound()
+        stackView.pop()
     }
 
     ColumnLayout {

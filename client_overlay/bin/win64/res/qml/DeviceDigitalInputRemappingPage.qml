@@ -21,28 +21,21 @@ MyStackViewPage {
 
     function updateGui() {
         touchAsClickButton.checked = DigitalInputRemappingController.touchAsClickEnabled()
-        normalBindingStatusText.text = DigitalInputRemappingController.getNormalBindingStatus()
+        normalBindingConfigButton.text = DigitalInputRemappingController.getNormalBindingStatus()
         longPressToggleButton.checked = DigitalInputRemappingController.isLongPressEnabled()
         longPressThresholdSlider.value = DigitalInputRemappingController.getLongPressThreshold()
-        longPressBindingStatusText.text = DigitalInputRemappingController.getLongPressBindingStatus()
+        longPressBindingConfigButton.text = DigitalInputRemappingController.getLongPressBindingStatus()
+        longPressImmediateReleaseToggle.checked = DigitalInputRemappingController.isLongPressImmediateRelease()
         doublePressToggleButton.checked = DigitalInputRemappingController.isDoublePressEnabled()
         doublePressThresholdSlider.value = DigitalInputRemappingController.getDoublePressThreshold()
-        doublePressBindingStatusText.text = DigitalInputRemappingController.getDoublePressBindingStatus()
+        doublePressBindingConfigButton.text = DigitalInputRemappingController.getDoublePressBindingStatus()
+        doublePressImmediateReleaseToggle.checked = DigitalInputRemappingController.isDoublePressImmediateRelease()
     }
 
     function updateBindingStatus() {
-        normalBindingStatusText.text = DigitalInputRemappingController.getNormalBindingStatus()
-        longPressBindingStatusText.text = DigitalInputRemappingController.getLongPressBindingStatus()
-        doublePressBindingStatusText.text = DigitalInputRemappingController.getDoublePressBindingStatus()
-    }
-
-    onPageBackButtonClicked: {
-        var touchAsClick = touchAsClickButton.checked
-        var longPress = longPressToggleButton.checked
-        var longPressThreshold = longPressThresholdSlider.value
-        var doublePress = doublePressToggleButton.checked
-        var doublePressThreshold = doublePressThresholdSlider.value
-        DeviceManipulationTabController.finishConfigureDigitalInputRemapping(deviceIndex, buttonId, touchAsClick, longPress, longPressThreshold, doublePress, doublePressThreshold)
+        normalBindingConfigButton.text = DigitalInputRemappingController.getNormalBindingStatus()
+        longPressBindingConfigButton.text = DigitalInputRemappingController.getLongPressBindingStatus()
+        doublePressBindingConfigButton.text = DigitalInputRemappingController.getDoublePressBindingStatus()
     }
 
     content: ColumnLayout {
@@ -53,20 +46,15 @@ MyStackViewPage {
 
 
             ColumnLayout {
-                Layout.topMargin: 32
-                spacing: 16
+                spacing: 8
                 RowLayout {
                     MyText {
-                        Layout.preferredWidth: 270
+                        Layout.preferredWidth: 300
                         text: "Normal Press:"
                     }
-                    MyText {
-                        id: normalBindingStatusText
-                        Layout.preferredWidth: 650
-                        text: "<Status>"
-                    }
                     MyPushButton {
-                        Layout.preferredWidth: 150
+                        id: normalBindingConfigButton
+                        Layout.fillWidth: true
                         text: "Configure"
                         onClicked: {
                             DigitalInputRemappingController.startConfigureNormalBinding()
@@ -83,20 +71,27 @@ MyStackViewPage {
             }
 
             ColumnLayout {
+                spacing: 8
 
                 RowLayout {
                     MyToggleButton {
-                        Layout.preferredWidth: 270
+                        Layout.preferredWidth: 300
                         id: longPressToggleButton
                         text: "Long Press:"
-                    }
-                    MyText {
-                        id: longPressBindingStatusText
-                        Layout.preferredWidth: 650
-                        text: "<Status>"
+                        onCheckedChanged: {
+                            longPressBindingConfigButton.enabled = checked
+                            longPressThresholdLabel.enabled = checked
+                            longPressThresholdMinusButton.enabled = checked
+                            longPressThresholdPlusButton.enabled = checked
+                            longPressThresholdSlider.enabled = checked
+                            longPressThresholdText.enabled = checked
+                            longPressImmediateReleaseToggle.enabled = checked
+                        }
                     }
                     MyPushButton {
-                        Layout.preferredWidth: 150
+                        id: longPressBindingConfigButton
+                        Layout.fillWidth: true
+                        enabled: false
                         text: "Configure"
                         onClicked: {
                             DigitalInputRemappingController.startConfigureLongPressBinding()
@@ -111,12 +106,16 @@ MyStackViewPage {
                     spacing: 16
 
                     MyText {
+                        id: longPressThresholdLabel
                         text: "Long Press Threshold:"
                         Layout.preferredWidth: 350
                         Layout.rightMargin: 12
+                        enabled: false
                     }
 
                     MyPushButton2 {
+                        id: longPressThresholdMinusButton
+                        enabled: false
                         text: "-"
                         Layout.preferredWidth: 40
                         onClicked: {
@@ -126,6 +125,7 @@ MyStackViewPage {
 
                     MySlider {
                         id: longPressThresholdSlider
+                        enabled: false
                         from: 100
                         to: 5000
                         stepSize: 100
@@ -142,6 +142,8 @@ MyStackViewPage {
                     }
 
                     MyPushButton2 {
+                        id: longPressThresholdPlusButton
+                        enabled: false
                         text: "+"
                         Layout.preferredWidth: 40
                         onClicked: {
@@ -151,6 +153,7 @@ MyStackViewPage {
 
                     MyTextField {
                         id: longPressThresholdText
+                        enabled: false
                         text: "0.0"
                         Layout.preferredWidth: 150
                         Layout.leftMargin: 10
@@ -169,23 +172,36 @@ MyStackViewPage {
                         }
                     }
                 }
+
+                MyToggleButton {
+                    id: longPressImmediateReleaseToggle
+                    enabled: false
+                    text: "Immediate Key Release"
+                }
             }
 
             ColumnLayout {
+                spacing: 8
 
                 RowLayout {
                     MyToggleButton {
                         id: doublePressToggleButton
-                        Layout.preferredWidth: 270
+                        Layout.preferredWidth: 300
                         text: "Double Press:"
-                    }
-                    MyText {
-                        id: doublePressBindingStatusText
-                        Layout.preferredWidth: 650
-                        text: "<Status>"
+                        onCheckedChanged: {
+                            doublePressBindingConfigButton.enabled = checked
+                            doublePressThresholdLabel.enabled = checked
+                            doublePressThresholdMinusButton.enabled = checked
+                            doublePressThresholdPlusButton.enabled = checked
+                            doublePressThresholdSlider.enabled = checked
+                            doublePressThresholdText.enabled = checked
+                            doublePressImmediateReleaseToggle.enabled = checked
+                        }
                     }
                     MyPushButton {
-                        Layout.preferredWidth: 150
+                        id: doublePressBindingConfigButton
+                        Layout.fillWidth: true
+                        enabled: false
                         text: "Configure"
                         onClicked: {
                             DigitalInputRemappingController.startConfigureDoublePressBinding()
@@ -200,14 +216,18 @@ MyStackViewPage {
                     spacing: 16
 
                     MyText {
+                        id: doublePressThresholdLabel
                         text: "Double Press Threshold:"
                         Layout.preferredWidth: 350
                         Layout.rightMargin: 12
+                        enabled: false
                     }
 
                     MyPushButton2 {
+                        id: doublePressThresholdMinusButton
                         text: "-"
                         Layout.preferredWidth: 40
+                        enabled: false
                         onClicked: {
                             doublePressThresholdSlider.value -= 100
                         }
@@ -215,6 +235,7 @@ MyStackViewPage {
 
                     MySlider {
                         id: doublePressThresholdSlider
+                        enabled: false
                         from: 100
                         to: 5000
                         stepSize: 100
@@ -231,8 +252,10 @@ MyStackViewPage {
                     }
 
                     MyPushButton2 {
+                        id: doublePressThresholdPlusButton
                         text: "+"
                         Layout.preferredWidth: 40
+                        enabled: false
                         onClicked: {
                             doublePressThresholdSlider.value += 100
                         }
@@ -243,6 +266,7 @@ MyStackViewPage {
                         text: "0.0"
                         Layout.preferredWidth: 150
                         Layout.leftMargin: 10
+                        enabled: false
                         horizontalAlignment: Text.AlignHCenter
                         function onInputEvent(input) {
                             var val = parseFloat(input)
@@ -258,6 +282,12 @@ MyStackViewPage {
                         }
                     }
                 }
+
+                MyToggleButton {
+                    id: doublePressImmediateReleaseToggle
+                    enabled: false
+                    text: "Immediate Key Release"
+                }
             }
         }
 
@@ -267,6 +297,28 @@ MyStackViewPage {
             Layout.fillHeight: true
         }
 
+        RowLayout {
+            Item {
+                Layout.fillWidth: true
+            }
+            MyPushButton {
+                Layout.preferredWidth: 200
+                text: "Save"
+                onClicked: {
+                    DeviceManipulationTabController.finishConfigureDigitalInputRemapping(
+                        deviceIndex, buttonId,
+                        touchAsClickButton.checked,
+                        longPressToggleButton.checked,
+                        longPressThresholdSlider.value,
+                        longPressImmediateReleaseToggle.checked,
+                        doublePressToggleButton.checked,
+                        doublePressThresholdSlider.value,
+                        doublePressImmediateReleaseToggle.checked
+                    )
+                    goBack()
+                }
+            }
+        }
 
         Component.onCompleted: {
         }

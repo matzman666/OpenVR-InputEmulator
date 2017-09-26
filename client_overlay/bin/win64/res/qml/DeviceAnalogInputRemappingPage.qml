@@ -59,26 +59,6 @@ MyStackViewPage {
         }
     }
 
-    onPageBackButtonClicked: {
-        if (bindingTypeComboBox.currentIndex == 0) {
-            AnalogInputRemappingController.finishConfigure_Original()
-        } else if (bindingTypeComboBox.currentIndex == 1) {
-            AnalogInputRemappingController.finishConfigure_Disabled()
-        } else if (bindingTypeComboBox.currentIndex == 2) {
-            var controllerId = -1
-            if (openVRControllerComboBox.currentIndex > 0) {
-                var controllerId = _controllerIds[openVRControllerComboBox.currentIndex - 1]
-            }
-            var mappedAxisId = openvrAxisComboBox.currentIndex
-            var invertXAxis = openvrXAxisInvertToggle.checked
-            var invertYAxis = openvrYAxisInvertToggle.checked
-            var swapAxes = openvrAxisSwapToggle.checked
-            var lowerDeadzone = deadzonesRangeSlider.first.value
-            var upperDeadzone = deadzonesRangeSlider.second.value
-            AnalogInputRemappingController.finishConfigure_OpenVR(controllerId, mappedAxisId, invertXAxis, invertYAxis, swapAxes, lowerDeadzone, upperDeadzone)
-        }
-    }
-
     content: ColumnLayout {
         spacing: 64
 
@@ -180,7 +160,7 @@ MyStackViewPage {
                 spacing: 16
 
                 MyText {
-                    text: "Deadzones:"
+                    text: "Active Zone:"
                     Layout.preferredWidth: 180
                     Layout.rightMargin: 12
                 }
@@ -250,6 +230,36 @@ MyStackViewPage {
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
+        }
+
+        RowLayout {
+            Item {
+                Layout.fillWidth: true
+            }
+            MyPushButton {
+                Layout.preferredWidth: 200
+                text: "Save"
+                onClicked: {
+                    if (bindingTypeComboBox.currentIndex == 0) {
+                        AnalogInputRemappingController.finishConfigure_Original()
+                    } else if (bindingTypeComboBox.currentIndex == 1) {
+                        AnalogInputRemappingController.finishConfigure_Disabled()
+                    } else if (bindingTypeComboBox.currentIndex == 2) {
+                        var controllerId = -1
+                        if (openVRControllerComboBox.currentIndex > 0) {
+                            var controllerId = _controllerIds[openVRControllerComboBox.currentIndex - 1]
+                        }
+                        var mappedAxisId = openvrAxisComboBox.currentIndex
+                        var invertXAxis = openvrXAxisInvertToggle.checked
+                        var invertYAxis = openvrYAxisInvertToggle.checked
+                        var swapAxes = openvrAxisSwapToggle.checked
+                        var lowerDeadzone = deadzonesRangeSlider.first.value
+                        var upperDeadzone = deadzonesRangeSlider.second.value
+                        AnalogInputRemappingController.finishConfigure_OpenVR(controllerId, mappedAxisId, invertXAxis, invertYAxis, swapAxes, lowerDeadzone, upperDeadzone)
+                    }
+                    goBack()
+                }
+            }
         }
 
 

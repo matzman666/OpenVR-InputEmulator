@@ -631,13 +631,16 @@ void DeviceManipulationTabController::startConfigureDigitalInputRemapping(unsign
 	}
 }
 
-void DeviceManipulationTabController::finishConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId, bool touchAsClick, bool longPress, int longPressThreshold, bool doublePress, int doublePressThreshold) {
+void DeviceManipulationTabController::finishConfigureDigitalInputRemapping(unsigned deviceIndex, unsigned buttonId, bool touchAsClick,
+		bool longPress, int longPressThreshold, bool longPressImmediateRelease, bool doublePress, int doublePressThreshold, bool doublePressImmediateRelease) {
 	auto remapping = parent->digitalInputRemappingController.currentRemapping();
 	remapping.touchAsClick = touchAsClick;
 	remapping.longPressEnabled = longPress;
 	remapping.longPressThreshold = longPressThreshold;
+	remapping.longPressImmediateRelease = longPressImmediateRelease;
 	remapping.doublePressEnabled = doublePress;
 	remapping.doublePressThreshold = doublePressThreshold;
+	remapping.doublePressImmediateRelease = doublePressImmediateRelease;
 	parent->vrInputEmulator().setDigitalInputRemapping(deviceInfos[deviceIndex]->openvrId, buttonId, remapping);
 	emit configureDigitalInputRemappingFinished();
 }

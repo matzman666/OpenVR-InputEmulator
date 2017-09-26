@@ -3,6 +3,6 @@ import QtQuick.Controls 2.0
 
 
 Text {
-	color: "#ffffff"
+    color: enabled ? "#ffffff" : "#8b8c8c"
 	font.pointSize: 20
 }

@@ -429,7 +429,9 @@ MyStackViewPage {
         var oldIndex = deviceSelectionComboBox.currentIndex
         var deviceCount = DeviceManipulationTabController.getDeviceCount()
         for (var i = 0; i < deviceCount; i++) {
-            var deviceName = DeviceManipulationTabController.getDeviceSerial(i)
+            var deviceId = DeviceManipulationTabController.getDeviceId(i)
+            var deviceName = deviceId.toString() + ": "
+            deviceName += DeviceManipulationTabController.getDeviceSerial(i)
             var deviceClass = DeviceManipulationTabController.getDeviceClass(i)
             if (deviceClass == 1) {
                 deviceName += " (HMD)"

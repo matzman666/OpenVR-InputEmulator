@@ -135,17 +135,17 @@ void OpenvrDeviceManipulationInfo::handleButtonEvent(vr::IVRServerDriverHost* dr
 		if (buttonInfo.remapping.valid) {
 			if (buttonInfo.remapping.touchAsClick) {
 				switch (eventType) {
-				case vrinputemulator::ButtonEventType::ButtonPressed:
-				case vrinputemulator::ButtonEventType::ButtonUnpressed:
-					return;
-				case vrinputemulator::ButtonEventType::ButtonTouched: {
-					eventType = vrinputemulator::ButtonEventType::ButtonPressed;
-				} break;
-				case vrinputemulator::ButtonEventType::ButtonUntouched: {
-					eventType = vrinputemulator::ButtonEventType::ButtonUnpressed;
-				} break;
-				default: {
-				} break;
+					case vrinputemulator::ButtonEventType::ButtonPressed:
+					case vrinputemulator::ButtonEventType::ButtonUnpressed:
+						return;
+					case vrinputemulator::ButtonEventType::ButtonTouched: {
+						eventType = vrinputemulator::ButtonEventType::ButtonPressed;
+					} break;
+					case vrinputemulator::ButtonEventType::ButtonUntouched: {
+						eventType = vrinputemulator::ButtonEventType::ButtonUnpressed;
+					} break;
+					default: {
+					} break;
 				}
 			}
 			if (eventType == ButtonEventType::ButtonTouched || eventType == ButtonEventType::ButtonUntouched) {
@@ -190,6 +190,9 @@ void OpenvrDeviceManipulationInfo::handleButtonEvent(vr::IVRServerDriverHost* dr
 				case 3: {
 					if (eventType == ButtonEventType::ButtonPressed) {
 						sendDigitalBinding(buttonInfo.remapping.doublePressBinding, unWhichDevice, eventType, eButtonId, eventTimeOffset, &buttonInfo.bindings[2]);
+						if (buttonInfo.remapping.doublePressImmediateRelease) {
+							buttonInfo.timeout = std::chrono::system_clock::now() + std::chrono::milliseconds(100);
+						}
 						buttonInfo.state = 5;
 						LOG(INFO) << "buttonInfo.state = 3: sendDigitalBinding, => 5";
 					}
@@ -199,6 +202,12 @@ void OpenvrDeviceManipulationInfo::handleButtonEvent(vr::IVRServerDriverHost* dr
 						sendDigitalBinding(buttonInfo.remapping.doublePressBinding, unWhichDevice, eventType, eButtonId, eventTimeOffset, &buttonInfo.bindings[2]);
 						buttonInfo.state = 0;
 						LOG(INFO) << "buttonInfo.state = 5: sendDigitalBinding, => 0";
+					}
+				} break;
+				case 6: {
+					if (eventType == ButtonEventType::ButtonUnpressed) {
+						buttonInfo.state = 0;
+						LOG(INFO) << "buttonInfo.state = 6: => 0";
 					}
 				} break;
 				default: {
@@ -240,8 +249,21 @@ void OpenvrDeviceManipulationInfo::RunFrame() {
 				auto now = std::chrono::system_clock::now();
 				if (r.second.timeout <= now) {
 					sendDigitalBinding(r.second.remapping.longPressBinding, m_openvrId, ButtonEventType::ButtonPressed, (vr::EVRButtonId)r.first, 0.0, &r.second.bindings[1]);
+					if (r.second.remapping.longPressImmediateRelease) {
+						r.second.timeout = std::chrono::system_clock::now() + std::chrono::milliseconds(100);
+					}
 					r.second.state = 2;
 					LOG(INFO) << "buttonInfo.state = 1: sendDigitalBinding, => 2";
+				}
+			}
+		} break;
+		case 2: {
+			if (r.second.remapping.longPressImmediateRelease) {
+				auto now = std::chrono::system_clock::now();
+				if (r.second.timeout <= now) {
+					sendDigitalBinding(r.second.remapping.longPressBinding, m_openvrId, ButtonEventType::ButtonUnpressed, (vr::EVRButtonId)r.first, 0.0, &r.second.bindings[1]);
+					r.second.state = 6;
+					LOG(INFO) << "buttonInfo.state = 2: sendDigitalBinding, => 6";
 				}
 			}
 		} break;
@@ -260,6 +282,16 @@ void OpenvrDeviceManipulationInfo::RunFrame() {
 				sendDigitalBinding(r.second.remapping.binding, m_openvrId, ButtonEventType::ButtonUnpressed, (vr::EVRButtonId)r.first, 0.0, &r.second.bindings[0]);
 				r.second.state = 0;
 				LOG(INFO) << "buttonInfo.state = 4: sendDigitalBinding, => 0";
+			}
+		} break;
+		case 5: {
+			if (r.second.remapping.doublePressImmediateRelease) {
+				auto now = std::chrono::system_clock::now();
+				if (r.second.timeout <= now) {
+					sendDigitalBinding(r.second.remapping.doublePressBinding, m_openvrId, ButtonEventType::ButtonUnpressed, (vr::EVRButtonId)r.first, 0.0, &r.second.bindings[2]);
+					r.second.state = 6;
+					LOG(INFO) << "buttonInfo.state = 5: sendDigitalBinding, => 6";
+				}
 			}
 		} break;
 		default:
@@ -367,7 +399,7 @@ void OpenvrDeviceManipulationInfo::sendDigitalBinding(vrinputemulator::DigitalBi
 						bindingInfo->autoTriggerEnabled = binding.autoTriggerEnabled;
 						if (bindingInfo->autoTriggerEnabled) {
 							bindingInfo->autoTriggerState = true;
-							bindingInfo->autoTriggerTimeoutTime = (1000.0 / ((float)binding.autoTriggerFrequency / 100.0));
+							bindingInfo->autoTriggerTimeoutTime = (uint32_t)(1000.0 / ((float)binding.autoTriggerFrequency / 100.0));
 							auto now = std::chrono::system_clock::now();
 							bindingInfo->autoTriggerUnpressTimeout = now + std::chrono::milliseconds(10);
 							bindingInfo->autoTriggerTimeout = now + std::chrono::milliseconds(bindingInfo->autoTriggerTimeoutTime);
@@ -593,38 +625,40 @@ void OpenvrDeviceManipulationInfo::sendKeyboardEvent(ButtonEventType eventType, 
 			|| (eventType == ButtonEventType::ButtonUnpressed && (!binding || binding->pressedState)) ) {
 		INPUT ips[4];
 		memset(ips, 0, sizeof(ips));
-		WORD flags = 0;
+		/* DirectInput games ignore virtual key codes, so we have to send the scan code */
+		WORD flags = KEYEVENTF_SCANCODE;
 		if (eventType == ButtonEventType::ButtonUnpressed) {
-			flags = KEYEVENTF_KEYUP;
+			flags |= KEYEVENTF_KEYUP;
 		}
+		auto scanCode = MapVirtualKey(keyCode, MAPVK_VK_TO_VSC);
 		unsigned ipCount = 0;
-		if (eventType == ButtonEventType::ButtonUnpressed && keyCode) {
+		if (eventType == ButtonEventType::ButtonUnpressed && scanCode) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wVk = keyCode;
+			ips[ipCount].ki.wScan = scanCode;
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
 		if (shiftPressed) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wVk = VK_SHIFT;
+			ips[ipCount].ki.wScan = MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC);
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
 		if (ctrlPressed) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wVk = VK_CONTROL;
+			ips[ipCount].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
 		if (altPressed) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wVk = VK_MENU;
+			ips[ipCount].ki.wScan = MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC);
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
-		if (eventType == ButtonEventType::ButtonPressed && keyCode) {
+		if (eventType == ButtonEventType::ButtonPressed && scanCode) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wVk = keyCode;
+			ips[ipCount].ki.wScan = scanCode;
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}

@@ -17,13 +17,13 @@ RangeSlider {
         width: rangeSlider.availableWidth
         height: implicitHeight
         radius: 8
-        color: "#eeeeee"
+        color: "#2c435d"
 
         Rectangle {
             x: rangeSlider.first.visualPosition * parent.width
             width: rangeSlider.second.visualPosition * parent.width - x
             height: parent.height
-            color: "#2c435d"
+            color: "#cccccc"
             radius: 8
         }
     }
