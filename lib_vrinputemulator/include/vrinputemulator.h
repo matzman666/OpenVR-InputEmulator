@@ -88,7 +88,10 @@ namespace vr {
 namespace vrinputemulator {
 
 class vrinputemulator_exception : public std::runtime_error {
+public:
+	const int errorcode = 0;
 	using std::runtime_error::runtime_error;
+	vrinputemulator_exception(const std::string& msg, int code) : std::runtime_error(msg), errorcode(code) {}
 };
 
 class vrinputemulator_connectionerror : public vrinputemulator_exception {
@@ -186,6 +189,7 @@ public:
 	void setMotionVelAccCompensationMode(MotionCompensationVelAccMode velAccMode, bool modal = true);
 	void setMotionCompensationKalmanProcessNoise(double variance, bool modal = true);
 	void setMotionCompensationKalmanObservationNoise(double variance, bool modal = true);
+	void setMotionCompensationMovingAverageWindow(unsigned window, bool modal = true);
 
 	void triggerHapticPulse(uint32_t deviceId, uint32_t axisId, uint16_t durationMicroseconds, bool directMode, bool modal = true);
 

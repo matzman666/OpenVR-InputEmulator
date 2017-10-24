@@ -29,7 +29,7 @@ RowLayout {
     Connections {
         target: DeviceManipulationTabController
         onConfigureAnalogInputRemappingFinished: {
-            axisStatus = DeviceManipulationTabController.getAnalogAxisName(deviceIndex, axisId);
+            axisStatus = DeviceManipulationTabController.getAnalogAxisStatus(deviceIndex, axisId);
             configButton.text = axisStatus
         }
     }

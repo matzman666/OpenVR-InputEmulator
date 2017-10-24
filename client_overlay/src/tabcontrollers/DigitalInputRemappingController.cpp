@@ -56,7 +56,7 @@ void DigitalInputRemappingController::startConfigureDoublePressBinding() {
 }
 
 QString DigitalInputRemappingController::getNormalBindingStatus() {
-	return parent->digitalBindingToString(m_currentRemapping.binding, m_currentRemapping.binding.binding.openvr.controllerId != m_currentDeviceId);
+	return parent->digitalBindingToString(m_currentRemapping.binding, m_currentRemapping.binding.data.openvr.controllerId != m_currentDeviceId);
 }
 
 bool DigitalInputRemappingController::isLongPressEnabled() {
@@ -68,7 +68,7 @@ unsigned DigitalInputRemappingController::getLongPressThreshold() {
 }
 
 QString DigitalInputRemappingController::getLongPressBindingStatus() {
-	return parent->digitalBindingToString(m_currentRemapping.longPressBinding, m_currentRemapping.longPressBinding.binding.openvr.controllerId != m_currentDeviceId);
+	return parent->digitalBindingToString(m_currentRemapping.longPressBinding, m_currentRemapping.longPressBinding.data.openvr.controllerId != m_currentDeviceId);
 }
 
 bool DigitalInputRemappingController::isLongPressImmediateRelease() {
@@ -84,7 +84,7 @@ unsigned DigitalInputRemappingController::getDoublePressThreshold() {
 }
 
 QString DigitalInputRemappingController::getDoublePressBindingStatus() {
-	return parent->digitalBindingToString(m_currentRemapping.doublePressBinding, m_currentRemapping.doublePressBinding.binding.openvr.controllerId != m_currentDeviceId);
+	return parent->digitalBindingToString(m_currentRemapping.doublePressBinding, m_currentRemapping.doublePressBinding.data.openvr.controllerId != m_currentDeviceId);
 }
 
 bool DigitalInputRemappingController::isDoublePressImmediateRelease() {
@@ -101,7 +101,7 @@ int DigitalInputRemappingController::getBindingType() {
 
 int DigitalInputRemappingController::getBindingOpenVRControllerId() {
 	if (m_currentBinding) {
-		return m_currentBinding->binding.openvr.controllerId;
+		return m_currentBinding->data.openvr.controllerId;
 	} else {
 		return -1;
 	}
@@ -109,7 +109,7 @@ int DigitalInputRemappingController::getBindingOpenVRControllerId() {
 
 int DigitalInputRemappingController::getBindingOpenVRButtonId() {
 	if (m_currentBinding) {
-		return m_currentBinding->binding.openvr.buttonId;
+		return m_currentBinding->data.openvr.buttonId;
 	} else {
 		return -1;
 	}
@@ -157,7 +157,7 @@ int DigitalInputRemappingController::autoTriggerFrequency() {
 
 bool DigitalInputRemappingController::keyboardShiftEnabled() {
 	if (m_currentBinding) {
-		return m_currentBinding->binding.keyboard.shiftPressed;
+		return m_currentBinding->data.keyboard.shiftPressed;
 	} else {
 		return false;
 	}
@@ -165,7 +165,7 @@ bool DigitalInputRemappingController::keyboardShiftEnabled() {
 
 bool DigitalInputRemappingController::keyboardCtrlEnabled() {
 	if (m_currentBinding) {
-		return m_currentBinding->binding.keyboard.ctrlPressed;
+		return m_currentBinding->data.keyboard.ctrlPressed;
 	} else {
 		return false;
 	}
@@ -173,7 +173,7 @@ bool DigitalInputRemappingController::keyboardCtrlEnabled() {
 
 bool DigitalInputRemappingController::keyboardAltEnabled() {
 	if (m_currentBinding) {
-		return m_currentBinding->binding.keyboard.altPressed;
+		return m_currentBinding->data.keyboard.altPressed;
 	} else {
 		return false;
 	}
@@ -181,7 +181,7 @@ bool DigitalInputRemappingController::keyboardAltEnabled() {
 
 unsigned DigitalInputRemappingController::keyboardKeyIndex() {
 	if (m_currentBinding) {
-		return parent->keyboardVirtualCodeIndexFromId(m_currentBinding->binding.keyboard.keyCode);
+		return parent->keyboardVirtualCodeIndexFromId(m_currentBinding->data.keyboard.keyCode);
 	} else {
 		return false;
 	}
@@ -286,11 +286,11 @@ void DigitalInputRemappingController::finishConfigureBinding_Disabled() {
 void DigitalInputRemappingController::finishConfigureBinding_OpenVR(int controllerId, int ButtonId, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency) {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::OpenVR;
 	if (controllerId < 0) {
-		m_currentBinding->binding.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
+		m_currentBinding->data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
 	} else {
-		m_currentBinding->binding.openvr.controllerId = controllerId;
+		m_currentBinding->data.openvr.controllerId = controllerId;
 	}
-	m_currentBinding->binding.openvr.buttonId = ButtonId;
+	m_currentBinding->data.openvr.buttonId = ButtonId;
 	m_currentBinding->toggleEnabled = toggleMode;
 	m_currentBinding->toggleDelay = toggleThreshold;
 	m_currentBinding->autoTriggerEnabled = autoTrigger;
@@ -300,10 +300,10 @@ void DigitalInputRemappingController::finishConfigureBinding_OpenVR(int controll
 
 void DigitalInputRemappingController::finishConfigureBinding_keyboard(bool shiftPressed, bool ctrlPressed, bool altPressed, unsigned long keyIndex, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency) {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::Keyboard;
-	m_currentBinding->binding.keyboard.shiftPressed = shiftPressed;
-	m_currentBinding->binding.keyboard.ctrlPressed = ctrlPressed;
-	m_currentBinding->binding.keyboard.altPressed = altPressed;
-	m_currentBinding->binding.keyboard.keyCode = parent->keyboardVirtualCodeIdFromIndex(keyIndex);
+	m_currentBinding->data.keyboard.shiftPressed = shiftPressed;
+	m_currentBinding->data.keyboard.ctrlPressed = ctrlPressed;
+	m_currentBinding->data.keyboard.altPressed = altPressed;
+	m_currentBinding->data.keyboard.keyCode = parent->keyboardVirtualCodeIdFromIndex(keyIndex);
 	m_currentBinding->toggleEnabled = toggleMode;
 	m_currentBinding->toggleDelay = toggleThreshold;
 	m_currentBinding->autoTriggerEnabled = autoTrigger;

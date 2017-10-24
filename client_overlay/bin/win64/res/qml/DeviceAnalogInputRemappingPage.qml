@@ -21,7 +21,9 @@ MyStackViewPage {
         var _controllerNames = ["<No Change>"]
         _controllerIds = []
         for (var i = 0; i < DeviceManipulationTabController.getDeviceCount(); i++) {
-            _controllerNames.push(DeviceManipulationTabController.getDeviceSerial(i))
+            var deviceId = DeviceManipulationTabController.getDeviceId(i)
+            var deviceName = deviceId.toString() + ": " + DeviceManipulationTabController.getDeviceSerial(i)
+            _controllerNames.push(deviceName)
             _controllerIds.push(DeviceManipulationTabController.getDeviceId(i))
         }
         openVRControllerComboBox.model = _controllerNames

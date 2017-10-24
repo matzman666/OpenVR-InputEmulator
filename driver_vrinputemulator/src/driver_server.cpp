@@ -666,6 +666,7 @@ void CServerDriver::setMotionCompensationVelAccMode(MotionCompensationVelAccMode
 			d.second->setLastPoseTime(-1);
 			d.second->kalmanFilter().setProcessNoise(m_motionCompensationKalmanProcessVariance);
 			d.second->kalmanFilter().setObservationNoise(m_motionCompensationKalmanObservationVariance);
+			d.second->velMovingAverage().resize(m_motionCompensationMovingAverageWindow);
 		}
 		_motionCompensationVelAccMode = velAccMode;
 	}
@@ -685,6 +686,15 @@ void CServerDriver::setMotionCompensationKalmanObservationVariance(double varian
 	if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::KalmanFilter) {
 		for (auto d : _openvrDeviceInfos) {
 			d.second->kalmanFilter().setObservationNoise(variance);
+		}
+	}
+}
+
+void CServerDriver::setMotionCompensationMovingAverageWindow(unsigned window) {
+	m_motionCompensationMovingAverageWindow = window;
+	if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::LinearApproximation) {
+		for (auto d : _openvrDeviceInfos) {
+			d.second->velMovingAverage().resize(window);
 		}
 	}
 }
@@ -748,20 +758,20 @@ bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDevic
 		// Velocity / Acceleration Compensation
 		vr::HmdVector3d_t compensatedPoseWorldVel;
 		bool compensatedPoseWorldVelValid = false;
+		bool setVelToZero = false;
+		bool setAccToZero = false;
+		bool setAngVelToZero = false;
+		bool setAngAccToZero = false;
+
+		auto now = std::chrono::duration_cast <std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::SetZero) {
-			pose.vecVelocity[0] = 0.0;
-			pose.vecVelocity[1] = 0.0;
-			pose.vecVelocity[2] = 0.0;
-			pose.vecAcceleration[0] = 0.0;
-			pose.vecAcceleration[1] = 0.0;
-			pose.vecAcceleration[2] = 0.0;
-			pose.vecAngularVelocity[0] = 0.0;
-			pose.vecAngularVelocity[1] = 0.0;
-			pose.vecAngularVelocity[2] = 0.0;
-			pose.vecAngularAcceleration[0] = 0.0;
-			pose.vecAngularAcceleration[1] = 0.0;
-			pose.vecAngularAcceleration[2] = 0.0;
+			setVelToZero = true;
+			setAccToZero = true;
+			setAngVelToZero = true;
+			setAngAccToZero = true;
+
 		} else if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::SubstractMotionRef) {
+			// We translate the motion ref vel/acc values into driver space and directly substract them
 			if (_motionCompensationRefVelAccValid) {
 				auto tmpRot = pose.qWorldFromDriverRotation * pose.qRotation;
 				auto tmpRotInv = vrmath::quaternionConjugate(tmpRot);
@@ -782,19 +792,36 @@ bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDevic
 				pose.vecAngularAcceleration[1] -= tmpRotAcc.v[1];
 				pose.vecAngularAcceleration[2] -= tmpRotAcc.v[2];
 			}
+
 		} else if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::KalmanFilter) {
-			auto now = std::chrono::duration_cast <std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			// The Kalman filter uses app space coordinates
 			auto lastTime = deviceInfo->getLastPoseTime();
 			if (lastTime >= 0.0) {
 				double tdiff = ((double)(now - lastTime) / 1.0E6) + (pose.poseTimeOffset - deviceInfo->getLastPoseTimeOffset());
-				if (tdiff > 0.0001) {
+				if (tdiff < 0.0001) { // Sometimes we get a very small or even negative time difference between current and last pose
+									  // In this case we just take the velocities and accelerations from last time
+					auto& lastPose = deviceInfo->lastDriverPose();
+					pose.vecVelocity[0] = lastPose.vecVelocity[0];
+					pose.vecVelocity[1] = lastPose.vecVelocity[1];
+					pose.vecVelocity[2] = lastPose.vecVelocity[2];
+					pose.vecAcceleration[0] = lastPose.vecAcceleration[0];
+					pose.vecAcceleration[1] = lastPose.vecAcceleration[1];
+					pose.vecAcceleration[2] = lastPose.vecAcceleration[2];
+					pose.vecAngularVelocity[0] = lastPose.vecAngularVelocity[0];
+					pose.vecAngularVelocity[1] = lastPose.vecAngularVelocity[1];
+					pose.vecAngularVelocity[2] = lastPose.vecAngularVelocity[2];
+					pose.vecAngularAcceleration[0] = lastPose.vecAngularAcceleration[0];
+					pose.vecAngularAcceleration[1] = lastPose.vecAngularAcceleration[1];
+					pose.vecAngularAcceleration[2] = lastPose.vecAngularAcceleration[2];
+				} else {
 					deviceInfo->kalmanFilter().update(compensatedPoseWorldPos, tdiff);
-					compensatedPoseWorldPos = deviceInfo->kalmanFilter().getUpdatedPositionEstimate();
+					//compensatedPoseWorldPos = deviceInfo->kalmanFilter().getUpdatedPositionEstimate(); // Better to use the original values
 					compensatedPoseWorldVel = deviceInfo->kalmanFilter().getUpdatedVelocityEstimate();
 					compensatedPoseWorldVelValid = true;
-				} else {
-					// Ignore pose when timediff is very small or even negative
-					return false;
+					// Kalman filter only gives us velocity, so set the rest to zero
+					setAccToZero = true;
+					setAngVelToZero = true;
+					setAngAccToZero = true;
 				}
 			} else {
 				deviceInfo->kalmanFilter().init(
@@ -804,10 +831,66 @@ bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDevic
 				);
 				deviceInfo->kalmanFilter().setProcessNoise(m_motionCompensationKalmanProcessVariance);
 				deviceInfo->kalmanFilter().setObservationNoise(m_motionCompensationKalmanObservationVariance);
+				// Kalman Filter is not ready yet, so set everything to zero
+				setVelToZero = true;
+				setAccToZero = true;
+				setAngVelToZero = true;
+				setAngAccToZero = true;
 			}
-			deviceInfo->setLastPoseTime(now);
-			deviceInfo->setLastPoseTimeOffset(pose.poseTimeOffset);
+
+		} else if (_motionCompensationVelAccMode == MotionCompensationVelAccMode::LinearApproximation) {
+			// Linear approximation uses driver space coordinates
+			if (deviceInfo->lastDriverPoseValid()) {
+				auto& lastPose = deviceInfo->lastDriverPose();
+				double tdiff = ((double)(now - deviceInfo->getLastPoseTime()) / 1.0E6) + (pose.poseTimeOffset - lastPose.poseTimeOffset);
+				if (tdiff < 0.0001) { // Sometimes we get a very small or even negative time difference between current and last pose
+									  // In this case we just take the velocities and accelerations from last time
+					pose.vecVelocity[0] = lastPose.vecVelocity[0];
+					pose.vecVelocity[1] = lastPose.vecVelocity[1];
+					pose.vecVelocity[2] = lastPose.vecVelocity[2];
+					pose.vecAcceleration[0] = lastPose.vecAcceleration[0];
+					pose.vecAcceleration[1] = lastPose.vecAcceleration[1];
+					pose.vecAcceleration[2] = lastPose.vecAcceleration[2];
+					pose.vecAngularVelocity[0] = lastPose.vecAngularVelocity[0];
+					pose.vecAngularVelocity[1] = lastPose.vecAngularVelocity[1];
+					pose.vecAngularVelocity[2] = lastPose.vecAngularVelocity[2];
+					pose.vecAngularAcceleration[0] = lastPose.vecAngularAcceleration[0];
+					pose.vecAngularAcceleration[1] = lastPose.vecAngularAcceleration[1];
+					pose.vecAngularAcceleration[2] = lastPose.vecAngularAcceleration[2];
+				} else {
+					vr::HmdVector3d_t p;
+					p.v[0] = (pose.vecPosition[0] - lastPose.vecPosition[0]) / tdiff;
+					if (p.v[0] > -0.01 && p.v[0] < 0.01) { // Set very small values to zero to avoid jitter
+						p.v[0] = 0.0;
+					}
+					p.v[1] = (pose.vecPosition[1] - lastPose.vecPosition[1]) / tdiff;
+					if (p.v[1] > -0.01 && p.v[1] < 0.01) {
+						p.v[1] = 0.0;
+					}
+					p.v[2] = (pose.vecPosition[2] - lastPose.vecPosition[2]) / tdiff;
+					if (p.v[2] > -0.01 && p.v[2] < 0.01) {
+						p.v[2] = 0.0;
+					}
+					deviceInfo->velMovingAverage().push(p);
+					auto vel = deviceInfo->velMovingAverage().average();
+					pose.vecVelocity[0] = vel.v[0];
+					pose.vecVelocity[1] = vel.v[1];
+					pose.vecVelocity[2] = vel.v[2];
+					// Predicting acceleration values leads to a very jittery experience.
+					// Also, the lighthouse driver does not send acceleration values any way, so why care?
+					setAccToZero = true;
+					setAngVelToZero = true;
+					setAngAccToZero = true;
+				}
+			} else {
+				// Linear approximation is not ready yet, so set everything to zero
+				setVelToZero = true;
+				setAccToZero = true;
+				setAngVelToZero = true;
+				setAngAccToZero = true;
+			}
 		}
+		deviceInfo->setLastDriverPose(pose, now);
 
 		// convert back to driver space
 		pose.qRotation = pose.qWorldFromDriverRotation * compensatedPoseWorldRot;
@@ -820,6 +903,25 @@ bool CServerDriver::_applyMotionCompensation(vr::DriverPose_t& pose, OpenvrDevic
 			pose.vecVelocity[0] = adjPoseDriverVel.v[0];
 			pose.vecVelocity[1] = adjPoseDriverVel.v[1];
 			pose.vecVelocity[2] = adjPoseDriverVel.v[2];
+		} else if (setVelToZero) {
+			pose.vecVelocity[0] = 0.0;
+			pose.vecVelocity[1] = 0.0;
+			pose.vecVelocity[2] = 0.0;
+		}
+		if (setAccToZero) {
+			pose.vecAcceleration[0] = 0.0;
+			pose.vecAcceleration[1] = 0.0;
+			pose.vecAcceleration[2] = 0.0;
+		}
+		if (setAngVelToZero) {
+			pose.vecAngularVelocity[0] = 0.0;
+			pose.vecAngularVelocity[1] = 0.0;
+			pose.vecAngularVelocity[2] = 0.0;
+		}
+		if (setAngAccToZero) {
+			pose.vecAngularAcceleration[0] = 0.0;
+			pose.vecAngularAcceleration[1] = 0.0;
+			pose.vecAngularAcceleration[2] = 0.0;
 		}
 
 		return true;

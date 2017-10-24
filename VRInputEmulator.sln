@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib_vrinputemulator", "lib_vrinputemulator\lib_vrinputemulator.vcxproj", "{05AC9994-2B63-4DE5-ABF3-95CE346F3A64}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "driver_vrinputemulator", "driver_vrinputemulator\driver_vrinputemulator.vcxproj", "{AF6FBE95-527D-499B-9ABD-3A47E9E84C8A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{05AC9994-2B63-4DE5-ABF3-95CE346F3A64} = {05AC9994-2B63-4DE5-ABF3-95CE346F3A64}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "client_leapmotion", "client_leapmotion\client_leapmotion.vcxproj", "{329C6147-E62D-456F-8860-A2DD91B113B5}"
 EndProject

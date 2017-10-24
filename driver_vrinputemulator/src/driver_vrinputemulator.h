@@ -12,6 +12,7 @@
 #include <vrinputemulator_types.h>
 #include "utils/DevicePropertyValueVisitor.h"
 #include "com/shm/driver_ipc_shm.h"
+#include <openvr_math.h>
 
 
 // driver namespace
@@ -102,71 +103,61 @@ struct DeviceInputMapping {
 };
 
 
-
-template<typename T>
-class RingBuffer {
+class MovingAverageRingBuffer {
 public:
-	RingBuffer() noexcept : _buffer(nullptr), _bufferSize(0) {}
-	RingBuffer(unsigned size) noexcept : _buffer(new T[size]), _bufferSize(size) {}
-	~RingBuffer() noexcept {
+	MovingAverageRingBuffer() noexcept : _buffer(new vr::HmdVector3d_t[1]), _bufferSize(1) {}
+	MovingAverageRingBuffer(unsigned size) noexcept : _buffer(new vr::HmdVector3d_t[size > 0 ? size : 1]), _bufferSize(size > 0 ? size : 1) {}
+	~MovingAverageRingBuffer() noexcept {
 		std::lock_guard<std::mutex> lock(_mutex);
 		if (_buffer) {
 			delete[] _buffer;
 			_buffer = nullptr;
-			_bufferSize = 0;
-			_dataStart = 0;
-			_dataSize = 0;
+			_bufferSize = _dataStart = _dataSize = 0;
 		}
 	}
 
 	void resize(unsigned size) noexcept {
 		std::lock_guard<std::mutex> lock(_mutex);
+		if (size == 0) {
+			size = 1;
+		}
 		if (_buffer) {
 			delete[] _buffer;
 		}
-		_buffer = new T[size];
+		_buffer = new vr::HmdVector3d_t[size];
 		_bufferSize = size;
-		_dataStart = 0;
-		_dataSize = 0;
+		_dataSize = _dataStart = 0;
 	}
 
 	unsigned bufferSize() noexcept { return _bufferSize; }
 	
 	unsigned dataSize() noexcept { return _dataSize; }
 
-	const T& operator[](unsigned index) noexcept {
-		if (index < _dataSize) {
-			return _buffer[(_dataStart + _index) % _bufferSize];
-		} else {
-			return T();
-		}
-	}
-
-	void push(const T& value) {
+	void push(const vr::HmdVector3d_t& value) {
 		if (_dataSize < _bufferSize) {
 			_buffer[(_dataStart + _dataSize) % _bufferSize] = value;
 			_dataSize++;
 		} else {
 			_buffer[_dataStart] = value;
-			dataStart++;
+			_dataStart = (_dataStart+1)%_bufferSize;
 		}
 	}
 
-	const T& average() {
+	vr::HmdVector3d_t average() {
 		if (_dataSize > 0) {
-			T sum = T();
+			vr::HmdVector3d_t sum = {0.0, 0.0, 0.0};
 			for (unsigned i = 0; i < _dataSize; i++) {
-				sum += _buffer[(_dataStart + i) % _bufferSize];
+				sum = sum + _buffer[(_dataStart + i) % _bufferSize];
 			}
 			return sum / _dataSize;
 		} else {
-			return T();
+			return vr::HmdVector3d_t();
 		}
 	}
 
 private:
 	std::mutex _mutex;
-	T* _buffer;
+	vr::HmdVector3d_t* _buffer;
 	unsigned _bufferSize;
 	unsigned _dataStart = 0;
 	unsigned _dataSize = 0;
@@ -232,7 +223,7 @@ private:
 	long long m_lastPoseTime = -1;
 	bool m_lastPoseValid = false;
 	vr::DriverPose_t m_lastPose;
-	RingBuffer<vr::HmdVector3d_t> m_velMovingAverageBuffer;
+	MovingAverageRingBuffer m_velMovingAverageBuffer;
 	double m_lastPoseTimeOffset = 0.0;
 	PosKalmanFilter m_kalmanFilter;
 
@@ -303,6 +294,7 @@ public:
 	bool triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds, bool directMode = false);
 
 	PosKalmanFilter& kalmanFilter() { return m_kalmanFilter; }
+	MovingAverageRingBuffer& velMovingAverage() { return m_velMovingAverageBuffer; }
 	long long getLastPoseTime() { return m_lastPoseTime; }
 	void setLastPoseTime(long long time) { m_lastPoseTime = time; }
 	double getLastPoseTimeOffset() { return m_lastPoseTimeOffset; }
@@ -409,6 +401,8 @@ public:
 
 	/* Motion Compensation API */
 	void enableMotionCompensation(bool enable);
+	MotionCompensationStatus motionCompensationStatus() { return _motionCompensationStatus; }
+	void _setMotionCompensationStatus(MotionCompensationStatus status) { _motionCompensationStatus = status;  }
 	void setMotionCompensationRefDevice(OpenvrDeviceManipulationInfo* device);
 	OpenvrDeviceManipulationInfo* getMotionCompensationRefDevice();
 	void setMotionCompensationVelAccMode(MotionCompensationVelAccMode velAccMode);
@@ -416,6 +410,8 @@ public:
 	void setMotionCompensationKalmanProcessVariance(double variance);
 	double motionCompensationKalmanObservationVariance() { return m_motionCompensationKalmanObservationVariance; }
 	void setMotionCompensationKalmanObservationVariance(double variance);
+	double motionCompensationMovingAverageWindow() { return m_motionCompensationMovingAverageWindow; }
+	void setMotionCompensationMovingAverageWindow(unsigned window);
 	void _disableMotionCompensationOnAllDevices();
 	bool _isMotionCompensationZeroPoseValid();
 	void _setMotionCompensationZeroPose(const vr::DriverPose_t& pose);
@@ -451,6 +447,7 @@ private:
 	MotionCompensationVelAccMode _motionCompensationVelAccMode = MotionCompensationVelAccMode::Disabled;
 	double m_motionCompensationKalmanProcessVariance = 0.1;
 	double m_motionCompensationKalmanObservationVariance = 0.1;
+	unsigned m_motionCompensationMovingAverageWindow = 3;
 
 	bool _motionCompensationZeroPoseValid = false;
 	vr::HmdVector3d_t _motionCompensationZeroPos;

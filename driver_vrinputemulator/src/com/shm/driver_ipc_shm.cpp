@@ -472,6 +472,12 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 										resp.msg.dm_deviceInfo.deviceId = message.msg.vd_GenericDeviceIdMessage.deviceId;
 										resp.msg.dm_deviceInfo.deviceMode = info->deviceMode();
 										resp.msg.dm_deviceInfo.deviceClass = info->deviceClass();
+										auto ref = info->redirectRef();
+										if (ref) {
+											resp.msg.dm_deviceInfo.refDeviceId = ref->openvrId();
+										} else {
+											resp.msg.dm_deviceInfo.refDeviceId = (uint32_t)vr::k_unTrackedDeviceIndexInvalid;
+										}
 										resp.msg.dm_deviceInfo.offsetsEnabled = info->areOffsetsEnabled();
 										resp.msg.dm_deviceInfo.redirectSuspended = info->redirectSuspended();
 									}
@@ -713,8 +719,13 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
 										OpenvrDeviceManipulationInfo* infoTarget = driver->deviceManipulation_getInfo(message.msg.dm_RedirectMode.targetId);
-										if (info && (info->deviceMode() == 0 || info->deviceMode() == 1) 
-												&& infoTarget && (infoTarget->deviceMode() == 0 || infoTarget->deviceMode() == 1)) {
+										if (info && infoTarget) {
+											if (info->deviceMode() > 0) {
+												info->setDefaultMode();
+											}
+											if (infoTarget->deviceMode() > 0) {
+												infoTarget->setDefaultMode();
+											}
 											info->setRedirectMode(false, infoTarget);
 											infoTarget->setRedirectMode(true, info);
 											resp.status = ipc::ReplyStatus::Ok;
@@ -744,8 +755,13 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
 										OpenvrDeviceManipulationInfo* infoTarget = driver->deviceManipulation_getInfo(message.msg.dm_SwapMode.targetId);
-										if (info && (info->deviceMode() == 0 || info->deviceMode() == 1)
-											&& infoTarget && (infoTarget->deviceMode() == 0 || infoTarget->deviceMode() == 1)) {
+										if (info && infoTarget) {
+											if (info->deviceMode() > 0) {
+												info->setDefaultMode();
+											}
+											if (infoTarget->deviceMode() > 0) {
+												infoTarget->setDefaultMode();
+											}
 											info->setSwapMode(infoTarget);
 											infoTarget->setSwapMode(info);
 											resp.status = ipc::ReplyStatus::Ok;
@@ -857,6 +873,9 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 									}
 									if (message.msg.dm_SetMotionCompensationProperties.kalmanFilterObservationNoiseValid) {
 										serverDriver->setMotionCompensationKalmanObservationVariance(message.msg.dm_SetMotionCompensationProperties.kalmanFilterObservationNoise);
+									}
+									if (message.msg.dm_SetMotionCompensationProperties.movingAverageWindowValid) {
+										serverDriver->setMotionCompensationMovingAverageWindow(message.msg.dm_SetMotionCompensationProperties.movingAverageWindow);
 									}
 									resp.status = ipc::ReplyStatus::Ok;
 								} else {

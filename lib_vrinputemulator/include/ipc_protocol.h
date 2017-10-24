@@ -4,7 +4,7 @@
 #include <utility>
 
 
-#define IPC_PROTOCOL_VERSION 1
+#define IPC_PROTOCOL_VERSION 2
 
 namespace vrinputemulator {
 namespace ipc {
@@ -294,6 +294,8 @@ struct Request_DeviceManipulation_SetMotionCompensationProperties {
 	double kalmanFilterProcessNoise;
 	bool kalmanFilterObservationNoiseValid;
 	double kalmanFilterObservationNoise;
+	bool movingAverageWindowValid;
+	unsigned movingAverageWindow;
 };
 
 struct Request_InputRemapping_SetDigitalRemapping {
@@ -411,6 +413,7 @@ struct Reply_DeviceManipulation_GetDeviceInfo {
 	uint32_t deviceId;
 	vr::ETrackedDeviceClass deviceClass;
 	int deviceMode;
+	uint32_t refDeviceId;
 	bool offsetsEnabled;
 	bool redirectSuspended;
 };

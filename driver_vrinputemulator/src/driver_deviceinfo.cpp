@@ -17,8 +17,14 @@ namespace driver {
 
 
 void OpenvrDeviceManipulationInfo::setDigitalInputRemapping(uint32_t buttonId, const DigitalInputRemapping& remapping) {
-	auto& entry = m_digitalInputRemapping[buttonId];
-	entry.remapping = remapping;
+	if (remapping.valid) {
+		m_digitalInputRemapping[buttonId].remapping = remapping;
+	} else {
+		auto it = m_digitalInputRemapping.find(buttonId);
+		if (it != m_digitalInputRemapping.end()) {
+			m_digitalInputRemapping.erase(it);
+		}
+	}
 }
 
 
@@ -33,8 +39,14 @@ DigitalInputRemapping OpenvrDeviceManipulationInfo::getDigitalInputRemapping(uin
 
 
 void OpenvrDeviceManipulationInfo::setAnalogInputRemapping(uint32_t axisId, const AnalogInputRemapping& remapping) {
-	auto& entry = m_analogInputRemapping[axisId];
-	entry.remapping = remapping;
+	if (remapping.valid) {
+		m_analogInputRemapping[axisId].remapping = remapping;
+	} else {
+		auto it = m_analogInputRemapping.find(axisId);
+		if (it != m_analogInputRemapping.end()) {
+			m_analogInputRemapping.erase(it);
+		}
+	}
 }
 
 
@@ -65,6 +77,7 @@ void OpenvrDeviceManipulationInfo::handleNewDevicePose(vr::IVRServerDriverHost* 
 		auto serverDriver = CServerDriver::getInstance();
 		if (serverDriver) {
 			if (pose.poseIsValid && pose.result == vr::TrackingResult_Running_OK) {
+				serverDriver->_setMotionCompensationStatus(MotionCompensationStatus::Running);
 				if (!serverDriver->_isMotionCompensationZeroPoseValid()) {
 					serverDriver->_setMotionCompensationZeroPose(pose);
 					serverDriver->sendReplySetMotionCompensationMode(true);
@@ -73,7 +86,10 @@ void OpenvrDeviceManipulationInfo::handleNewDevicePose(vr::IVRServerDriverHost* 
 				}
 			} else {
 				if (!serverDriver->_isMotionCompensationZeroPoseValid()) {
+					setDefaultMode();
 					serverDriver->sendReplySetMotionCompensationMode(false);
+				} else {
+					serverDriver->_setMotionCompensationStatus(MotionCompensationStatus::MotionRefNotTracking);
 				}
 			}
 		}
@@ -446,8 +462,8 @@ void OpenvrDeviceManipulationInfo::sendDigitalBinding(vrinputemulator::DigitalBi
 					if (m_deviceMode == 1 || (m_deviceMode == 3 && !m_redirectSuspended) /*|| m_deviceMode == 5*/) {
 						//nop
 					} else {
-						vr::EVRButtonId button = (vr::EVRButtonId)binding.binding.openvr.buttonId;
-						uint32_t deviceId = binding.binding.openvr.controllerId;
+						vr::EVRButtonId button = (vr::EVRButtonId)binding.data.openvr.buttonId;
+						uint32_t deviceId = binding.data.openvr.controllerId;
 						if (deviceId >= 999) {
 							deviceId = m_openvrId;
 						}
@@ -458,8 +474,8 @@ void OpenvrDeviceManipulationInfo::sendDigitalBinding(vrinputemulator::DigitalBi
 					if (m_deviceMode == 1 || (m_deviceMode == 3 && !m_redirectSuspended) /*|| m_deviceMode == 5*/) {
 						//nop
 					} else {
-						sendKeyboardEvent(eventType, binding.binding.keyboard.shiftPressed, binding.binding.keyboard.ctrlPressed, 
-							binding.binding.keyboard.altPressed, (WORD)binding.binding.keyboard.keyCode, bindingInfo);
+						sendKeyboardEvent(eventType, binding.data.keyboard.shiftPressed, binding.data.keyboard.ctrlPressed, 
+							binding.data.keyboard.altPressed, (WORD)binding.data.keyboard.keyCode, bindingInfo);
 					}
 				} break;
 				case DigitalBindingType::SuspendRedirectMode: {
@@ -758,6 +774,7 @@ int OpenvrDeviceManipulationInfo::setMotionCompensationMode() {
 	if (res == 0 && serverDriver) {
 		serverDriver->enableMotionCompensation(true);
 		serverDriver->setMotionCompensationRefDevice(this);
+		serverDriver->_setMotionCompensationStatus(MotionCompensationStatus::WaitingForZeroRef);
 		m_deviceMode = 5;
 	}
 	return 0;

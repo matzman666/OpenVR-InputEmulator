@@ -1288,6 +1288,7 @@ void VRInputEmulator::getDeviceInfo(uint32_t deviceId, DeviceInfo & info) {
 			info.deviceId = resp.msg.dm_deviceInfo.deviceId;
 			info.deviceClass = resp.msg.dm_deviceInfo.deviceClass;
 			info.deviceMode = resp.msg.dm_deviceInfo.deviceMode;
+			info.refDeviceId = resp.msg.dm_deviceInfo.refDeviceId;
 			info.offsetsEnabled = resp.msg.dm_deviceInfo.offsetsEnabled;
 			info.redirectSuspended = resp.msg.dm_deviceInfo.redirectSuspended;
 		} else if (resp.status == ipc::ReplyStatus::InvalidId) {
@@ -1459,13 +1460,13 @@ void VRInputEmulator::setDeviceSwapMode(uint32_t deviceId, uint32_t target, bool
 			ss << "Error while setting swap mode: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
-				throw vrinputemulator_invalidid(ss.str());
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
 			} else if (resp.status == ipc::ReplyStatus::NotFound) {
 				ss << "Device not found";
-				throw vrinputemulator_notfound(ss.str());
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
 			} else if (resp.status != ipc::ReplyStatus::Ok) {
 				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
 			}
 		} else {
 			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
@@ -1477,6 +1478,7 @@ void VRInputEmulator::setDeviceSwapMode(uint32_t deviceId, uint32_t target, bool
 
 
 void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, MotionCompensationVelAccMode velAccMode, bool modal) {
+	bool retval = false;
 	if (_ipcServerQueue) {
 		ipc::Request message(ipc::RequestType::DeviceManipulation_MotionCompensationMode);
 		memset(&message.msg, 0, sizeof(message.msg));
@@ -1503,13 +1505,13 @@ void VRInputEmulator::setDeviceMotionCompensationMode(uint32_t deviceId, MotionC
 			ss << "Error while setting motion compensation mode: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
-				throw vrinputemulator_invalidid(ss.str());
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
 			} else if (resp.status == ipc::ReplyStatus::NotFound) {
 				ss << "Device not found";
-				throw vrinputemulator_notfound(ss.str());
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
 			} else if (resp.status != ipc::ReplyStatus::Ok) {
 				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
 			}
 		} else {
 			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
@@ -1549,13 +1551,13 @@ void VRInputEmulator::setMotionVelAccCompensationMode(MotionCompensationVelAccMo
 			ss << "Error while setting motion compensation properties: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
-				throw vrinputemulator_invalidid(ss.str());
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
 			} else if (resp.status == ipc::ReplyStatus::NotFound) {
 				ss << "Device not found";
-				throw vrinputemulator_notfound(ss.str());
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
 			} else if (resp.status != ipc::ReplyStatus::Ok) {
 				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
 			}
 		} else {
 			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
@@ -1594,13 +1596,13 @@ void VRInputEmulator::setMotionCompensationKalmanProcessNoise(double variance, b
 			ss << "Error while setting motion compensation properties: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
-				throw vrinputemulator_invalidid(ss.str());
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
 			} else if (resp.status == ipc::ReplyStatus::NotFound) {
 				ss << "Device not found";
-				throw vrinputemulator_notfound(ss.str());
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
 			} else if (resp.status != ipc::ReplyStatus::Ok) {
 				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
 			}
 		} else {
 			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
@@ -1639,13 +1641,59 @@ void VRInputEmulator::setMotionCompensationKalmanObservationNoise(double varianc
 			ss << "Error while setting motion compensation properties: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
-				throw vrinputemulator_invalidid(ss.str());
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
 			} else if (resp.status == ipc::ReplyStatus::NotFound) {
 				ss << "Device not found";
-				throw vrinputemulator_notfound(ss.str());
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
 			} else if (resp.status != ipc::ReplyStatus::Ok) {
 				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
+			}
+		} else {
+			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+		}
+	} else {
+		throw vrinputemulator_connectionerror("No active connection.");
+	}
+}
+
+void VRInputEmulator::setMotionCompensationMovingAverageWindow(unsigned window, bool modal) {
+	if (_ipcServerQueue) {
+		ipc::Request message(ipc::RequestType::DeviceManipulation_SetMotionCompensationProperties);
+		memset(&message.msg, 0, sizeof(message.msg));
+		message.msg.dm_SetMotionCompensationProperties.clientId = m_clientId;
+		message.msg.dm_SetMotionCompensationProperties.messageId = 0;
+		message.msg.dm_SetMotionCompensationProperties.velAccCompensationModeValid = false;
+		message.msg.dm_SetMotionCompensationProperties.kalmanFilterProcessNoiseValid = false;
+		message.msg.dm_SetMotionCompensationProperties.kalmanFilterObservationNoiseValid = false;
+		message.msg.dm_SetMotionCompensationProperties.movingAverageWindowValid = true;
+		message.msg.dm_SetMotionCompensationProperties.movingAverageWindow = window;
+		if (modal) {
+			uint32_t messageId = _ipcRandomDist(_ipcRandomDevice);
+			message.msg.dm_SetMotionCompensationProperties.messageId = messageId;
+			std::promise<ipc::Reply> respPromise;
+			auto respFuture = respPromise.get_future();
+			{
+				std::lock_guard<std::recursive_mutex> lock(_mutex);
+				_ipcPromiseMap.insert({ messageId, std::move(respPromise) });
+			}
+			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
+			auto resp = respFuture.get();
+			{
+				std::lock_guard<std::recursive_mutex> lock(_mutex);
+				_ipcPromiseMap.erase(messageId);
+			}
+			std::stringstream ss;
+			ss << "Error while setting motion compensation properties: ";
+			if (resp.status == ipc::ReplyStatus::InvalidId) {
+				ss << "Invalid device id";
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
+			} else if (resp.status == ipc::ReplyStatus::NotFound) {
+				ss << "Device not found";
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
+			} else if (resp.status != ipc::ReplyStatus::Ok) {
+				ss << "Error code " << (int)resp.status;
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
 			}
 		} else {
 			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
@@ -1685,13 +1733,13 @@ void VRInputEmulator::triggerHapticPulse(uint32_t deviceId, uint32_t axisId, uin
 			ss << "Error while enabling device offsets: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
-				throw vrinputemulator_invalidid(ss.str());
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
 			} else if (resp.status == ipc::ReplyStatus::NotFound) {
 				ss << "Device not found";
-				throw vrinputemulator_notfound(ss.str());
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
 			} else if (resp.status != ipc::ReplyStatus::Ok) {
 				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
 			}
 		} else {
 			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
@@ -1729,13 +1777,13 @@ void VRInputEmulator::setDigitalInputRemapping(uint32_t deviceId, uint32_t butto
 			ss << "Error while setting digital input remapping: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
-				throw vrinputemulator_invalidid(ss.str());
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
 			} else if (resp.status == ipc::ReplyStatus::NotFound) {
 				ss << "Device not found";
-				throw vrinputemulator_notfound(ss.str());
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
 			} else if (resp.status != ipc::ReplyStatus::Ok) {
 				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
 			}
 		} else {
 			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
@@ -1768,7 +1816,7 @@ DigitalInputRemapping VRInputEmulator::getDigitalInputRemapping(uint32_t deviceI
 		if (resp.status != ipc::ReplyStatus::Ok) {
 			std::stringstream ss;
 			ss << "Error while getting digital input remapping: Error code " << (int)resp.status;
-			throw vrinputemulator_exception(ss.str());
+			throw vrinputemulator_exception(ss.str(), (int)resp.status);
 		}
 		return resp.msg.ir_getDigitalRemapping.remapData;
 	} else {
@@ -1804,13 +1852,13 @@ void VRInputEmulator::setAnalogInputRemapping(uint32_t deviceId, uint32_t axisId
 			ss << "Error while setting analog input remapping: ";
 			if (resp.status == ipc::ReplyStatus::InvalidId) {
 				ss << "Invalid device id";
-				throw vrinputemulator_invalidid(ss.str());
+				throw vrinputemulator_invalidid(ss.str(), (int)resp.status);
 			} else if (resp.status == ipc::ReplyStatus::NotFound) {
 				ss << "Device not found";
-				throw vrinputemulator_notfound(ss.str());
+				throw vrinputemulator_notfound(ss.str(), (int)resp.status);
 			} else if (resp.status != ipc::ReplyStatus::Ok) {
 				ss << "Error code " << (int)resp.status;
-				throw vrinputemulator_exception(ss.str());
+				throw vrinputemulator_exception(ss.str(), (int)resp.status);
 			}
 		} else {
 			_ipcServerQueue->send(&message, sizeof(ipc::Request), 0);
@@ -1843,7 +1891,7 @@ AnalogInputRemapping VRInputEmulator::getAnalogInputRemapping(uint32_t deviceId,
 		if (resp.status != ipc::ReplyStatus::Ok) {
 			std::stringstream ss;
 			ss << "Error while getting analog input remapping: Error code " << (int)resp.status;
-			throw vrinputemulator_exception(ss.str());
+			throw vrinputemulator_exception(ss.str(), (int)resp.status);
 		}
 		return resp.msg.ir_getAnalogRemapping.remapData;
 	} else {

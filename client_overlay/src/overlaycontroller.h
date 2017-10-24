@@ -40,7 +40,7 @@ class OverlayController : public QObject {
 public:
 	static constexpr const char* applicationKey = "matzman666.VRInputEmulator";
 	static constexpr const char* applicationName = "VR Input Emulator";
-	static constexpr const char* applicationVersionString = "v1.0.3";
+	static constexpr const char* applicationVersionString = "v1.1";
 
 private:
 	vr::VROverlayHandle_t m_ulOverlayHandle = vr::k_ulOverlayHandleInvalid;
@@ -112,7 +112,9 @@ public:
 
 
 	QString digitalBindingToString(const vrinputemulator::DigitalBinding& binding, bool printOptController);
+	QString analogBindingToString(const vrinputemulator::AnalogBinding& binding, bool printOptController);
 	QString openvrButtonToString(unsigned deviceId, unsigned buttonId);
+	QString openvrAxisToString(unsigned deviceId, unsigned axisId);
 
 	Q_INVOKABLE unsigned keyboardVirtualCodeCount();
 	Q_INVOKABLE QString keyboardVirtualCodeNameFromIndex(unsigned index);

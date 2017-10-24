@@ -629,9 +629,9 @@ QString OverlayController::digitalBindingToString(const vrinputemulator::Digital
 		status = "Disabled";
 		break;
 	case vrinputemulator::DigitalBindingType::OpenVR:
-		status = openvrButtonToString(binding.binding.openvr.controllerId, binding.binding.openvr.buttonId);
-		if (printOptController && binding.binding.openvr.controllerId != vr::k_unTrackedDeviceIndexInvalid) {
-			status.append(" [R:").append(QString::number(binding.binding.openvr.controllerId)).append("]");
+		status = openvrButtonToString(binding.data.openvr.controllerId, binding.data.openvr.buttonId);
+		if (printOptController && binding.data.openvr.controllerId != vr::k_unTrackedDeviceIndexInvalid) {
+			status.append(" [R:").append(QString::number(binding.data.openvr.controllerId)).append("]");
 		}
 		if (binding.toggleEnabled) {
 			status.append(" [T]");
@@ -641,17 +641,17 @@ QString OverlayController::digitalBindingToString(const vrinputemulator::Digital
 		}
 		break;
 	case vrinputemulator::DigitalBindingType::Keyboard:
-		if (binding.binding.keyboard.shiftPressed) {
+		if (binding.data.keyboard.shiftPressed) {
 			status.append("SHIFT + ");
 		}
-		if (binding.binding.keyboard.altPressed) {
+		if (binding.data.keyboard.altPressed) {
 			status.append("ALT + ");
 		}
-		if (binding.binding.keyboard.ctrlPressed) {
+		if (binding.data.keyboard.ctrlPressed) {
 			status.append("CTRL + ");
 		}
 		for (auto& k : _keyboardVirtualCodes) {
-			if (k.second == binding.binding.keyboard.keyCode) {
+			if (k.second == binding.data.keyboard.keyCode) {
 				status.append(QString::fromStdString(k.first));
 				break;
 			}
@@ -665,6 +665,35 @@ QString OverlayController::digitalBindingToString(const vrinputemulator::Digital
 		break;
 	case vrinputemulator::DigitalBindingType::SuspendRedirectMode:
 		status = "Suspend Redirect Mode";
+		break;
+	default:
+		status = "<Unknown>";
+		break;
+	}
+	return status;
+}
+
+
+QString OverlayController::analogBindingToString(const vrinputemulator::AnalogBinding& binding, bool printOptController) {
+	QString status;
+	switch (binding.type) {
+	case vrinputemulator::AnalogBindingType::NoRemapping:
+		status = "No Remapping";
+		break;
+	case vrinputemulator::AnalogBindingType::Disabled:
+		status = "Disabled";
+		break;
+	case vrinputemulator::AnalogBindingType::OpenVR:
+		status = openvrAxisToString(binding.data.openvr.controllerId, binding.data.openvr.axisId);
+		if (printOptController && binding.data.openvr.controllerId != vr::k_unTrackedDeviceIndexInvalid) {
+			status.append(" [R:").append(QString::number(binding.data.openvr.controllerId)).append("]");
+		}
+		if (binding.invertXAxis || binding.invertYAxis) {
+			status.append(" [I]");
+		}
+		if (binding.swapAxes) {
+			status.append(" [S]");
+		}
 		break;
 	default:
 		status = "<Unknown>";
@@ -707,6 +736,37 @@ QString OverlayController::openvrButtonToString(unsigned deviceId, unsigned butt
 	}
 	return name;
 }
+
+
+QString OverlayController::openvrAxisToString(unsigned deviceId, unsigned axisId) {
+	QString name("Axis");
+	name.append(QString::number(axisId));
+	if (deviceId != vr::k_unTrackedDeviceIndexInvalid) {
+	vr::ETrackedPropertyError pError;
+	auto axisType = vr::VRSystem()->GetInt32TrackedDeviceProperty(deviceId, (vr::ETrackedDeviceProperty)((int)vr::Prop_Axis0Type_Int32 + axisId), &pError);
+		if (pError == vr::TrackedProp_Success && axisType != vr::k_eControllerAxis_None) {
+			name.append(" (");
+			switch (axisType) {
+			case vr::k_eControllerAxis_Trigger:
+				name.append("Trigger)");
+				break;
+			case vr::k_eControllerAxis_TrackPad:
+				name.append("TrackPad)");
+				break;
+			case vr::k_eControllerAxis_Joystick:
+				name.append("Joystick)");
+				break;
+			default:
+				LOG(INFO) << "AxisType: " << axisType;
+				name.append("<unknown>)");
+				break;
+			}
+			name.append(")");
+		}
+	}
+	return name;
+}
+
 
 unsigned OverlayController::keyboardVirtualCodeCount() {
 	return (unsigned)_keyboardVirtualCodes.size();

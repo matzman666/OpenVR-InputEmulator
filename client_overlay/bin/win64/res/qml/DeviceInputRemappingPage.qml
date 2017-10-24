@@ -170,13 +170,6 @@ MyStackViewPage {
         Component.onCompleted: {
         }
 
-        Connections {
-            target: DeviceManipulationTabController
-            onConfigureDigitalInputRemappingFinished: {
-
-            }
-        }
-
     }
 
 }

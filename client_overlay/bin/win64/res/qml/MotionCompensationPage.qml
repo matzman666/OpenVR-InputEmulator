@@ -182,21 +182,17 @@ MyStackViewPage {
 
                     MySlider {
                         id: movingAverageWindowSlider
-                        // There seems to be a bug which causes the handle to snap to the wrong position when 'from' is not 0
-                        from: 0
-                        to: 19
+                        from: 1
+                        to: 20
                         stepSize: 1
                         value: 2
                         Layout.fillWidth: true
                         onPositionChanged: {
-                            var val = (1 + ( this.position  * this.to)).toFixed(0)
-                            if (activeFocus) {
-                                //ChaperoneTabController.setHeight(val, false);
-                            }
+                            var val = (this.from + this.position * (this.to-this.from)).toFixed(0)
                             movingAverageWindowText.text = val
                         }
                         onValueChanged: {
-                            //ChaperoneTabController.setHeight(value.toFixed(0), false)
+                            DeviceManipulationTabController.setMotionCompensationMovingAverageWindow(value.toFixed(0), false)
                         }
                     }
 
@@ -216,18 +212,11 @@ MyStackViewPage {
                         horizontalAlignment: Text.AlignHCenter
                         function onInputEvent(input) {
                             var val = parseFloat(input)
-                            if (!isNaN(val)) {
-                                if (val < 1) {
-                                    val = 1
-                                }
-                                var v = val.toFixed(0) - 1
-                                if (v <= movingAverageWindowSlider.to) {
-                                    movingAverageWindowSlider.value = v
-                                } else {
-                                    //ChaperoneTabController.setHeight(v, false)
-                                }
+                            if (!isNaN(val) && val >= 0.0) {
+                                DeviceManipulationTabController.setMotionCompensationMovingAverageWindow(val.toFixed(0))
+                            } else {
+                                movingAverageWindowText.text = DeviceManipulationTabController.getMotionCompensationMovingAverageWindow().toFixed(0)
                             }
-                            //text = ChaperoneTabController.height.toFixed(2)
                         }
                     }
                 }
@@ -246,6 +235,7 @@ MyStackViewPage {
             deviceSelectionComboBox.currentIndex = DeviceManipulationTabController.getMotionCompensationVelAccMode()
             kalmanProcessNoiseInputField.text = DeviceManipulationTabController.getMotionCompensationKalmanProcessNoise().toFixed(2)
             kalmanObservationNoiseInputField.text = DeviceManipulationTabController.getMotionCompensationKalmanObservationNoise().toFixed(2)
+            movingAverageWindowSlider.value = DeviceManipulationTabController.getMotionCompensationMovingAverageWindow().toFixed(0)
             setupFinished = true
         }
 

@@ -56,6 +56,7 @@ namespace vrinputemulator {
 		uint32_t deviceId;
 		vr::ETrackedDeviceClass deviceClass;
 		int deviceMode;
+		uint32_t refDeviceId;
 		bool offsetsEnabled;
 		bool redirectSuspended;
 	};
@@ -96,7 +97,7 @@ namespace vrinputemulator {
 			} keyboard;
 
 			BindingUnion() {}
-		} binding;
+		} data;
 		
 		bool toggleEnabled;
 		uint32_t toggleDelay;
@@ -115,7 +116,7 @@ namespace vrinputemulator {
 		bool touchAsClick = false;
 
 		bool longPressEnabled = false;
-		uint32_t longPressThreshold = 1000;
+		uint32_t longPressThreshold = 1000u;
 		DigitalBinding longPressBinding;
 		bool longPressImmediateRelease = false;
 

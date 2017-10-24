@@ -14,6 +14,22 @@ namespace inputemulator {
 class OverlayController;
 
 
+struct DigitalInputRemappingProfile {
+	QString normalBindingControllerSerial;
+	QString longBindingControllerSerial;
+	QString doubleBindingControllerSerial;
+	vrinputemulator::DigitalInputRemapping remapping;
+
+	DigitalInputRemappingProfile() : remapping(true) {}
+};
+
+struct AnalogInputRemappingProfile {
+	QString controllerSerial;
+	vrinputemulator::AnalogInputRemapping remapping;
+
+	AnalogInputRemappingProfile() : remapping(true) {}
+};
+
 struct DeviceManipulationProfile {
 	std::string profileName;
 
@@ -25,6 +41,9 @@ struct DeviceManipulationProfile {
 	vr::HmdVector3d_t driverFromHeadRotationOffset;
 	vr::HmdVector3d_t driverTranslationOffset;
 	vr::HmdVector3d_t driverRotationOffset;
+	bool includesInputRemapping = false;
+	std::map<int, DigitalInputRemappingProfile> digitalRemappingProfiles;
+	AnalogInputRemappingProfile analogRemappingProfiles[5];
 };
 
 
@@ -34,6 +53,7 @@ struct DeviceInfo {
 	uint32_t openvrId = 0;
 	int deviceStatus = 0; // 0 .. Normal, 1 .. Disconnected/Suspended
 	int deviceMode = 0; // 0 .. Default, 1 .. Fake Disconnected, 2 .. Redirect Source, 3 .. Redirect Target, 4 .. Motion Compensation
+	uint32_t refDeviceId = 0;
 	bool deviceOffsetsEnabled;
 	vr::HmdVector3d_t worldFromDriverRotationOffset;
 	vr::HmdVector3d_t worldFromDriverTranslationOffset;
@@ -62,6 +82,9 @@ private:
 	vrinputemulator::MotionCompensationVelAccMode motionCompensationVelAccMode = vrinputemulator::MotionCompensationVelAccMode::Disabled;
 	double motionCompensationKalmanProcessNoise = 0.1;
 	double motionCompensationKalmanObservationNoise = 0.1;
+	unsigned motionCompensationMovingAverageWindow = 3;
+
+	QString m_deviceModeErrorString;
 
 	unsigned settingsUpdateCounter = 0;
 
@@ -81,6 +104,7 @@ public:
 	Q_INVOKABLE int getDeviceClass(unsigned index);
 	Q_INVOKABLE int getDeviceState(unsigned index);
 	Q_INVOKABLE int getDeviceMode(unsigned index);
+	Q_INVOKABLE int getDeviceModeRefDeviceIndex(unsigned index);
 	Q_INVOKABLE bool deviceOffsetsEnabled(unsigned index);
 	Q_INVOKABLE double getWorldFromDriverRotationOffset(unsigned index, unsigned axis);
 	Q_INVOKABLE double getWorldFromDriverTranslationOffset(unsigned index, unsigned axis);
@@ -91,6 +115,7 @@ public:
 	Q_INVOKABLE unsigned getMotionCompensationVelAccMode();
 	Q_INVOKABLE double getMotionCompensationKalmanProcessNoise();
 	Q_INVOKABLE double getMotionCompensationKalmanObservationNoise();
+	Q_INVOKABLE unsigned getMotionCompensationMovingAverageWindow();
 
 	void reloadDeviceManipulationSettings();
 	void reloadDeviceManipulationProfiles();
@@ -121,6 +146,9 @@ public:
 	Q_INVOKABLE void startConfigureAnalogInputRemapping(unsigned deviceIndex, unsigned axisId);
 	Q_INVOKABLE void finishConfigureAnalogInputRemapping(unsigned deviceIndex, unsigned axisId);
 
+	Q_INVOKABLE bool setDeviceMode(unsigned index, unsigned mode, unsigned targedIndex, bool notify = true);
+	Q_INVOKABLE QString getDeviceModeErrorString();
+
 
 public slots:
 	void enableDeviceOffsets(unsigned index, bool enable, bool notify = true);
@@ -130,17 +158,17 @@ public slots:
 	void setDriverFromHeadTranslationOffset(unsigned index, double yaw, double pitch, double roll, bool notify = true);
 	void setDriverRotationOffset(unsigned index, double x, double y, double z, bool notify = true);
 	void setDriverTranslationOffset(unsigned index, double yaw, double pitch, double roll, bool notify = true);
-	void setDeviceMode(unsigned index, unsigned mode, unsigned targedIndex, bool notify = true);
 	void triggerHapticPulse(unsigned index);
 	void setDeviceRenderModel(unsigned deviceIndex, unsigned renderModelIndex);
 
-	void addDeviceManipulationProfile(QString name, unsigned deviceIndex, bool includesDeviceOffsets, bool includesMotionCompensationSettings);
+	void addDeviceManipulationProfile(QString name, unsigned deviceIndex, bool includesDeviceOffsets, bool includesInputRemapping);
 	void applyDeviceManipulationProfile(unsigned index, unsigned deviceIndex);
 	void deleteDeviceManipulationProfile(unsigned index);
 
 	void setMotionCompensationVelAccMode(unsigned mode, bool notify = true);
 	void setMotionCompensationKalmanProcessNoise(double variance, bool notify = true);
 	void setMotionCompensationKalmanObservationNoise(double variance, bool notify = true);
+	void setMotionCompensationMovingAverageWindow(unsigned window, bool notify = true);
 
 signals:
 	void deviceCountChanged(unsigned deviceCount);
@@ -150,6 +178,7 @@ signals:
 	void motionCompensationVelAccModeChanged(unsigned mode);
 	void motionCompensationKalmanProcessNoiseChanged(double variance);
 	void motionCompensationKalmanObservationNoiseChanged(double variance);
+	void motionCompensationMovingAverageWindowChanged(unsigned window);
 
 	void configureDigitalInputRemappingFinished();
 	void configureAnalogInputRemappingFinished();
