@@ -51,9 +51,9 @@ std::map<int, const char*> OverlayController::_openVRButtonNames = {
 
 std::vector<std::pair<std::string, WORD>> OverlayController::_keyboardVirtualCodes = {
 	{ "<None>", 0x00 },
-	{ "Left Mouse Button", VK_LBUTTON },
+	/*{ "Left Mouse Button", VK_LBUTTON },
 	{ "Right Mouse Button", VK_RBUTTON },
-	{ "Middle Mouse Button", VK_MBUTTON },
+	{ "Middle Mouse Button", VK_MBUTTON },*/
 	{ "Backspace", VK_BACK },
 	{ "Tab", VK_TAB },
 	{ "Clear", VK_CLEAR },
@@ -745,23 +745,21 @@ QString OverlayController::openvrAxisToString(unsigned deviceId, unsigned axisId
 	vr::ETrackedPropertyError pError;
 	auto axisType = vr::VRSystem()->GetInt32TrackedDeviceProperty(deviceId, (vr::ETrackedDeviceProperty)((int)vr::Prop_Axis0Type_Int32 + axisId), &pError);
 		if (pError == vr::TrackedProp_Success && axisType != vr::k_eControllerAxis_None) {
-			name.append(" (");
 			switch (axisType) {
 			case vr::k_eControllerAxis_Trigger:
-				name.append("Trigger)");
+				name.append(" (Trigger)");
 				break;
 			case vr::k_eControllerAxis_TrackPad:
-				name.append("TrackPad)");
+				name.append(" (TrackPad)");
 				break;
 			case vr::k_eControllerAxis_Joystick:
-				name.append("Joystick)");
+				name.append(" (Joystick)");
 				break;
 			default:
 				LOG(INFO) << "AxisType: " << axisType;
 				name.append("<unknown>)");
 				break;
 			}
-			name.append(")");
 		}
 	}
 	return name;

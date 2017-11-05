@@ -17,7 +17,6 @@ void PosKalmanFilter::init(const vr::HmdVector3d_t& initPos, const vr::HmdVector
 }
 
 void PosKalmanFilter::update(const vr::HmdVector3d_t& devicePos, double dt) {
-	LOG(INFO) << "debug01: " << processNoise << ", " << observationNoise << ", " << dt;
 	// predict new position
 	vr::HmdVector3d_t predictedPos = {
 		lastPos.v[0] + dt * lastVel.v[0],
@@ -45,9 +44,6 @@ void PosKalmanFilter::update(const vr::HmdVector3d_t& devicePos, double dt) {
 		gain[0] = newCovariance[0][0] / innovationVariance;
 		gain[1] = newCovariance[1][0] / innovationVariance;
 	}
-	LOG(INFO) << "debug02.a: " << lastCovariance[0][0] << ", " << lastCovariance[0][1] << ", " << lastCovariance[1][0] << ", " << lastCovariance[1][1];
-	LOG(INFO) << "debug02.b: " << newCovariance[0][0] << ", " << newCovariance[0][1] << ", " << newCovariance[1][0] << ", " << newCovariance[1][1];
-	LOG(INFO) << "debug03: " << gain[0] << ", " << gain[1];
 	// calculate new a posteriori position
 	lastPos = lastPos + innovation * gain[0];
 	// calculate new a posteriori velocity
@@ -57,7 +53,6 @@ void PosKalmanFilter::update(const vr::HmdVector3d_t& devicePos, double dt) {
 	lastCovariance[0][1] = (1 - gain[0]) * newCovariance[0][1];
 	lastCovariance[1][0] = newCovariance[1][0] - gain[1] * newCovariance[0][0];
 	lastCovariance[1][1] = newCovariance[1][1] - gain[1] * newCovariance[0][1];
-	LOG(INFO) << "debug04: (1 - " << gain[0] << ") * " << newCovariance[0][0] << " = " << (1 - gain[0]) * newCovariance[0][0];
 }
 
 } // end namespace driver

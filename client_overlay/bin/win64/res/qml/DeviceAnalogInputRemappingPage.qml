@@ -162,7 +162,7 @@ MyStackViewPage {
                 spacing: 16
 
                 MyText {
-                    text: "Active Zone:"
+                    text: "Dead Zone:"
                     Layout.preferredWidth: 180
                     Layout.rightMargin: 12
                 }

@@ -21,10 +21,8 @@ void printHelp(int argc, const char* argv[]) {
 		<< "  setdeviceconnection\t\tSets the connection state of a virtual device" << std::endl
 		<< "  setdeviceposition\t\tSets the position of a virtual device" << std::endl
 		<< "  setdevicerotation\t\tSets the rotation of a virtual device" << std::endl
-		<< "  devicebuttonmapping\t\tConfigures the device button mapping" << std::endl
 		<< "  devicetranslationoffset\tConfigure the device translation offset" << std::endl
 		<< "  devicerotationoffset\t\tConfigure the device rotation offset" << std::endl
-		<< "  devicemirrormode\t\tConfigure the device mirror mode" << std::endl
 		<< "  benchmarkipc\t\t\tipc benchmarks" << std::endl;
 }
 
@@ -66,12 +64,8 @@ int main(int argc, const char* argv[]) {
 			setDevicePosition(argc, argv);
 		} else if (std::strcmp(argv[1], "setdevicerotation") == 0) {
 			setDeviceRotation(argc, argv);
-		} else if (std::strcmp(argv[1], "devicebuttonmapping") == 0) {
-			deviceButtonMapping(argc, argv);
 		} else if (std::strcmp(argv[1], "deviceoffsets") == 0) {
 			deviceOffsets(argc, argv);
-		} else if (std::strcmp(argv[1], "devicemodes") == 0) {
-			deviceModes(argc, argv);
 		} else if (std::strcmp(argv[1], "benchmarkipc") == 0) {
 			benchmarkIPC(argc, argv);
 		} else {

@@ -452,59 +452,6 @@ void setDeviceRotation(int argc, const char* argv[]) {
 	inputEmulator.setVirtualDevicePose(deviceId, pose);
 }
 
-void deviceButtonMapping(int argc, const char * argv[]) {
-	if (argc > 2 && std::strcmp(argv[2], "help") == 0) {
-		std::stringstream ss;
-		ss <<  "Usage: client_commandline.exe devicebuttonmapping <openvrId> [enable|disable]" << std::endl
-			<< "       client_commandline.exe devicebuttonmapping <openvrId> add <buttonId> <mappedButtonId>" << std::endl
-			<< "       client_commandline.exe devicebuttonmapping <openvrId> remove [<buttonId>|all]";
-		throw std::runtime_error(ss.str());
-	} else if (argc < 4) {
-		throw std::runtime_error("Error: Too few arguments.");
-	}
-	uint32_t deviceId = std::atoi(argv[2]);
-	uint32_t enable = 0;
-	uint32_t operation = 0;
-	uint32_t op1 = 0;
-	uint32_t op2 = 0;
-	if (std::strcmp(argv[3], "enable") == 0) {
-		enable = 1;
-	} else if (std::strcmp(argv[3], "disable") == 0) {
-		enable = 2;
-	} else if (std::strcmp(argv[3], "add") == 0) {
-		if (argc < 6) {
-			throw std::runtime_error("Error: Too few arguments.");
-		}
-		operation = 1;
-		op1 = std::atoi(argv[4]);
-		op2 = std::atoi(argv[5]);
-	} else if (std::strcmp(argv[3], "remove") == 0) {
-		if (argc < 5) {
-			throw std::runtime_error("Error: Too few arguments.");
-		}
-		if (std::strcmp(argv[4], "all") == 0) {
-			operation = 3;
-		} else {
-			operation = 2;
-			op1 = std::atoi(argv[4]);
-		}
-
-	} else {
-		throw std::runtime_error("Error: Unknown button mapping command");
-	}
-	vrinputemulator::VRInputEmulator inputEmulator;
-	inputEmulator.connect();
-	if (enable > 0) {
-		inputEmulator.enableDeviceButtonMapping(deviceId, enable == 1 ? true : false);
-	} else if (operation == 1) {
-		inputEmulator.addDeviceButtonMapping(deviceId, (vr::EVRButtonId)op1, (vr::EVRButtonId)op2);
-	} else if (operation == 2) {
-		inputEmulator.removeDeviceButtonMapping(deviceId, (vr::EVRButtonId)op1);
-	} else if (operation == 3) {
-		inputEmulator.removeAllDeviceButtonMappings(deviceId);
-	}
-}
-
 void deviceOffsets(int argc, const char * argv[]) {
 	if (argc > 2 && std::strcmp(argv[2], "help") == 0) {
 		std::stringstream ss;
@@ -600,36 +547,6 @@ void deviceOffsets(int argc, const char * argv[]) {
 			throw std::runtime_error("Error: Unknown type");
 		}
 	}
-}
-
-void deviceModes(int argc, const char * argv[]) {
-	if (argc > 2 && std::strcmp(argv[2], "help") == 0) {
-		std::stringstream ss;
-		ss << "Usage: client_commandline.exe devicemirrormode <openvrId> off" << std::endl
-			<< "       client_commandline.exe devicemirrormode <openvrId> [mirror|redirect] <targetOpenvrId>";
-		throw std::runtime_error(ss.str());
-	} else if (argc < 4) {
-		throw std::runtime_error("Error: Too few arguments.");
-	}
-	/*uint32_t deviceId = std::atoi(argv[2]);
-	uint32_t mode;
-	uint32_t target = vr::k_unTrackedDeviceIndexInvalid;
-	if (std::strcmp(argv[3], "off") == 0) {
-		mode = 0;
-	} else if (std::strcmp(argv[3], "mirror") == 0) {
-		mode = 1;
-	} else if (std::strcmp(argv[3], "redirect") == 0) {
-		mode = 2;
-	}
-	if (mode > 0) {
-		if (argc < 5) {
-			throw std::runtime_error("Error: Too few arguments.");
-		}
-		target = std::atoi(argv[4]);
-	}
-	vrinputemulator::VRInputEmulator inputEmulator;
-	inputEmulator.connect();
-	inputEmulator.setDeviceMirrorMode(deviceId, mode, target);*/
 }
 
 

@@ -40,7 +40,7 @@ class OverlayController : public QObject {
 public:
 	static constexpr const char* applicationKey = "matzman666.VRInputEmulator";
 	static constexpr const char* applicationName = "VR Input Emulator";
-	static constexpr const char* applicationVersionString = "v1.1";
+	static constexpr const char* applicationVersionString = "v1.1 beta1";
 
 private:
 	vr::VROverlayHandle_t m_ulOverlayHandle = vr::k_ulOverlayHandleInvalid;

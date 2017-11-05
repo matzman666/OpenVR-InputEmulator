@@ -27,10 +27,6 @@ void setDevicePosition(int argc, const char* argv[]);
 
 void setDeviceRotation(int argc, const char* argv[]);
 
-void deviceButtonMapping(int argc, const char* argv[]);
-
 void deviceOffsets(int argc, const char* argv[]);
-
-void deviceModes(int argc, const char* argv[]);
 
 void benchmarkIPC(int argc, const char* argv[]);

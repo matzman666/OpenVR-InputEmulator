@@ -16,14 +16,14 @@ RangeSlider {
         implicitHeight: 8
         width: rangeSlider.availableWidth
         height: implicitHeight
+        color: "#cccccc"
         radius: 8
-        color: "#2c435d"
 
         Rectangle {
             x: rangeSlider.first.visualPosition * parent.width
             width: rangeSlider.second.visualPosition * parent.width - x
             height: parent.height
-            color: "#cccccc"
+			color: "#2c435d"
             radius: 8
         }
     }

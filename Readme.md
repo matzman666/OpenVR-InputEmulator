@@ -4,7 +4,7 @@
 
 An OpenVR driver that allows to create virtual controllers, emulate controller input, enable motion compensation, manipulate poses of existing controllers and remap buttons. Includes a dashboard to configure some settings directly in VR, a command line client for more advanced settings, and a client-side library to support development of third-party applications.
 
-![Example Screenshot](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/InVRScreenshot.png)
+![Example Screenshot](docs/screenshots/InVRScreenshot.png)
 
 The OpenVR driver hooks into the HTC Vive lighthouse driver and allows to modify any pose updates or button/axis events coming from the Vive controllers before they reach the OpenVR runtime. Due to the nature of this hack the driver may break when Valve decides to update the driver-side OpenVR API.
 
@@ -42,7 +42,7 @@ Download the newest command-line client from the [release section](https://githu
 
 ## Top Page:
 
-![Root Page](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/DeviceManipulationPage.png)
+![Root Page](docs/screenshots/DeviceManipulationPage.png)
 
 - **Identify**: Sends a haptic pulse to the selected device (Devices without haptic feedback like the Vive trackers can be identified by a flashing white light).
 - **Status**: Shows the current status of the selected device.
@@ -55,17 +55,18 @@ Download the newest command-line client from the [release section](https://githu
 - **Device Offsets**: Allows to add translation or rotation offsets to the selected device.
 - **Motion Compensation Settings**: Allows to configure motion compensation mode.
 - **Render Model**: Shows a render model at the device position (experimental).
+- **Input Remapping**: Allows to re-map input coming from controller buttons, joysticks or touchpads.
 - **Profile**: Allows to apply/define/delete device offsets/motion compensation profiles.
 
 ### Redirect Mode
 
 Redirect mode allows to redirect the pose updates and controller events from one controller to another. To enable it select the device from with the pose updates/controller events should be redirected, then set the device mode to "Redirect to" and select the device that should be the redirect target from the combo box on the right, and at last press 'Apply'.
 
-Redirect mode can be temporarily suspended by pressing the system button on either the source or target device.
+Redirect mode can be temporarily suspended by re-mapping a controller button to a "suspend" action on the input remapping page.
 
 ## Device Offsets Page:
 
-![Device Offsets Page](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/DeviceOffsetsPage.png)
+![Device Offsets Page](docs/screenshots/DeviceOffsetsPage.png)
 
 - **Enable Offsets**: Enable/disable device offsets.
 - **WorldFormDriver Offsets**: Allows to add offsets to the 'WorldFromDriver' transformations.
@@ -75,13 +76,85 @@ Redirect mode can be temporarily suspended by pressing the system button on eith
 
 ## Motion Compensation Settings Page:
 
-![Motion Compensation Settings Page](https://raw.githubusercontent.com/matzman666/OpenVR-InputEmulator/master/docs/screenshots/MotionCompensationPage.png)
+![Motion Compensation Settings Page](docs/screenshots/MotionCompensationPage.png)
 
-- **Vel/Acc Compensation Mode**: How should reported velocities and acceleration values be adjusted. The problem with only adjusting the headset position is that pose prediction also takes velocity and acceleration into accound. As long as the reported values to not differ too much from the real values, pose prediction errors are hardly noticeable. But with fast movements of the motion platform the pose prediction error can be noticeable. Available modes are:
-  - **Disabled**: Do not adjust velocity/acceration values.
-  - **Set Zero**: Set all velocity/acceleration values to zero. Most simple form of velocity/acceleration compensation.
-  - **Use Reference Tracker**: Substract the velocity/acceleration values of the motion compensation reference tracker/controller from the values reported from the headset. Most accurate form of velocity/acceleration compensation. However, it requires that the reference tracker/controller is as closely mounted to the head position as possible. The further away it is from the head position the larger the error.
-  - **Linear Approximation (Experimental)**: Uses linear approximation to estimate the velocity/acceleration values. The used formula is: (current_position - last_position) / time_difference, however the resulting values do cause a lot of jitter and therefore they are divided by four to reduce jitter to an acceptable level.
+**Vel/Acc Compensation Mode**: How should reported velocities and acceleration values be adjusted. The problem with only adjusting the headset position is that pose prediction also takes velocity and acceleration into accound. As long as the reported values to not differ too much from the real values, pose prediction errors are hardly noticeable. But with fast movements of the motion platform the pose prediction error can be noticeable. Available modes are:
+- **Disabled**: Do not adjust velocity/acceration values.
+- **Set Zero**: Set all velocity/acceleration values to zero. Most simple form of velocity/acceleration compensation.
+- **Use Reference Tracker**: Substract the velocity/acceleration values of the motion compensation reference tracker/controller from the values reported from the headset. Most accurate form of velocity/acceleration compensation. However, it requires that the reference tracker/controller is as closely mounted to the head position as possible. The further away it is from the head position the larger the error.
+- **Linear Approximation w/ Moving Average (Experimental)**: Uses linear approximation to estimate the velocity/acceleration values. The used formula is: (current_position - last_position) / time_difference. To reduce jitter the average over the last few values is used.
+  - **Moving Average Window**: How many values are used for calculating the average.
+- **Kalman Filter (Experimental)**: The position values are fed into a kalman filter which then outputs a velocity value. The kalman filter implementation is based on the filter described [here](https://en.wikipedia.org/wiki/Kalman_filter#Example_application.2C_technical).
+  - **Process/Observation Noise**: Parameters used to fine-tune the kalman filter. 
+  
+## Input Remapping Page:
+
+![Input Remapping Page](docs/screenshots/InputRemappingPage.png)
+
+Lists all available controller inputs (as reported by OpenVR) and their remapping statuses.
+
+### Digital Input Settings:
+
+![Digital Input Settings Page](docs/screenshots/DigitalInputPage.png)
+
+- **Normal Press**: The configured key binding is send when the user normally presses a button (or in other words, when the input is neither a long nor a double press).
+  - **Touch as Click**: Registers a button touch as a button click. Can be used to simulate a touchpad click when the user only touches the touchpad.
+- **Long Press**: The configured key binding is send when the user presses a button longer as the specified treshold.
+  - **Immediate Key Release**: The button down event for the double click event is immediately followed by a button up event. Useful for situations where a program only reacts on button up events (e.g. the SteamVR dashboard).
+- **Double Press**: The configured key binding is send when two consecutive button presses happen within the specified time threshold.
+  - **Immediate Key Release**: The button down event for the double click event is immediately followed by a button up event. Useful for situations where a program only reacts on button up events (e.g. the SteamVR dashboard).
+
+Attention: When long and double presses are enabled normal controller input may be delayed because I first need to wait the specified thresholds before I can send a normal key event.
+
+#### Digital Binding:
+
+![Digital Binding Page](docs/screenshots/DigitalBindingPage.png)
+
+Allows to configure a digital button binding. Available binding types are:
+
+- **No Remapping**: Original binding is used.
+- **Disabled**: Disables the button.
+- **OpenVR**: Remap to another OpenVR controller button.
+- **Keyboard**: Remap to a keyboard key.
+- **Suspend Redirect Mode**: Allows to temporarily suspend controller redirect mode.
+
+##### OpenVR
+
+![Digital Binding Page - OpenVR](docs/screenshots/DigitalBindingOpenVRPage.png)
+
+- **Controller**: Onto which controller should the input be redirected.
+- **Button**: Onto which OpenVR button should the input be mapped.
+- **Toggle Mode**: When the button is pressed longer than the specified threshold, the button state is toggled.
+- **Auto Trigger**: The button state is constantly pressed and then unpressed with the specified frequency as long as the user keeps the button pressed.
+
+##### Keyboard
+
+![Digital Binding Page - Keyboard](docs/screenshots/DigitalBindingKeyboardPage.png)
+
+- **Key**: Onto which keyboard key should the input be mapped.
+- **Toggle Mode**: When the button is pressed longer than the specified threshold, the key state is toggled.
+- **Auto Trigger**: The key state is constantly pressed and then unpressed with the specified frequency as long as the user keeps the button pressed.
+
+### Analog Input Settings:
+
+![Analog Input Settings Page](docs/screenshots/AnalogBindingPage.png)
+
+Allows to configure an analog input. Available binding types are:
+
+- **No Remapping**: Original binding is used.
+- **Disabled**: Disables the analog input.
+- **OpenVR**: Remap to another OpenVR controller axis.
+
+##### OpenVR
+
+![Analog Binding Page - OpenVR](docs/screenshots/AnalogBindingOpenVRPage.png)
+
+- **Controller**: Onto which controller should the input be redirected.
+- **Axis**: Onto which OpenVR axis should the input be mapped.
+- **Invert X/Y Axis**: Inverts the x or y axis.
+- **Swap X/Y**: Swaps the x and the y axis.
+- **Dead Zone**: Allows to configure dead zones in the middle (left value) and at the edges (right value) of an axis. The deadzone in the middle is mapped to 0, and the deadzone at the edges is mapped to 1. All input between the deadzones is remapped to an interval of [0, 1].
+
 
 ## client_commandline commands:
 
@@ -187,26 +260,6 @@ setdeviceposition <virtualId> <x> <y> <z>
 
 setdevicerotation <virtualId> <yaw> <pitch> <roll>.
 
-### devicebuttonmapping
-
-```
-devicebuttonmapping <openvrId> [enable|disable]
-```
-
-Enables/disables device button mapping on the given device.
-
-```
-devicebuttonmapping <openvrId> add <buttonId> <mappedButtonId>
-```
-
-Adds a new button mapping to the given device. See [openvr.h](https://github.com/ValveSoftware/openvr/blob/master/headers/openvr.h#L600-L626) for available button ids.
-
-```
-devicebuttonmapping <openvrId> remove [<buttonId>|all]
-```
-
-Removes a button mapping from the given device. 
-
 
 ## Client API
 
@@ -255,16 +308,8 @@ client_commandline.exe setdeviceconnection 0 1
 client_commandline.exe setdeviceposition 0 -1 -1 -1
 ```
 
-## Map the grip-button to the trigger-button and vice-versa on the controller with id 3
-
-```
-client_commandline.exe devicebuttonmapping 3 add 2 33
-client_commandline.exe devicebuttonmapping 3 add 33 2
-client_commandline.exe devicebuttonmapping 3 enable
-```
-
 ## Initial Setup
-### Download the LeapMotion SDK
+### ~~Download the LeapMotion SDK~~ (Only needed by the now defunct project driver_leapmotion)
 1. Goto https://developer.leapmotion.com/get-started
 1. Click "Download Orion Beta"
 1. Unzip the "LeapSDK" folder in the zip file into `OpenVR-InputEmulator/third-party/LeapSDK`
