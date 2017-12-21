@@ -41,12 +41,15 @@ public:
 	Q_INVOKABLE float getBindingDeadzoneLower();
 	Q_INVOKABLE float getBindingDeadzoneUpper();
 
+	Q_INVOKABLE unsigned getBindingTouchpadEmulationMode();
+	Q_INVOKABLE bool getBindingButtonPressDeadzoneFix();
+
 	const vrinputemulator::AnalogInputRemapping& currentRemapping() { return m_currentRemapping; }
 
 public slots:
-	void finishConfigure_Original();
+	void finishConfigure_Original(unsigned touchpadEmulationMode, bool updateOnButtonEvent);
 	void finishConfigure_Disabled();
-	void finishConfigure_OpenVR(int controllerId, int axisId, bool invertXAxis, bool invertYAxis, bool swapAxes, float lowerDeadzone, float upperDeadzone);
+	void finishConfigure_OpenVR(int controllerId, int axisId, bool invertXAxis, bool invertYAxis, bool swapAxes, float lowerDeadzone, float upperDeadzone, unsigned touchpadEmulationMode, bool updateOnButtonEvent);
 
 private:
 	OverlayController* parent;

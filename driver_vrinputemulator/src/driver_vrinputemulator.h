@@ -210,12 +210,17 @@ private:
 	std::map<uint32_t, DigitalInputRemappingInfo> m_digitalInputRemapping;
 
 	struct AnalogInputRemappingInfo {
-		// currently no internal state needed
 		struct BindingInfo {
-		} bindings[1];
+			bool pressedState = false;
+			bool touchedState = false;
+			vr::VRControllerAxis_t lastSeenAxisState = { 0, 0 };
+			vr::VRControllerAxis_t lastSendAxisState = { 0, 0 };
+		} binding;
 		AnalogInputRemapping remapping;
 	};
-	std::map<uint32_t, AnalogInputRemappingInfo> m_analogInputRemapping;
+	AnalogInputRemappingInfo m_analogInputRemapping[5];
+
+	static bool touchpadEmulationEnabledFlag;
 
 	bool m_redirectSuspended = false;
 	OpenvrDeviceManipulationInfo* m_redirectRef = nullptr;
@@ -230,8 +235,14 @@ private:
 	vr::IVRProperties* m_vrproperties = nullptr;
 	vr::PropertyContainerHandle_t m_propertyContainerHandle = vr::k_ulInvalidPropertyContainer;
 
+	HANDLE _vibrationCueTheadHandle = NULL;
+
 	void sendDigitalBinding(vrinputemulator::DigitalBinding& binding, uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, DigitalInputRemappingInfo::BindingInfo* bindingInfo = nullptr);
 	void sendAnalogBinding(vrinputemulator::AnalogBinding& binding, uint32_t unWhichDevice, uint32_t axisId, const vr::VRControllerAxis_t& axisState, AnalogInputRemappingInfo::BindingInfo* bindingInfo = nullptr);
+
+	void _buttonPressDeadzoneFix(vr::EVRButtonId eButtonId);
+	void _vibrationCue();
+	void _audioCue();
 
 public:
 	OpenvrDeviceManipulationInfo() {}
@@ -317,6 +328,13 @@ public:
 	void RunFrameDigitalBinding(vrinputemulator::DigitalBinding& binding, vr::EVRButtonId eButtonId, DigitalInputRemappingInfo::BindingInfo& bindingInfo);
 
 	void suspendRedirectMode();
+
+	static bool getTouchpadEmulationFixFlag() {
+		return touchpadEmulationEnabledFlag;
+	}
+	static void setTouchpadEmulationFixFlag(bool flag) {
+		touchpadEmulationEnabledFlag = flag;
+	}
 };
 
 
@@ -364,6 +382,8 @@ public:
 	//// self ////
 
 	static CServerDriver* getInstance() { return singleton; }
+
+	static std::string getInstallDirectory() { return installDir; }
 
 	uint32_t virtualDevices_getDeviceCount();
 
@@ -422,6 +442,8 @@ public:
 
 private:
 	static CServerDriver* singleton;
+
+	static std::string installDir;
 
 	//// virtual devices related ////
 	std::recursive_mutex _virtualDevicesMutex;

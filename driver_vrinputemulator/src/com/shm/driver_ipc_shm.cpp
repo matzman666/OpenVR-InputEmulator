@@ -890,6 +890,10 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							}
 							break;
 
+						case ipc::RequestType::InputRemapping_SetTouchpadEmulationFixEnabled: {
+							OpenvrDeviceManipulationInfo::setTouchpadEmulationFixFlag(message.msg.ir_SetTouchPadEmulationFixEnabled.enable);
+						} break;
+
 						default:
 							LOG(ERROR) << "Error in ipc server receive loop: Unknown message type (" << (int)message.type << ")";
 							break;

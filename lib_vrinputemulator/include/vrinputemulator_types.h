@@ -76,7 +76,8 @@ namespace vrinputemulator {
 		Disabled = 1,
 		OpenVR = 2,
 		Keyboard = 3,
-		SuspendRedirectMode = 4
+		SuspendRedirectMode = 4,
+		ToggleTouchpadEmulationFix = 5
 	};
 
 
@@ -99,11 +100,11 @@ namespace vrinputemulator {
 			BindingUnion() {}
 		} data;
 		
-		bool toggleEnabled;
-		uint32_t toggleDelay;
+		bool toggleEnabled = false;
+		uint32_t toggleDelay = 0;
 		
-		bool autoTriggerEnabled;
-		uint32_t autoTriggerFrequency;
+		bool autoTriggerEnabled = false;
+		uint32_t autoTriggerFrequency = 1;
 
 		DigitalBinding() {}
 	};
@@ -149,6 +150,8 @@ namespace vrinputemulator {
 		bool swapAxes = false;
 		float lowerDeadzone = 0.0;
 		float upperDeadzone = 1.0;
+		unsigned touchpadEmulationMode = 0; // 0 .. Disabled, 1 .. Position Based, 2 .. Position Based (Deferred Zero Updates)
+		bool buttonPressDeadzoneFix = false;
 
 		AnalogBinding(AnalogBindingType type = AnalogBindingType::NoRemapping) : type(type) {}
 	};

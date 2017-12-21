@@ -666,6 +666,9 @@ QString OverlayController::digitalBindingToString(const vrinputemulator::Digital
 	case vrinputemulator::DigitalBindingType::SuspendRedirectMode:
 		status = "Suspend Redirect Mode";
 		break;
+	case vrinputemulator::DigitalBindingType::ToggleTouchpadEmulationFix:
+		status = "Toggle Touchpad Emulation";
+		break;
 	default:
 		status = "<Unknown>";
 		break;
@@ -698,6 +701,9 @@ QString OverlayController::analogBindingToString(const vrinputemulator::AnalogBi
 	default:
 		status = "<Unknown>";
 		break;
+	}
+	if (binding.touchpadEmulationMode > 0 || binding.buttonPressDeadzoneFix) {
+		status.append(";Touchpad Emulation");
 	}
 	return status;
 }

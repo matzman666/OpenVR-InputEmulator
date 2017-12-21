@@ -127,8 +127,26 @@ float AnalogInputRemappingController::getBindingDeadzoneUpper() {
 	}
 }
 
-void AnalogInputRemappingController::finishConfigure_Original() {
+unsigned AnalogInputRemappingController::getBindingTouchpadEmulationMode() {
+	if (m_currentRemapping.valid) {
+		return m_currentRemapping.binding.touchpadEmulationMode;
+	} else {
+		return false;
+	}
+}
+
+bool AnalogInputRemappingController::getBindingButtonPressDeadzoneFix() {
+	if (m_currentRemapping.valid) {
+		return m_currentRemapping.binding.buttonPressDeadzoneFix;
+	} else {
+		return false;
+	}
+}
+
+void AnalogInputRemappingController::finishConfigure_Original(unsigned touchpadEmulationMode, bool updateOnButtonEvent) {
 	m_currentRemapping.binding.type = vrinputemulator::AnalogBindingType::NoRemapping;
+	m_currentRemapping.binding.touchpadEmulationMode = touchpadEmulationMode;
+	m_currentRemapping.binding.buttonPressDeadzoneFix = updateOnButtonEvent;
 	parent->deviceManipulationTabController.finishConfigureAnalogInputRemapping(m_currentDeviceIndex, m_currentAxisId);
 }
 
@@ -137,7 +155,7 @@ void AnalogInputRemappingController::finishConfigure_Disabled() {
 	parent->deviceManipulationTabController.finishConfigureAnalogInputRemapping(m_currentDeviceIndex, m_currentAxisId);
 }
 
-void AnalogInputRemappingController::finishConfigure_OpenVR(int controllerId, int axisId, bool invertXAxis, bool invertYAxis, bool swapAxes, float lowerDeadzone, float upperDeadzone) {
+void AnalogInputRemappingController::finishConfigure_OpenVR(int controllerId, int axisId, bool invertXAxis, bool invertYAxis, bool swapAxes, float lowerDeadzone, float upperDeadzone, unsigned touchpadEmulationMode, bool updateOnButtonEvent) {
 	m_currentRemapping.binding.type = vrinputemulator::AnalogBindingType::OpenVR;
 	if (controllerId < 0) {
 		m_currentRemapping.binding.data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
@@ -150,6 +168,8 @@ void AnalogInputRemappingController::finishConfigure_OpenVR(int controllerId, in
 	m_currentRemapping.binding.swapAxes = swapAxes;
 	m_currentRemapping.binding.lowerDeadzone = lowerDeadzone;
 	m_currentRemapping.binding.upperDeadzone = upperDeadzone;
+	m_currentRemapping.binding.touchpadEmulationMode = touchpadEmulationMode;
+	m_currentRemapping.binding.buttonPressDeadzoneFix = updateOnButtonEvent;
 	parent->deviceManipulationTabController.finishConfigureAnalogInputRemapping(m_currentDeviceIndex, m_currentAxisId);
 }
 

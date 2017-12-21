@@ -37,6 +37,7 @@ namespace driver {
 
 
 CServerDriver* CServerDriver::singleton = nullptr;
+std::string CServerDriver::installDir;
 
 std::map<vr::ITrackedDeviceServerDriver*, std::shared_ptr<OpenvrDeviceManipulationInfo>> CServerDriver::_openvrDeviceInfos;
 OpenvrDeviceManipulationInfo* CServerDriver::_openvrIdToDeviceInfoMap[vr::k_unMaxTrackedDeviceCount]; // index == openvrId
@@ -365,6 +366,15 @@ vr::ETrackedPropertyError CServerDriver::_writePropertyBatchDetourFunc(vr::IVRPr
 vr::EVRInitError CServerDriver::Init(vr::IVRDriverContext *pDriverContext) {
 	LOG(TRACE) << "CServerDriver::Init()";
 	VR_INIT_SERVER_DRIVER_CONTEXT(pDriverContext);
+
+	// Read installation directory
+	vr::ETrackedPropertyError tpeError;
+	installDir = vr::VRProperties()->GetStringProperty(pDriverContext->GetDriverHandle(), vr::Prop_InstallPath_String, &tpeError);
+	if (tpeError == vr::TrackedProp_Success) {
+		LOG(INFO) << "Install Dir:" << installDir;
+	} else {
+		LOG(INFO) << "Could not get Install Dir: " << vr::VRPropertiesRaw()->GetPropErrorNameFromEnum(tpeError);
+	}
 
 	// Read vrsettings
 	char buffer[vr::k_unMaxPropertyStringSize];

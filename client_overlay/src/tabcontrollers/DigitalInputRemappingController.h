@@ -78,6 +78,7 @@ public slots:
 	void finishConfigureBinding_OpenVR(int controllerId, int ButtonId, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency);
 	void finishConfigureBinding_keyboard(bool shiftPressed, bool ctrlPressed, bool altPressed, unsigned long keyIndex, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency);
 	void finishConfigureBinding_suspendRedirectMode();
+	void finishConfigureBinding_toggleTouchpadEmulationFix();
 
 signals:
 	/*void longPressEnabledChanged(bool enable);

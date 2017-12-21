@@ -95,7 +95,8 @@ MyStackViewPage {
                     "Disabled",
                     "OpenVR",
                     "Keyboard",
-                    "Suspend Redirect Mode"
+                    "Suspend Redirect Mode",
+                    "Toggle Touchpad Emulation"
                 ]
                 onCurrentIndexChanged: {
                     if (currentIndex == 2) {
@@ -419,6 +420,8 @@ MyStackViewPage {
                         DigitalInputRemappingController.finishConfigureBinding_keyboard(shift, ctrl, alt, keyIndex, toggleMode, toggleDelay, autoTrigger, autoTriggerFreq)
                     } else if (bindingTypeComboBox.currentIndex == 4) {
                         DigitalInputRemappingController.finishConfigureBinding_suspendRedirectMode()
+                    } else if (bindingTypeComboBox.currentIndex == 5) {
+                        DigitalInputRemappingController.finishConfigureBinding_toggleTouchpadEmulationFix()
                     }
                     goBack()
                 }

@@ -117,6 +117,7 @@ Allows to configure a digital button binding. Available binding types are:
 - **OpenVR**: Remap to another OpenVR controller button.
 - **Keyboard**: Remap to a keyboard key.
 - **Suspend Redirect Mode**: Allows to temporarily suspend controller redirect mode.
+- **Toggle Touchpad Emulation**: Enables/disables the touchpad emulation mode for all analog axes.
 
 ##### OpenVR
 
@@ -144,6 +145,16 @@ Allows to configure an analog input. Available binding types are:
 - **No Remapping**: Original binding is used.
 - **Disabled**: Disables the analog input.
 - **OpenVR**: Remap to another OpenVR controller axis.
+
+The touchpad emulation mode for this analog axis can also be configured here. Touchpad emulation mode tries to emulate the behaviour of a touchpad with a joystick. The primary purpose of this option is to make Fallout 4 VR playable with Oculus Rift controllers, but it can also be used for other games.
+
+Available touch emulation modes:
+
+- **Position Based**: This modes assumes that the joystick can only move further away from the center position. All newer positions smaller can the last known position are ignored. The saved highest position is reset when the center position has been reached. The idea is to ignore input events caused by the joystick snapping back to center position. As soon as the center position is reached it is immediately send to the application in a position update. This helps with movement controls as otherwise any movement in an application is not reset when the joystick is let go by the user.
+
+- **Position Based (Deferred Zero Update)**: This modes works exactly the same as the mode above with one small difference. The position update when the center position is reached is not immediately send but only when the joystick starts moving again. This helps with applications that have problems with the above mode but messes up movement controls.
+
+**Button Press Deadzone Fix**: Some applications ignore touchpad/joystick clicks when the position is exactly the center position. This fix can help in this case by slightly offsetting the position when a click has been registered exactly at center position.
 
 ##### OpenVR
 

@@ -54,7 +54,8 @@ enum class RequestType : uint32_t {
 	InputRemapping_SetDigitalRemapping,
 	InputRemapping_GetDigitalRemapping,
 	InputRemapping_SetAnalogRemapping,
-	InputRemapping_GetAnalogRemapping
+	InputRemapping_GetAnalogRemapping,
+	InputRemapping_SetTouchpadEmulationFixEnabled
 };
 
 
@@ -328,6 +329,12 @@ struct Request_InputRemapping_GetAnalogRemapping {
 	uint32_t axisId;
 };
 
+struct Request_InputRemapping_SetTouchpadEmulationFixEnabled {
+	uint32_t clientId;
+	uint32_t messageId; // Used to associate with Reply
+	bool enable;
+};
+
 
 
 struct Request {
@@ -370,6 +377,7 @@ struct Request {
 		Request_InputRemapping_GetDigitalRemapping ir_GetDigitalRemapping;
 		Request_InputRemapping_SetAnalogRemapping ir_SetAnalogRemapping;
 		Request_InputRemapping_GetAnalogRemapping ir_GetAnalogRemapping;
+		Request_InputRemapping_SetTouchpadEmulationFixEnabled ir_SetTouchPadEmulationFixEnabled;
 		MsgUnion() {}
 	} msg;
 };

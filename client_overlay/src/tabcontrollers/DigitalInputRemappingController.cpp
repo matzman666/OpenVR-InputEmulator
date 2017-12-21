@@ -275,16 +275,27 @@ void DigitalInputRemappingController::enableTouchAsClick(bool enable, bool notif
 
 void DigitalInputRemappingController::finishConfigureBinding_Original() {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::NoRemapping;
+	memset(&m_currentBinding->data, 0, sizeof(m_currentBinding->data));
+	m_currentBinding->toggleEnabled = false;
+	m_currentBinding->toggleDelay = 0;
+	m_currentBinding->autoTriggerEnabled = false;
+	m_currentBinding->autoTriggerFrequency = 1;
 	emit configureDigitalBindingFinished();
 }
 
 void DigitalInputRemappingController::finishConfigureBinding_Disabled() {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::Disabled;
+	memset(&m_currentBinding->data, 0, sizeof(m_currentBinding->data));
+	m_currentBinding->toggleEnabled = false;
+	m_currentBinding->toggleDelay = 0;
+	m_currentBinding->autoTriggerEnabled = false;
+	m_currentBinding->autoTriggerFrequency = 1;
 	emit configureDigitalBindingFinished();
 }
 
 void DigitalInputRemappingController::finishConfigureBinding_OpenVR(int controllerId, int ButtonId, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency) {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::OpenVR;
+	memset(&m_currentBinding->data, 0, sizeof(m_currentBinding->data));
 	if (controllerId < 0) {
 		m_currentBinding->data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
 	} else {
@@ -300,6 +311,7 @@ void DigitalInputRemappingController::finishConfigureBinding_OpenVR(int controll
 
 void DigitalInputRemappingController::finishConfigureBinding_keyboard(bool shiftPressed, bool ctrlPressed, bool altPressed, unsigned long keyIndex, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency) {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::Keyboard;
+	memset(&m_currentBinding->data, 0, sizeof(m_currentBinding->data));
 	m_currentBinding->data.keyboard.shiftPressed = shiftPressed;
 	m_currentBinding->data.keyboard.ctrlPressed = ctrlPressed;
 	m_currentBinding->data.keyboard.altPressed = altPressed;
@@ -313,6 +325,22 @@ void DigitalInputRemappingController::finishConfigureBinding_keyboard(bool shift
 
 void DigitalInputRemappingController::finishConfigureBinding_suspendRedirectMode() {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::SuspendRedirectMode;
+	memset(&m_currentBinding->data, 0, sizeof(m_currentBinding->data));
+	m_currentBinding->toggleEnabled = false;
+	m_currentBinding->toggleDelay = 0;
+	m_currentBinding->autoTriggerEnabled = false;
+	m_currentBinding->autoTriggerFrequency = 1;
+	emit configureDigitalBindingFinished();
+}
+
+
+void DigitalInputRemappingController::finishConfigureBinding_toggleTouchpadEmulationFix() {
+	m_currentBinding->type = vrinputemulator::DigitalBindingType::ToggleTouchpadEmulationFix;
+	memset(&m_currentBinding->data, 0, sizeof(m_currentBinding->data));
+	m_currentBinding->toggleEnabled = false;
+	m_currentBinding->toggleDelay = 0;
+	m_currentBinding->autoTriggerEnabled = false;
+	m_currentBinding->autoTriggerFrequency = 1;
 	emit configureDigitalBindingFinished();
 }
 

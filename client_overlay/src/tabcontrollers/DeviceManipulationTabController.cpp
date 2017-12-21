@@ -375,6 +375,8 @@ void DeviceManipulationTabController::reloadDeviceManipulationProfiles() {
 				p.remapping.binding.swapAxes = r["swapAxes"].toBool();
 				p.remapping.binding.lowerDeadzone = r["lowerDeadzone"].toFloat();
 				p.remapping.binding.upperDeadzone = r["upperDeadzone"].toFloat();
+				p.remapping.binding.buttonPressDeadzoneFix = r["buttonPressDeadzoneFix"].toBool();
+				p.remapping.binding.touchpadEmulationMode = r["touchpadEmulationMode"].toUInt();
 				entry.analogRemappingProfiles[key.toInt()] = p;
 			}
 		}
@@ -489,6 +491,8 @@ void DeviceManipulationTabController::saveDeviceManipulationProfiles() {
 					profile["lowerDeadzone"] = ap.remapping.binding.lowerDeadzone;
 					profile["upperDeadzone"] = ap.remapping.binding.upperDeadzone;
 					profile["swapAxes"] = ap.remapping.binding.swapAxes;
+					profile["buttonPressDeadzoneFix"] = ap.remapping.binding.buttonPressDeadzoneFix;
+					profile["touchpadEmulationMode"] = ap.remapping.binding.touchpadEmulationMode;
 					analogProfiles[QString::number(i2)] = profile;
 				}
 			}
@@ -593,6 +597,8 @@ void DeviceManipulationTabController::addDeviceManipulationProfile(QString name,
 					p.remapping.binding.lowerDeadzone = r.binding.lowerDeadzone;
 					p.remapping.binding.upperDeadzone = r.binding.upperDeadzone;
 					p.remapping.binding.swapAxes = r.binding.swapAxes;
+					p.remapping.binding.buttonPressDeadzoneFix = r.binding.buttonPressDeadzoneFix;
+					p.remapping.binding.touchpadEmulationMode = r.binding.touchpadEmulationMode;
 				}
 			}
 		} catch (const std::exception& e) {
@@ -638,6 +644,30 @@ void DeviceManipulationTabController::applyDeviceManipulationProfile(unsigned in
 					parent->vrInputEmulator().setDigitalInputRemapping(device->openvrId, i, vrinputemulator::DigitalInputRemapping());
 				} else {
 					auto& p = *it;
+
+					// We need to correct some potentially false data to not mess up the button state machine
+					if (p.second.remapping.binding.type == vrinputemulator::DigitalBindingType::NoRemapping 
+							|| p.second.remapping.binding.type == vrinputemulator::DigitalBindingType::Disabled
+							|| p.second.remapping.binding.type == vrinputemulator::DigitalBindingType::SuspendRedirectMode
+							|| p.second.remapping.binding.type == vrinputemulator::DigitalBindingType::ToggleTouchpadEmulationFix) {
+						p.second.remapping.binding.toggleEnabled = false;
+						p.second.remapping.binding.autoTriggerEnabled = false;
+					}
+					if (p.second.remapping.doublePressEnabled && (p.second.remapping.doublePressBinding.type == vrinputemulator::DigitalBindingType::NoRemapping
+						|| p.second.remapping.doublePressBinding.type == vrinputemulator::DigitalBindingType::Disabled
+						|| p.second.remapping.doublePressBinding.type == vrinputemulator::DigitalBindingType::SuspendRedirectMode
+						|| p.second.remapping.doublePressBinding.type == vrinputemulator::DigitalBindingType::ToggleTouchpadEmulationFix)) {
+						p.second.remapping.doublePressBinding.toggleEnabled = false;
+						p.second.remapping.doublePressBinding.autoTriggerEnabled = false;
+					}
+					if (p.second.remapping.longPressEnabled && (p.second.remapping.longPressBinding.type == vrinputemulator::DigitalBindingType::NoRemapping
+						|| p.second.remapping.longPressBinding.type == vrinputemulator::DigitalBindingType::Disabled
+						|| p.second.remapping.longPressBinding.type == vrinputemulator::DigitalBindingType::SuspendRedirectMode
+						|| p.second.remapping.longPressBinding.type == vrinputemulator::DigitalBindingType::ToggleTouchpadEmulationFix)) {
+						p.second.remapping.longPressBinding.toggleEnabled = false;
+						p.second.remapping.longPressBinding.autoTriggerEnabled = false;
+					}
+
 					if (p.second.remapping.binding.type == vrinputemulator::DigitalBindingType::OpenVR && !p.second.normalBindingControllerSerial.isEmpty()) {
 						p.second.remapping.binding.data.openvr.controllerId = _getDeviceIdFromSerial(p.second.normalBindingControllerSerial);
 					} else {
@@ -872,6 +902,9 @@ QString DeviceManipulationTabController::getAnalogAxisStatus(unsigned deviceInde
 	if (deviceIndex < deviceInfos.size()) {
 		auto remapping = parent->vrInputEmulator().getAnalogInputRemapping(deviceInfos[deviceIndex]->openvrId, axisId);
 		status = parent->analogBindingToString(remapping.binding, remapping.binding.data.openvr.controllerId != deviceInfos[deviceIndex]->openvrId);
+		if (status.size() > 60) {
+			status = status.left(60).append("...");
+		}
 	}
 	return status;
 }
@@ -1153,7 +1186,7 @@ void DeviceManipulationTabController::triggerHapticPulse(unsigned index) {
 		// When I use a thread everything works in debug modus, but as soon as I switch to release mode I get a segmentation fault
 		// Hard to debug since it works in debug modus and therefore I cannot use a debugger :-(
 		for (unsigned i = 0; i < 50; ++i) {
-			parent->vrInputEmulator().triggerHapticPulse(deviceInfos[index]->openvrId, 0, 2000, true);
+			parent->vrInputEmulator().triggerHapticPulse(deviceInfos[index]->openvrId, 0, 1000, true);
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 		/*if (identifyThread.joinable()) {
