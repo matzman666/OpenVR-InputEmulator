@@ -1,5 +1,3 @@
-// dllmain.cpp : Definiert den Einstiegspunkt für die DLL-Anwendung.
-#include "stdafx.h"
 #include "logging.h"
 
 const char* logConfigFileName = "logging.conf";

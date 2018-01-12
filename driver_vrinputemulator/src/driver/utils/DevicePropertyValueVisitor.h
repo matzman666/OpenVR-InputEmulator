@@ -1,11 +1,12 @@
 #pragma once
 
-
 #include <openvr_driver.h>
 #include <boost/variant.hpp>
 
+
 namespace vrinputemulator {
 namespace driver {
+
 
 class DevicePropertyValueVisitor : public boost::static_visitor<std::string> {
 private:

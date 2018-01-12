@@ -1,7 +1,10 @@
+#include "DeviceManipulationHandle.h"
 
-#include "stdafx.h"
-#include "driver_vrinputemulator.h"
-#include <openvr_math.h>
+#include "../driver/ServerDriver.h"
+#include "../hooks/IVRServerDriverHost004Hooks.h"
+#include "../hooks/IVRServerDriverHost005Hooks.h"
+#include "../hooks/IVRControllerComponent001Hooks.h"
+
 #undef WIN32_LEAN_AND_MEAN
 #undef NOSOUND
 #include <Windows.h>
@@ -20,10 +23,15 @@ namespace driver {
 		lhs[2] += rhs.v[2];
 
 
-bool OpenvrDeviceManipulationInfo::touchpadEmulationEnabledFlag = true;
+bool DeviceManipulationHandle::touchpadEmulationEnabledFlag = true;
 
 
-void OpenvrDeviceManipulationInfo::setDigitalInputRemapping(uint32_t buttonId, const DigitalInputRemapping& remapping) {
+DeviceManipulationHandle::DeviceManipulationHandle(vr::ETrackedDeviceClass eDeviceClass, void* driverPtr, void* driverHostPtr, int driverInterfaceVersion)
+	: m_isValid(true), m_parent(ServerDriver::getInstance()), m_motionCompensationManager(m_parent->motionCompensation()), m_deviceDriverPtr(driverPtr), m_deviceDriverHostPtr(driverHostPtr),
+	m_deviceDriverInterfaceVersion(driverInterfaceVersion), m_eDeviceClass(eDeviceClass) {}
+
+
+void DeviceManipulationHandle::setDigitalInputRemapping(uint32_t buttonId, const DigitalInputRemapping& remapping) {
 	if (remapping.valid) {
 		m_digitalInputRemapping[buttonId].remapping = remapping;
 	} else {
@@ -35,7 +43,7 @@ void OpenvrDeviceManipulationInfo::setDigitalInputRemapping(uint32_t buttonId, c
 }
 
 
-DigitalInputRemapping OpenvrDeviceManipulationInfo::getDigitalInputRemapping(uint32_t buttonId) {
+DigitalInputRemapping DeviceManipulationHandle::getDigitalInputRemapping(uint32_t buttonId) {
 	auto it = m_digitalInputRemapping.find(buttonId);
 	if (it != m_digitalInputRemapping.end()) {
 		return it->second.remapping;
@@ -45,14 +53,14 @@ DigitalInputRemapping OpenvrDeviceManipulationInfo::getDigitalInputRemapping(uin
 }
 
 
-void OpenvrDeviceManipulationInfo::setAnalogInputRemapping(uint32_t axisId, const AnalogInputRemapping& remapping) {
+void DeviceManipulationHandle::setAnalogInputRemapping(uint32_t axisId, const AnalogInputRemapping& remapping) {
 	if (axisId < 5) {
 		m_analogInputRemapping[axisId].remapping = remapping;
 	}
 }
 
 
-AnalogInputRemapping OpenvrDeviceManipulationInfo::getAnalogInputRemapping(uint32_t axisId) {
+AnalogInputRemapping DeviceManipulationHandle::getAnalogInputRemapping(uint32_t axisId) {
 	if (axisId < 5) {
 		return m_analogInputRemapping[axisId].remapping;
 	} else {
@@ -60,91 +68,138 @@ AnalogInputRemapping OpenvrDeviceManipulationInfo::getAnalogInputRemapping(uint3
 	}
 }
 
-
-void OpenvrDeviceManipulationInfo::handleNewDevicePose(vr::IVRServerDriverHost* driver, _DetourTrackedDevicePoseUpdated_t origFunc, uint32_t& unWhichDevice, const vr::DriverPose_t& pose) {
+bool DeviceManipulationHandle::handlePoseUpdate(void* serverDriverHost, int version, uint32_t& unWhichDevice, vr::DriverPose_t& newPose, uint32_t& unPoseStructSize) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
+
 	if (m_deviceMode == 1) { // fake disconnect mode
 		if (!_disconnectedMsgSend) {
-			vr::DriverPose_t newPose = pose;
 			newPose.poseIsValid = false;
 			newPose.deviceIsConnected = false;
 			newPose.result = vr::TrackingResult_Uninitialized;
 			_disconnectedMsgSend = true;
-			origFunc(driver, unWhichDevice, newPose, sizeof(vr::DriverPose_t));
+			return true;
+		} else {
+			return false;
 		}
+
 	} else if (m_deviceMode == 3 && !m_redirectSuspended) { // redirect target
-		//nop
+		return false;
+
 	} else if (m_deviceMode == 5) { // motion compensation mode
-		auto serverDriver = CServerDriver::getInstance();
+		auto serverDriver = ServerDriver::getInstance();
 		if (serverDriver) {
-			if (pose.poseIsValid && pose.result == vr::TrackingResult_Running_OK) {
-				serverDriver->_setMotionCompensationStatus(MotionCompensationStatus::Running);
-				if (!serverDriver->_isMotionCompensationZeroPoseValid()) {
-					serverDriver->_setMotionCompensationZeroPose(pose);
+			if (newPose.poseIsValid && newPose.result == vr::TrackingResult_Running_OK) {
+				m_motionCompensationManager._setMotionCompensationStatus(MotionCompensationStatus::Running);
+				if (!m_motionCompensationManager._isMotionCompensationZeroPoseValid()) {
+					m_motionCompensationManager._setMotionCompensationZeroPose(newPose);
 					serverDriver->sendReplySetMotionCompensationMode(true);
 				} else {
-					serverDriver->_updateMotionCompensationRefPose(pose);
+					m_motionCompensationManager._updateMotionCompensationRefPose(newPose);
 				}
 			} else {
-				if (!serverDriver->_isMotionCompensationZeroPoseValid()) {
+				if (!m_motionCompensationManager._isMotionCompensationZeroPoseValid()) {
 					setDefaultMode();
 					serverDriver->sendReplySetMotionCompensationMode(false);
 				} else {
-					serverDriver->_setMotionCompensationStatus(MotionCompensationStatus::MotionRefNotTracking);
+					m_motionCompensationManager._setMotionCompensationStatus(MotionCompensationStatus::MotionRefNotTracking);
 				}
 			}
 		}
+		return true;
+
 	} else {
-		vr::DriverPose_t newPose = pose;
 		if (m_offsetsEnabled) {
 			if (m_worldFromDriverRotationOffset.w != 1.0 || m_worldFromDriverRotationOffset.x != 0.0
-					|| m_worldFromDriverRotationOffset.y != 0.0 || m_worldFromDriverRotationOffset.z != 0.0) {
+				|| m_worldFromDriverRotationOffset.y != 0.0 || m_worldFromDriverRotationOffset.z != 0.0) {
 				newPose.qWorldFromDriverRotation = m_worldFromDriverRotationOffset * newPose.qWorldFromDriverRotation;
 			}
 			if (m_worldFromDriverTranslationOffset.v[0] != 0.0 || m_worldFromDriverTranslationOffset.v[1] != 0.0 || m_worldFromDriverTranslationOffset.v[2] != 0.0) {
 				VECTOR_ADD(newPose.vecWorldFromDriverTranslation, m_worldFromDriverTranslationOffset);
 			}
 			if (m_driverFromHeadRotationOffset.w != 1.0 || m_driverFromHeadRotationOffset.x != 0.0
-					|| m_driverFromHeadRotationOffset.y != 0.0 || m_driverFromHeadRotationOffset.z != 0.0) {
+				|| m_driverFromHeadRotationOffset.y != 0.0 || m_driverFromHeadRotationOffset.z != 0.0) {
 				newPose.qDriverFromHeadRotation = m_driverFromHeadRotationOffset * newPose.qDriverFromHeadRotation;
 			}
 			if (m_driverFromHeadTranslationOffset.v[0] != 0.0 || m_driverFromHeadTranslationOffset.v[1] != 0.0 || m_driverFromHeadTranslationOffset.v[2] != 0.0) {
 				VECTOR_ADD(newPose.vecDriverFromHeadTranslation, m_driverFromHeadTranslationOffset);
 			}
 			if (m_deviceRotationOffset.w != 1.0 || m_deviceRotationOffset.x != 0.0
-					|| m_deviceRotationOffset.y != 0.0 || m_deviceRotationOffset.z != 0.0) {
+				|| m_deviceRotationOffset.y != 0.0 || m_deviceRotationOffset.z != 0.0) {
 				newPose.qRotation = m_deviceRotationOffset * newPose.qRotation;
 			}
 			if (m_deviceTranslationOffset.v[0] != 0.0 || m_deviceTranslationOffset.v[1] != 0.0 || m_deviceTranslationOffset.v[2] != 0.0) {
 				VECTOR_ADD(newPose.vecPosition, m_deviceTranslationOffset);
 			}
 		}
-		auto serverDriver = CServerDriver::getInstance();
-		if (serverDriver) {
-			if (!serverDriver->_applyMotionCompensation(newPose, this)) {
-				return;
-			}
-		}
+		
+		m_motionCompensationManager._applyMotionCompensation(newPose, this);
+		
 		if (m_deviceMode == 2 && !m_redirectSuspended) { // redirect source
+			m_redirectRef->ll_sendPoseUpdate(newPose);
 			if (!_disconnectedMsgSend) {
-				vr::DriverPose_t newPose2 = pose;
-				newPose2.poseIsValid = false;
-				newPose2.deviceIsConnected = false;
-				newPose2.result = vr::TrackingResult_Uninitialized;
+				newPose.poseIsValid = false;
+				newPose.deviceIsConnected = false;
+				newPose.result = vr::TrackingResult_Uninitialized;
 				_disconnectedMsgSend = true;
-				origFunc(driver, unWhichDevice, newPose2, sizeof(vr::DriverPose_t));
+			} else {
+				return false;
 			}
-			origFunc(m_redirectRef->driverHost(), m_redirectRef->openvrId(), newPose, sizeof(vr::DriverPose_t));
 		} else if (m_deviceMode == 4) { // swap mode
-			origFunc(m_redirectRef->driverHost(), m_redirectRef->openvrId(), newPose, sizeof(vr::DriverPose_t));
-		} else {
-			origFunc(driver, unWhichDevice, newPose, sizeof(vr::DriverPose_t));
+			unWhichDevice = m_redirectRef->openvrId();
 		}
+		return true;
 	}
 }
 
 
-void OpenvrDeviceManipulationInfo::handleButtonEvent(vr::IVRServerDriverHost* driver, uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset) {
+void DeviceManipulationHandle::ll_sendPoseUpdate(const vr::DriverPose_t& newPose) {
+	if (m_deviceDriverInterfaceVersion == 4) {
+		IVRServerDriverHost004Hooks::trackedDevicePoseUpdatedOrig(m_deviceDriverHostPtr, m_openvrId, newPose, sizeof(vr::DriverPose_t));
+	} else if (m_deviceDriverInterfaceVersion == 5) {
+		IVRServerDriverHost005Hooks::trackedDevicePoseUpdatedOrig(m_deviceDriverHostPtr, m_openvrId, newPose, sizeof(vr::DriverPose_t));
+	}
+}
+
+
+void DeviceManipulationHandle::ll_sendButtonEvent(ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset) {
+	if (m_deviceDriverInterfaceVersion == 4) {
+		switch (eventType) {
+		case vrinputemulator::ButtonEventType::ButtonPressed:
+			IVRServerDriverHost004Hooks::trackedDeviceButtonPressedOrig(m_deviceDriverHostPtr, m_openvrId, eButtonId, eventTimeOffset);
+			break;
+		case vrinputemulator::ButtonEventType::ButtonUnpressed:
+			IVRServerDriverHost004Hooks::trackedDeviceButtonUnpressedOrig(m_deviceDriverHostPtr, m_openvrId, eButtonId, eventTimeOffset);
+			break;
+		case vrinputemulator::ButtonEventType::ButtonTouched:
+			IVRServerDriverHost004Hooks::trackedDeviceButtonTouchedOrig(m_deviceDriverHostPtr, m_openvrId, eButtonId, eventTimeOffset);
+			break;
+		case vrinputemulator::ButtonEventType::ButtonUntouched:
+			IVRServerDriverHost004Hooks::trackedDeviceButtonUntouchedOrig(m_deviceDriverHostPtr, m_openvrId, eButtonId, eventTimeOffset);
+			break;
+		default:
+			break;
+		}
+		
+	}
+}
+
+
+void DeviceManipulationHandle::ll_sendAxisEvent(uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState) {
+	if (m_deviceDriverInterfaceVersion == 4) {
+		IVRServerDriverHost004Hooks::trackedDeviceAxisUpdatedOrig(m_deviceDriverHostPtr, m_openvrId, unWhichAxis, axisState);
+	}
+}
+
+
+bool DeviceManipulationHandle::ll_triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds) {
+	if (m_deviceDriverInterfaceVersion == 4 && m_controllerComponentHooks) {
+		return std::static_pointer_cast<IVRControllerComponent001Hooks>(m_controllerComponentHooks)->triggerHapticPulseOrig(unAxisId, usPulseDurationMicroseconds);
+	}
+	return true;
+}
+
+
+bool DeviceManipulationHandle::handleButtonEvent(void* serverDriverHost, int version, uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId& eButtonId, double& eventTimeOffset) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	auto buttonIt = m_digitalInputRemapping.find(eButtonId);
 	if (buttonIt != m_digitalInputRemapping.end()) {
@@ -154,7 +209,7 @@ void OpenvrDeviceManipulationInfo::handleButtonEvent(vr::IVRServerDriverHost* dr
 				switch (eventType) {
 					case vrinputemulator::ButtonEventType::ButtonPressed:
 					case vrinputemulator::ButtonEventType::ButtonUnpressed:
-						return;
+						return false;
 					case vrinputemulator::ButtonEventType::ButtonTouched: {
 						eventType = vrinputemulator::ButtonEventType::ButtonPressed;
 					} break;
@@ -245,10 +300,11 @@ void OpenvrDeviceManipulationInfo::handleButtonEvent(vr::IVRServerDriverHost* dr
 			sendButtonEvent(unWhichDevice, eventType, eButtonId, eventTimeOffset);
 		}
 	}
+	return false;
 }
 
 
-void OpenvrDeviceManipulationInfo::suspendRedirectMode() {
+void DeviceManipulationHandle::suspendRedirectMode() {
 	if (m_deviceMode == 2 || m_deviceMode == 3) {
 		m_redirectSuspended = !m_redirectSuspended;
 		_disconnectedMsgSend = false;
@@ -258,7 +314,7 @@ void OpenvrDeviceManipulationInfo::suspendRedirectMode() {
 }
 
 
-void OpenvrDeviceManipulationInfo::RunFrame() {
+void DeviceManipulationHandle::RunFrame() {
 	for (auto& r : m_digitalInputRemapping) {
 		switch (r.second.state) {
 		case 1: {
@@ -321,7 +377,7 @@ void OpenvrDeviceManipulationInfo::RunFrame() {
 }
 
 
-void OpenvrDeviceManipulationInfo::RunFrameDigitalBinding(vrinputemulator::DigitalBinding& binding, vr::EVRButtonId eButtonId, OpenvrDeviceManipulationInfo::DigitalInputRemappingInfo::BindingInfo& bindingInfo) {
+void DeviceManipulationHandle::RunFrameDigitalBinding(vrinputemulator::DigitalBinding& binding, vr::EVRButtonId eButtonId, DeviceManipulationHandle::DigitalInputRemappingInfo::BindingInfo& bindingInfo) {
 	if (bindingInfo.autoTriggerEnabled) {
 		auto now = std::chrono::system_clock::now();
 		if (bindingInfo.autoTriggerState && bindingInfo.autoTriggerUnpressTimeout < now) {
@@ -350,7 +406,7 @@ void OpenvrDeviceManipulationInfo::RunFrameDigitalBinding(vrinputemulator::Digit
 }
 
 
-void OpenvrDeviceManipulationInfo::handleAxisEvent(vr::IVRServerDriverHost* driver, _DetourTrackedDeviceAxisUpdated_t origFunc, uint32_t& unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState) {
+bool DeviceManipulationHandle::handleAxisUpdate(void* serverDriverHost, int version, uint32_t& unWhichDevice, uint32_t& unWhichAxis, vr::VRControllerAxis_t& axisState) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	AnalogInputRemappingInfo* axisInfo = nullptr;
 	if (unWhichAxis < 5) {
@@ -360,31 +416,30 @@ void OpenvrDeviceManipulationInfo::handleAxisEvent(vr::IVRServerDriverHost* driv
 		sendAnalogBinding(axisInfo->remapping.binding, unWhichDevice, unWhichAxis, axisState, &axisInfo->binding);
 	} else {
 		if (m_deviceMode == 1 || (m_deviceMode == 3 && !m_redirectSuspended) /*|| m_deviceMode == 5*/) {
-			//nop
+			// nop
 		} else {
 			sendAxisEvent(unWhichDevice, unWhichAxis, axisState);
 		}
 	}
+	return false;
 }
 
 
-bool OpenvrDeviceManipulationInfo::triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds, bool directMode) {
+bool DeviceManipulationHandle::triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds, bool directMode) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
-	if (m_controllerComponent) {
-		if (directMode) {
-			return m_triggerHapticPulseFunc(m_controllerComponent, unAxisId, usPulseDurationMicroseconds);
-		} else if ((m_deviceMode == 3 && !m_redirectSuspended) || m_deviceMode == 4) {
-			m_redirectRef->triggerHapticPulse(unAxisId, usPulseDurationMicroseconds, true);
-		} else  if (m_deviceMode == 0 || ((m_deviceMode == 3 || m_deviceMode == 2) && m_redirectSuspended)) {
-			return m_triggerHapticPulseFunc(m_controllerComponent, unAxisId, usPulseDurationMicroseconds);
-		}
+	if (directMode) {
+		return ll_triggerHapticPulse(unAxisId, usPulseDurationMicroseconds);
+	} else if ((m_deviceMode == 3 && !m_redirectSuspended) || m_deviceMode == 4) {
+		return m_redirectRef->ll_triggerHapticPulse(unAxisId, usPulseDurationMicroseconds);
+	} else  if (m_deviceMode == 0 || ((m_deviceMode == 3 || m_deviceMode == 2) && m_redirectSuspended)) {
+		return ll_triggerHapticPulse(unAxisId, usPulseDurationMicroseconds);
 	}
 	return true;
 }
 
 
 
-void OpenvrDeviceManipulationInfo::sendDigitalBinding(vrinputemulator::DigitalBinding& binding, uint32_t unWhichDevice, ButtonEventType eventType, 
+void DeviceManipulationHandle::sendDigitalBinding(vrinputemulator::DigitalBinding& binding, uint32_t unWhichDevice, ButtonEventType eventType, 
 		vr::EVRButtonId eButtonId, double eventTimeOffset, DigitalInputRemappingInfo::BindingInfo* bindingInfo) {
 	if (binding.type == DigitalBindingType::NoRemapping) {
 		sendButtonEvent(unWhichDevice, eventType, eButtonId, eventTimeOffset, false, bindingInfo);
@@ -487,7 +542,7 @@ void OpenvrDeviceManipulationInfo::sendDigitalBinding(vrinputemulator::DigitalBi
 					if (eventType == ButtonEventType::ButtonPressed) {
 						//_vibrationCue(); // Better not let it interfere with an haptic event triggered by an application
 						_audioCue();
-						OpenvrDeviceManipulationInfo::setTouchpadEmulationFixFlag(!OpenvrDeviceManipulationInfo::getTouchpadEmulationFixFlag());
+						DeviceManipulationHandle::setTouchpadEmulationFixFlag(!DeviceManipulationHandle::getTouchpadEmulationFixFlag());
 						bindingInfo->pressedState = true;
 					} else if (eventType == ButtonEventType::ButtonUnpressed) {
 						bindingInfo->pressedState = false;
@@ -501,13 +556,13 @@ void OpenvrDeviceManipulationInfo::sendDigitalBinding(vrinputemulator::DigitalBi
 }
 
 
-void OpenvrDeviceManipulationInfo::_audioCue() {
-	auto audiofile = CServerDriver::getInstallDirectory().append("\\resources\\sounds\\audiocue.wav");
+void DeviceManipulationHandle::_audioCue() {
+	auto audiofile = ServerDriver::getInstallDirectory().append("\\resources\\sounds\\audiocue.wav");
 	PlaySoundA(audiofile.c_str(), NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
 }
 
 
-void OpenvrDeviceManipulationInfo::_vibrationCue() {
+void DeviceManipulationHandle::_vibrationCue() {
 	if (_vibrationCueTheadHandle != NULL) {
 		DWORD threadExitCode = 0;
 		if (GetExitCodeThread(_vibrationCueTheadHandle, &threadExitCode) != 0 && threadExitCode == STILL_ACTIVE) {
@@ -517,7 +572,7 @@ void OpenvrDeviceManipulationInfo::_vibrationCue() {
 		_vibrationCueTheadHandle = NULL;
 	}
 	static struct _vibrationCueThreadArgs {
-		OpenvrDeviceManipulationInfo* deviceInfo;
+		DeviceManipulationHandle* deviceInfo;
 	} threadArgs;
 	threadArgs.deviceInfo = this;
 	_vibrationCueTheadHandle = CreateThread(
@@ -526,7 +581,7 @@ void OpenvrDeviceManipulationInfo::_vibrationCue() {
 		[](LPVOID lpParam)->DWORD {
 			_vibrationCueThreadArgs* args = (_vibrationCueThreadArgs*)lpParam;
 			for (unsigned i = 0; i < 10; ++i) {
-				args->deviceInfo->m_triggerHapticPulseFunc(args->deviceInfo->controllerComponent(), 0, 1000);
+				args->deviceInfo->ll_triggerHapticPulse(0, 1000);
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			}
 			return 0;
@@ -538,7 +593,7 @@ void OpenvrDeviceManipulationInfo::_vibrationCue() {
 }
 
 
-void OpenvrDeviceManipulationInfo::sendAnalogBinding(vrinputemulator::AnalogBinding& binding, uint32_t unWhichDevice, uint32_t axisId, const vr::VRControllerAxis_t& axisState, OpenvrDeviceManipulationInfo::AnalogInputRemappingInfo::BindingInfo* bindingInfo) {
+void DeviceManipulationHandle::sendAnalogBinding(vrinputemulator::AnalogBinding& binding, uint32_t unWhichDevice, uint32_t axisId, const vr::VRControllerAxis_t& axisState, DeviceManipulationHandle::AnalogInputRemappingInfo::BindingInfo* bindingInfo) {
 	if (binding.type == AnalogBindingType::NoRemapping) {
 		sendAxisEvent(unWhichDevice, axisId, axisState, false, bindingInfo);
 	} else if (binding.type == AnalogBindingType::Disabled) {
@@ -609,22 +664,22 @@ void OpenvrDeviceManipulationInfo::sendAnalogBinding(vrinputemulator::AnalogBind
 }
 
 
-void OpenvrDeviceManipulationInfo::_buttonPressDeadzoneFix(vr::EVRButtonId eButtonId) {
+void DeviceManipulationHandle::_buttonPressDeadzoneFix(vr::EVRButtonId eButtonId) {
 	auto& axisInfo = m_analogInputRemapping[eButtonId - vr::k_EButton_Axis0];
 	if (axisInfo.remapping.valid && axisInfo.remapping.binding.buttonPressDeadzoneFix) {
 		if (axisInfo.binding.lastSendAxisState.x == 0.0f && axisInfo.binding.lastSendAxisState.y == 0.0f) {
-			CServerDriver::openvrTrackedDeviceAxisUpdated(m_driverHost, m_openvrId, eButtonId - vr::k_EButton_Axis0, {0.01f, 0.01f});
+			ll_sendAxisEvent(eButtonId - vr::k_EButton_Axis0, { 0.01f, 0.01f });
 		}
 	}
 }
 
-void OpenvrDeviceManipulationInfo::sendButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode, DigitalInputRemappingInfo::BindingInfo* binding) {
+void DeviceManipulationHandle::sendButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode, DigitalInputRemappingInfo::BindingInfo* binding) {
 	if (!directMode) {
 		if (unWhichDevice == m_openvrId && ((m_deviceMode == 2 && !m_redirectSuspended) || m_deviceMode == 4)) {
 			unWhichDevice = m_redirectRef->openvrId();
 		}
 		if (unWhichDevice != m_openvrId) {
-			auto deviceInfo = CServerDriver::getDeviceInfo(unWhichDevice);
+			auto deviceInfo = m_parent->getDeviceManipulationHandleById(unWhichDevice);
 			if (deviceInfo) {
 				return deviceInfo->sendButtonEvent(unWhichDevice, eventType, eButtonId, eventTimeOffset, true, binding);
 			}
@@ -638,7 +693,7 @@ void OpenvrDeviceManipulationInfo::sendButtonEvent(uint32_t& unWhichDevice, Butt
 						auto& axisInfo = m_analogInputRemapping[eButtonId - vr::k_EButton_Axis0];
 						axisInfo.binding.touchedState = true;
 					}
-					CServerDriver::openvrTrackedDeviceButtonTouched(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+					ll_sendButtonEvent(ButtonEventType::ButtonTouched, eButtonId, eventTimeOffset);
 					binding->touchedState = true;
 					binding->touchedAutoset = true;
 				}
@@ -646,40 +701,40 @@ void OpenvrDeviceManipulationInfo::sendButtonEvent(uint32_t& unWhichDevice, Butt
 					if (eButtonId >= vr::k_EButton_Axis0 && eButtonId <= vr::k_EButton_Axis4) {
 						_buttonPressDeadzoneFix(eButtonId);
 					}
-					CServerDriver::openvrTrackedDeviceButtonPressed(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+					ll_sendButtonEvent(ButtonEventType::ButtonPressed, eButtonId, eventTimeOffset);
 					binding->pressedState = true;
 				}
 			} else {
 				if (eButtonId >= vr::k_EButton_Axis0 && eButtonId <= vr::k_EButton_Axis4) {
 					_buttonPressDeadzoneFix(eButtonId);
 				}
-				CServerDriver::openvrTrackedDeviceButtonPressed(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+				ll_sendButtonEvent(ButtonEventType::ButtonPressed, eButtonId, eventTimeOffset);
 			}
 		} break;
 		case ButtonEventType::ButtonUnpressed: {
 			if (binding) {
 				if (binding->pressedState) {
-					CServerDriver::openvrTrackedDeviceButtonUnpressed(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+					ll_sendButtonEvent(ButtonEventType::ButtonUnpressed, eButtonId, eventTimeOffset);
 					binding->pressedState = false;
 				}
 				if (binding->touchedState && binding->touchedAutoset) {
-					CServerDriver::openvrTrackedDeviceButtonUntouched(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+					ll_sendButtonEvent(ButtonEventType::ButtonUntouched, eButtonId, eventTimeOffset);
 					binding->touchedState = false;
 					binding->touchedAutoset = false;
 				}
 			} else {
-				CServerDriver::openvrTrackedDeviceButtonUnpressed(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+				ll_sendButtonEvent(ButtonEventType::ButtonUnpressed, eButtonId, eventTimeOffset);
 			}
 		} break;
 		case ButtonEventType::ButtonTouched: {
 			if (binding) {
 				if (!binding->touchedState) {
-					CServerDriver::openvrTrackedDeviceButtonTouched(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+					ll_sendButtonEvent(ButtonEventType::ButtonTouched, eButtonId, eventTimeOffset);
 					binding->touchedState = true;
 					binding->touchedAutoset = false;
 				}
 			} else {
-				CServerDriver::openvrTrackedDeviceButtonTouched(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+				ll_sendButtonEvent(ButtonEventType::ButtonTouched, eButtonId, eventTimeOffset);
 			}
 		} break;
 		case ButtonEventType::ButtonUntouched: {
@@ -688,13 +743,13 @@ void OpenvrDeviceManipulationInfo::sendButtonEvent(uint32_t& unWhichDevice, Butt
 					if (binding->pressedState) {
 						binding->touchedAutoset = true;
 					} else {
-						CServerDriver::openvrTrackedDeviceButtonUntouched(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+						ll_sendButtonEvent(ButtonEventType::ButtonUntouched, eButtonId, eventTimeOffset);
 						binding->touchedState = false;
 						binding->touchedAutoset = false;
 					}
 				}
 			} else {
-				CServerDriver::openvrTrackedDeviceButtonUntouched(m_driverHost, unWhichDevice, eButtonId, eventTimeOffset);
+				ll_sendButtonEvent(ButtonEventType::ButtonUntouched, eButtonId, eventTimeOffset);
 			}
 		} break;
 		default: {
@@ -702,7 +757,8 @@ void OpenvrDeviceManipulationInfo::sendButtonEvent(uint32_t& unWhichDevice, Butt
 	}
 }
 
-void OpenvrDeviceManipulationInfo::sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, DigitalInputRemappingInfo::BindingInfo* binding) {
+
+void DeviceManipulationHandle::sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, DigitalInputRemappingInfo::BindingInfo* binding) {
 	if ( (eventType == ButtonEventType::ButtonPressed && (!binding || !binding->pressedState)) 
 			|| (eventType == ButtonEventType::ButtonUnpressed && (!binding || binding->pressedState)) ) {
 		INPUT ips[4];
@@ -756,13 +812,13 @@ void OpenvrDeviceManipulationInfo::sendKeyboardEvent(ButtonEventType eventType, 
 }
 
 
-void OpenvrDeviceManipulationInfo::sendAxisEvent(uint32_t& unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState, bool directMode, AnalogInputRemappingInfo::BindingInfo* binding) {
+void DeviceManipulationHandle::sendAxisEvent(uint32_t& unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState, bool directMode, AnalogInputRemappingInfo::BindingInfo* binding) {
 	if (!directMode) {
 		if (unWhichDevice == m_openvrId && ((m_deviceMode == 2 && !m_redirectSuspended) || m_deviceMode == 4)) {
 			unWhichDevice = m_redirectRef->openvrId();
 		}
 		if (unWhichDevice != m_openvrId) {
-			auto deviceInfo = CServerDriver::getDeviceInfo(unWhichDevice);
+			auto deviceInfo = m_parent->getDeviceManipulationHandleById(unWhichDevice);
 			if (deviceInfo) {
 				return deviceInfo->sendAxisEvent(unWhichDevice, unWhichAxis, axisState, true, binding);
 			}
@@ -787,7 +843,7 @@ void OpenvrDeviceManipulationInfo::sendAxisEvent(uint32_t& unWhichDevice, uint32
 				// Joystick was already in neutral position but we haven't send it yet, and now it moved away from neutral position
 				// => send neutral position before we do anything else since some menus use this information to reset input handling.
 				if (lastSeenState.x == 0.0f && lastSeenState.y == 0.0f && (lastSendState.x != 0.0f || lastSendState.y != 0.0f) && (axisState.x != 0.0f || axisState.y != 0.0f)) {
-					CServerDriver::openvrTrackedDeviceAxisUpdated(m_driverHost, unWhichDevice, unWhichAxis, {0.0f, 0.0f});
+					ll_sendAxisEvent(unWhichAxis, { 0.0f, 0.0f });
 					lastSendState = {0.0f, 0.0f};
 				}
 				if (axisState.x == 0.0f || (vrmath::signum(axisState.x) == vrmath::signum(lastSendState.x) && abs(axisState.x) < abs(lastSendState.x))) {
@@ -800,49 +856,23 @@ void OpenvrDeviceManipulationInfo::sendAxisEvent(uint32_t& unWhichDevice, uint32
 
 			lastSeenState = axisState;
 			if (!suppress) {
-				CServerDriver::openvrTrackedDeviceAxisUpdated(m_driverHost, unWhichDevice, unWhichAxis, newState);
+				ll_sendAxisEvent(unWhichAxis, newState);
 				lastSendState = newState;
 			}
 		} else {
-			CServerDriver::openvrTrackedDeviceAxisUpdated(m_driverHost, unWhichDevice, unWhichAxis, axisState);
+			ll_sendAxisEvent(unWhichAxis, axisState);
 			m_analogInputRemapping[unWhichAxis].binding.lastSeenAxisState = axisState;
 			m_analogInputRemapping[unWhichAxis].binding.lastSendAxisState = axisState;
 		}
 
 	} else {
-		CServerDriver::openvrTrackedDeviceAxisUpdated(m_driverHost, unWhichDevice, unWhichAxis, axisState);
+		ll_sendAxisEvent(unWhichAxis, axisState);
 	}
 }
 
 
-/*bool OpenvrDeviceManipulationInfo::getButtonMapping(vr::EVRButtonId button, vr::EVRButtonId& mappedButton) {
-	std::lock_guard<std::recursive_mutex> lock(_mutex);
-	if (m_enableButtonMapping) {
-		auto i = m_buttonMapping.find(button);
-		if (i != m_buttonMapping.end()) {
-			mappedButton = i->second;
-			return true;
-		}
-	}
-	return false;
-}
 
-void OpenvrDeviceManipulationInfo::addButtonMapping(vr::EVRButtonId button, vr::EVRButtonId mappedButton) {
-	std::lock_guard<std::recursive_mutex> lock(_mutex);
-	m_buttonMapping[button] = mappedButton;
-}
-
-void OpenvrDeviceManipulationInfo::eraseButtonMapping(vr::EVRButtonId button) {
-	std::lock_guard<std::recursive_mutex> lock(_mutex);
-	m_buttonMapping.erase(button);
-}
-
-void OpenvrDeviceManipulationInfo::eraseAllButtonMappings() {
-	std::lock_guard<std::recursive_mutex> lock(_mutex);
-	m_buttonMapping.clear();
-}*/
-
-int OpenvrDeviceManipulationInfo::setDefaultMode() {
+int DeviceManipulationHandle::setDefaultMode() {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	auto res = _disableOldMode(0);
 	if (res == 0) {
@@ -851,7 +881,7 @@ int OpenvrDeviceManipulationInfo::setDefaultMode() {
 	return 0; 
 }
 
-int OpenvrDeviceManipulationInfo::setRedirectMode(bool target, OpenvrDeviceManipulationInfo* ref) {
+int DeviceManipulationHandle::setRedirectMode(bool target, DeviceManipulationHandle* ref) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	auto res = _disableOldMode(target ? 3 : 2);
 	if (res == 0) {
@@ -866,7 +896,7 @@ int OpenvrDeviceManipulationInfo::setRedirectMode(bool target, OpenvrDeviceManip
 	return 0; 
 }
 
-int OpenvrDeviceManipulationInfo::setSwapMode(OpenvrDeviceManipulationInfo* ref) {
+int DeviceManipulationHandle::setSwapMode(DeviceManipulationHandle* ref) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	auto res = _disableOldMode(4);
 	if (res == 0) {
@@ -876,20 +906,20 @@ int OpenvrDeviceManipulationInfo::setSwapMode(OpenvrDeviceManipulationInfo* ref)
 	return 0;
 }
 
-int OpenvrDeviceManipulationInfo::setMotionCompensationMode() {
+int DeviceManipulationHandle::setMotionCompensationMode() {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	auto res = _disableOldMode(5);
-	auto serverDriver = CServerDriver::getInstance();
+	auto serverDriver = ServerDriver::getInstance();
 	if (res == 0 && serverDriver) {
-		serverDriver->enableMotionCompensation(true);
-		serverDriver->setMotionCompensationRefDevice(this);
-		serverDriver->_setMotionCompensationStatus(MotionCompensationStatus::WaitingForZeroRef);
+		m_motionCompensationManager.enableMotionCompensation(true);
+		m_motionCompensationManager.setMotionCompensationRefDevice(this);
+		m_motionCompensationManager._setMotionCompensationStatus(MotionCompensationStatus::WaitingForZeroRef);
 		m_deviceMode = 5;
 	}
 	return 0;
 }
 
-int OpenvrDeviceManipulationInfo::setFakeDisconnectedMode() {
+int DeviceManipulationHandle::setFakeDisconnectedMode() {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	auto res = _disableOldMode(1);
 	if (res == 0) {
@@ -899,23 +929,23 @@ int OpenvrDeviceManipulationInfo::setFakeDisconnectedMode() {
 	return 0;
 }
 
-int OpenvrDeviceManipulationInfo::_disableOldMode(int newMode) {
+int DeviceManipulationHandle::_disableOldMode(int newMode) {
 	if (m_deviceMode != newMode) {
 		if (m_deviceMode == 5) {
-			auto serverDriver = CServerDriver::getInstance();
+			auto serverDriver = ServerDriver::getInstance();
 			if (serverDriver) {
-				serverDriver->enableMotionCompensation(false);
-				serverDriver->setMotionCompensationRefDevice(nullptr);
+				m_motionCompensationManager.enableMotionCompensation(false);
+				m_motionCompensationManager.setMotionCompensationRefDevice(nullptr);
 			}
 		} else if (m_deviceMode == 3 || m_deviceMode == 2 || m_deviceMode == 4) {
 			m_redirectRef->m_deviceMode = 0;
 		}
 		if (newMode == 5) {
-			auto serverDriver = CServerDriver::getInstance();
+			auto serverDriver = ServerDriver::getInstance();
 			if (serverDriver) {
-				serverDriver->_disableMotionCompensationOnAllDevices();
-				serverDriver->enableMotionCompensation(false);
-				serverDriver->setMotionCompensationRefDevice(nullptr);
+				m_motionCompensationManager._disableMotionCompensationOnAllDevices();
+				m_motionCompensationManager.enableMotionCompensation(false);
+				m_motionCompensationManager.setMotionCompensationRefDevice(nullptr);
 			}
 		} 
 	}
@@ -923,10 +953,6 @@ int OpenvrDeviceManipulationInfo::_disableOldMode(int newMode) {
 }
 
 
-void OpenvrDeviceManipulationInfo::setControllerComponent(vr::IVRControllerComponent* component, _DetourTriggerHapticPulse_t triggerHapticPulse) {
-	m_controllerComponent = component;
-	m_triggerHapticPulseFunc = triggerHapticPulse;
-}
 
 } // end namespace driver
 } // end namespace vrinputemulator

@@ -1,28 +1,28 @@
+#include "VirtualDeviceDriver.h"
 
-#include "stdafx.h"
-#include "driver_vrinputemulator.h"
+#include "../logging.h"
+
 
 namespace vrinputemulator {
 namespace driver {
 
 
-
-
-CTrackedDeviceDriver::CTrackedDeviceDriver(CServerDriver* parent, VirtualDeviceType type, const std::string& serial, uint32_t virtualId)
+VirtualDeviceDriver::VirtualDeviceDriver(ServerDriver* parent, VirtualDeviceType type, const std::string& serial, uint32_t virtualId)
 		: m_serverDriver(parent), m_deviceType(type), m_serialNumber(serial), m_virtualDeviceId(virtualId) {
 	memset(&m_pose, 0, sizeof(vr::DriverPose_t));
 	m_pose.qDriverFromHeadRotation.w = 1;
 	m_pose.qWorldFromDriverRotation.w = 1;
 	m_pose.qRotation.w = 1;
 	m_pose.result = vr::ETrackingResult::TrackingResult_Uninitialized;
+	memset(&m_ControllerState, 0, sizeof(vr::VRControllerState_t));
 }
 
-vr::EVRInitError CTrackedDeviceDriver::Activate(uint32_t unObjectId) {
-	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::Activate( " << unObjectId << " )";
+vr::EVRInitError VirtualDeviceDriver::Activate(uint32_t unObjectId) {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::Activate( " << unObjectId << " )";
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	m_propertyContainer = vr::VRProperties()->TrackedDeviceToPropertyContainer(unObjectId);
 	m_openvrId = unObjectId;
-	m_serverDriver->_trackedDeviceActivated(m_openvrId, this);
+	//m_serverDriver->_trackedDeviceActivated(m_openvrId, this);
 	for (auto& e : _deviceProperties) {
 		auto errorMessage = boost::apply_visitor(DevicePropertyValueVisitor(m_propertyContainer, (vr::ETrackedDeviceProperty)e.first), e.second);
 		if (!errorMessage.empty()) {
@@ -33,31 +33,33 @@ vr::EVRInitError CTrackedDeviceDriver::Activate(uint32_t unObjectId) {
 }
 
 
-void CTrackedDeviceDriver::Deactivate() {
-	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::Deactivate()";
+void VirtualDeviceDriver::Deactivate() {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::Deactivate()";
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
-	m_serverDriver->_trackedDeviceDeactivated(m_openvrId);
+	//m_serverDriver->_trackedDeviceDeactivated(m_openvrId);
 	m_openvrId = vr::k_unTrackedDeviceIndexInvalid;
 }
 
 
-void * CTrackedDeviceDriver::GetComponent(const char * pchComponentNameAndVersion) {
-	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::GetComponent( " << pchComponentNameAndVersion << " )";
+void * VirtualDeviceDriver::GetComponent(const char * pchComponentNameAndVersion) {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::GetComponent( " << pchComponentNameAndVersion << " )";
 	if (std::strcmp(pchComponentNameAndVersion, vr::ITrackedDeviceServerDriver_Version) == 0) {
 		return static_cast<vr::ITrackedDeviceServerDriver*>(this);
+	} else if (std::strcmp(pchComponentNameAndVersion, vr::IVRControllerComponent_Version) == 0) {
+		return static_cast<vr::IVRControllerComponent*>(this);
 	}
 	return nullptr;
 }
 
 
-vr::DriverPose_t CTrackedDeviceDriver::GetPose() {
-	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::GetPose()";
+vr::DriverPose_t VirtualDeviceDriver::GetPose() {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::GetPose()";
 	return m_pose;
 }
 
 
-void CTrackedDeviceDriver::updatePose(const vr::DriverPose_t & newPose, double timeOffset, bool notify) {
-	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::updatePose( " << timeOffset << " )";
+void VirtualDeviceDriver::updatePose(const vr::DriverPose_t & newPose, double timeOffset, bool notify) {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::updatePose( " << timeOffset << " )";
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	m_pose = newPose;
 	m_pose.poseTimeOffset += timeOffset;
@@ -66,8 +68,8 @@ void CTrackedDeviceDriver::updatePose(const vr::DriverPose_t & newPose, double t
 	}
 }
 
-void CTrackedDeviceDriver::sendPoseUpdate(double timeOffset, bool onlyWhenConnected) {
-	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::sendPoseUpdate( " << timeOffset << " )";
+void VirtualDeviceDriver::sendPoseUpdate(double timeOffset, bool onlyWhenConnected) {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::sendPoseUpdate( " << timeOffset << " )";
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	if (!onlyWhenConnected || (m_pose.poseIsValid && m_pose.deviceIsConnected)) {
 		m_pose.poseTimeOffset = timeOffset;
@@ -77,8 +79,8 @@ void CTrackedDeviceDriver::sendPoseUpdate(double timeOffset, bool onlyWhenConnec
 	}
 }
 
-void CTrackedDeviceDriver::publish() {
-	LOG(TRACE) << "CTrackedDeviceDriver[" << m_serialNumber << "]::publish()";
+void VirtualDeviceDriver::publish() {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::publish()";
 	if (!m_published) {
 		vr::ETrackedPropertyError pError;
 		vr::ETrackedDeviceClass deviceClass = (vr::ETrackedDeviceClass)getTrackedDeviceProperty<int32_t>(vr::Prop_DeviceClass_Int32, &pError);
@@ -91,33 +93,18 @@ void CTrackedDeviceDriver::publish() {
 	}
 }
 
-
-CTrackedControllerDriver::CTrackedControllerDriver(CServerDriver* parent, const std::string& serial)
-		: CTrackedDeviceDriver(parent, VirtualDeviceType::TrackedController, serial) {
-	memset(&m_ControllerState, 0, sizeof(vr::VRControllerState_t));
-}
-
-
-vr::VRControllerState_t CTrackedControllerDriver::GetControllerState() {
-	LOG(TRACE) << "CTrackedControllerDriver[" << m_serialNumber << "]::GetControllerState()";
+vr::VRControllerState_t VirtualDeviceDriver::GetControllerState() {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::GetControllerState()";
 	return m_ControllerState;
 }
 
-void * CTrackedControllerDriver::GetComponent(const char * pchComponentNameAndVersion) {
-	LOG(TRACE) << "CTrackedControllerDriver[" << m_serialNumber << "]::GetComponent( " << pchComponentNameAndVersion << " )";
-	if (std::strcmp(pchComponentNameAndVersion, vr::IVRControllerComponent_Version) == 0) {
-		return static_cast<vr::IVRControllerComponent*>(this);
-	}
-	return CTrackedDeviceDriver::GetComponent(pchComponentNameAndVersion);
-}
-
-bool CTrackedControllerDriver::TriggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds) {
-	LOG(TRACE) << "CTrackedControllerDriver[" << m_serialNumber << "]::TriggerHapticPulse( " << unAxisId << " )";
+bool VirtualDeviceDriver::TriggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds) {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::TriggerHapticPulse( " << unAxisId << " )";
 	return true; // returning false will cause errors to come out of vrserver
 }
 
-void CTrackedControllerDriver::updateControllerState(const vr::VRControllerState_t & newState, double offset, bool notify) {
-	LOG(TRACE) << "CTrackedControllerDriver[" << m_serialNumber << "]::updateControllerState()";
+void VirtualDeviceDriver::updateControllerState(const vr::VRControllerState_t & newState, double offset, bool notify) {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::updateControllerState()";
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
 		auto oldState = m_ControllerState;
@@ -155,40 +142,40 @@ void CTrackedControllerDriver::updateControllerState(const vr::VRControllerState
 	}
 }
 
-void CTrackedControllerDriver::buttonEvent(ButtonEventType eventType, uint32_t buttonId, double timeOffset, bool notify) {
-	LOG(TRACE) << "CTrackedControllerDriver[" << m_serialNumber << "]::buttonEvent( " << (int)eventType << ", " << buttonId << ", " << timeOffset << " )";
+void VirtualDeviceDriver::buttonEvent(ButtonEventType eventType, uint32_t buttonId, double timeOffset, bool notify) {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::buttonEvent( " << (int)eventType << ", " << buttonId << ", " << timeOffset << " )";
 	switch (eventType) {
-		case ButtonEventType::ButtonPressed:
-			m_ControllerState.ulButtonPressed |= vr::ButtonMaskFromId((vr::EVRButtonId)buttonId);
-			if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
-				vr::VRServerDriverHost()->TrackedDeviceButtonPressed(m_openvrId, (vr::EVRButtonId)buttonId, timeOffset);
-			}
-			break;
-		case ButtonEventType::ButtonUnpressed:
-			m_ControllerState.ulButtonPressed &= ~vr::ButtonMaskFromId((vr::EVRButtonId)buttonId);
-			if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
-				vr::VRServerDriverHost()->TrackedDeviceButtonUnpressed(m_openvrId, (vr::EVRButtonId)buttonId, timeOffset);
-			}
-			break;
-		case ButtonEventType::ButtonTouched:
-			m_ControllerState.ulButtonTouched |= vr::ButtonMaskFromId((vr::EVRButtonId)buttonId);
-			if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
-				vr::VRServerDriverHost()->TrackedDeviceButtonTouched(m_openvrId, (vr::EVRButtonId)buttonId, timeOffset);
-			}
-			break;
-		case ButtonEventType::ButtonUntouched:
-			m_ControllerState.ulButtonTouched &= ~vr::ButtonMaskFromId((vr::EVRButtonId)buttonId);
-			if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
-				vr::VRServerDriverHost()->TrackedDeviceButtonUntouched(m_openvrId, (vr::EVRButtonId)buttonId, timeOffset);
-			}
-			break;
-		default:
-			break;
+	case ButtonEventType::ButtonPressed:
+		m_ControllerState.ulButtonPressed |= vr::ButtonMaskFromId((vr::EVRButtonId)buttonId);
+		if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
+			vr::VRServerDriverHost()->TrackedDeviceButtonPressed(m_openvrId, (vr::EVRButtonId)buttonId, timeOffset);
+		}
+		break;
+	case ButtonEventType::ButtonUnpressed:
+		m_ControllerState.ulButtonPressed &= ~vr::ButtonMaskFromId((vr::EVRButtonId)buttonId);
+		if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
+			vr::VRServerDriverHost()->TrackedDeviceButtonUnpressed(m_openvrId, (vr::EVRButtonId)buttonId, timeOffset);
+		}
+		break;
+	case ButtonEventType::ButtonTouched:
+		m_ControllerState.ulButtonTouched |= vr::ButtonMaskFromId((vr::EVRButtonId)buttonId);
+		if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
+			vr::VRServerDriverHost()->TrackedDeviceButtonTouched(m_openvrId, (vr::EVRButtonId)buttonId, timeOffset);
+		}
+		break;
+	case ButtonEventType::ButtonUntouched:
+		m_ControllerState.ulButtonTouched &= ~vr::ButtonMaskFromId((vr::EVRButtonId)buttonId);
+		if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
+			vr::VRServerDriverHost()->TrackedDeviceButtonUntouched(m_openvrId, (vr::EVRButtonId)buttonId, timeOffset);
+		}
+		break;
+	default:
+		break;
 	}
 }
 
-void CTrackedControllerDriver::axisEvent(uint32_t axisId, const vr::VRControllerAxis_t & axisState, bool notify) {
-	LOG(TRACE) << "CTrackedControllerDriver[" << m_serialNumber << "]::axisEvent( " << axisId << " )";
+void VirtualDeviceDriver::axisEvent(uint32_t axisId, const vr::VRControllerAxis_t & axisState, bool notify) {
+	LOG(TRACE) << "VirtualDeviceDriver[" << m_serialNumber << "]::axisEvent( " << axisId << " )";
 	if (axisId < vr::k_unControllerStateAxisCount) {
 		m_ControllerState.rAxis[axisId] = axisState;
 		if (notify && m_openvrId != vr::k_unTrackedDeviceIndexInvalid) {
@@ -196,6 +183,7 @@ void CTrackedControllerDriver::axisEvent(uint32_t axisId, const vr::VRController
 		}
 	}
 }
+
 
 } // end namespace driver
 } // end namespace vrinputemulator

@@ -1,11 +1,10 @@
+#include "KalmanFilter.h"
 
-#include "stdafx.h"
-#include "driver_vrinputemulator.h"
 #include <openvr_math.h>
+
 
 namespace vrinputemulator {
 namespace driver {
-
 
 void PosKalmanFilter::init(const vr::HmdVector3d_t& initPos, const vr::HmdVector3d_t& initVel, const double(&initCovariance)[2][2]) {
 	lastPos = initPos;
@@ -55,5 +54,6 @@ void PosKalmanFilter::update(const vr::HmdVector3d_t& devicePos, double dt) {
 	lastCovariance[1][1] = newCovariance[1][1] - gain[1] * newCovariance[0][1];
 }
 
-} // end namespace driver
+}
 } // end namespace vrinputemulator
+

@@ -1,15 +1,19 @@
 #include "driver_ipc_shm.h"
-#include "../../stdafx.h"
-#include "../../driver_vrinputemulator.h"
+
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <openvr_driver.h>
 #include <ipc_protocol.h>
 #include <openvr_math.h>
+#include "../../driver/ServerDriver.h"
+#include "../../driver/VirtualDeviceDriver.h"
+#include "../../devicemanipulation/DeviceManipulationHandle.h"
+
 
 namespace vrinputemulator {
 namespace driver {
 
 
-void IpcShmCommunicator::init(CServerDriver* driver) {
+void IpcShmCommunicator::init(ServerDriver* driver) {
 	_driver = driver;
 	_ipcThreadStopFlag = false;
 	_ipcThread = std::thread(_ipcThreadFunc, this, driver);
@@ -36,7 +40,7 @@ void IpcShmCommunicator::sendReplySetMotionCompensationMode(bool success) {
 	_setMotionCompensationMessageId = 0;
 }
 
-void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver * driver) {
+void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, ServerDriver * driver) {
 	_this->_ipcThreadRunning = true;
 	LOG(DEBUG) << "CServerDriver::_ipcThreadFunc: thread started";
 	try {
@@ -436,13 +440,12 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 									} else {
 										resp.status = ipc::ReplyStatus::Ok;
 										if (device->deviceType() == VirtualDeviceType::TrackedController) {
-											auto controller = (CTrackedControllerDriver*)device;
 											auto now = std::chrono::duration_cast <std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 											auto diff = 0.0;
 											if (message.timestamp < now) {
 												diff = ((double)now - message.timestamp) / 1000.0;
 											}
-											controller->updateControllerState(message.msg.vd_SetControllerState.controllerState, -diff);
+											device->updateControllerState(message.msg.vd_SetControllerState.controllerState, -diff);
 										} else {
 											resp.status = ipc::ReplyStatus::InvalidType;
 										}
@@ -464,7 +467,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.vd_GenericDeviceIdMessage.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.vd_GenericDeviceIdMessage.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.vd_GenericDeviceIdMessage.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
@@ -497,7 +500,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							if (message.msg.ir_SetDigitalRemapping.controllerId >= vr::k_unMaxTrackedDeviceCount) {
 								resp.status = ipc::ReplyStatus::InvalidId;
 							} else {
-								OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.ir_SetDigitalRemapping.controllerId);
+								DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.ir_SetDigitalRemapping.controllerId);
 								if (!info) {
 									resp.status = ipc::ReplyStatus::NotFound;
 								} else {
@@ -519,7 +522,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							if (message.msg.ir_GetDigitalRemapping.controllerId >= vr::k_unMaxTrackedDeviceCount) {
 								resp.status = ipc::ReplyStatus::InvalidId;
 							} else {
-								OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.ir_GetDigitalRemapping.controllerId);
+								DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.ir_GetDigitalRemapping.controllerId);
 								if (!info) {
 									resp.status = ipc::ReplyStatus::NotFound;
 								} else {
@@ -543,7 +546,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							if (message.msg.ir_SetAnalogRemapping.controllerId >= vr::k_unMaxTrackedDeviceCount) {
 								resp.status = ipc::ReplyStatus::InvalidId;
 							} else {
-								OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.ir_SetAnalogRemapping.controllerId);
+								DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.ir_SetAnalogRemapping.controllerId);
 								if (!info) {
 									resp.status = ipc::ReplyStatus::NotFound;
 								} else {
@@ -565,7 +568,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							if (message.msg.ir_GetAnalogRemapping.controllerId >= vr::k_unMaxTrackedDeviceCount) {
 								resp.status = ipc::ReplyStatus::InvalidId;
 							} else {
-								OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.ir_GetAnalogRemapping.controllerId);
+								DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.ir_GetAnalogRemapping.controllerId);
 								if (!info) {
 									resp.status = ipc::ReplyStatus::NotFound;
 								} else {
@@ -590,7 +593,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.vd_GenericDeviceIdMessage.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.vd_GenericDeviceIdMessage.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.vd_GenericDeviceIdMessage.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
@@ -622,7 +625,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.dm_DeviceOffsets.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.dm_DeviceOffsets.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.dm_DeviceOffsets.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
@@ -690,7 +693,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.vd_GenericDeviceIdMessage.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.vd_GenericDeviceIdMessage.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.vd_GenericDeviceIdMessage.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
@@ -714,11 +717,11 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.dm_RedirectMode.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.dm_RedirectMode.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.dm_RedirectMode.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
-										OpenvrDeviceManipulationInfo* infoTarget = driver->deviceManipulation_getInfo(message.msg.dm_RedirectMode.targetId);
+										DeviceManipulationHandle* infoTarget = driver->getDeviceManipulationHandleById(message.msg.dm_RedirectMode.targetId);
 										if (info && infoTarget) {
 											if (info->deviceMode() > 0) {
 												info->setDefaultMode();
@@ -750,11 +753,11 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.dm_SwapMode.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.dm_SwapMode.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.dm_SwapMode.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
-										OpenvrDeviceManipulationInfo* infoTarget = driver->deviceManipulation_getInfo(message.msg.dm_SwapMode.targetId);
+										DeviceManipulationHandle* infoTarget = driver->getDeviceManipulationHandleById(message.msg.dm_SwapMode.targetId);
 										if (info && infoTarget) {
 											if (info->deviceMode() > 0) {
 												info->setDefaultMode();
@@ -786,13 +789,13 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.dm_MotionCompensationMode.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.dm_MotionCompensationMode.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.dm_MotionCompensationMode.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
-										auto serverDriver = CServerDriver::getInstance();
+										auto serverDriver = ServerDriver::getInstance();
 										if (serverDriver) {
-											serverDriver->setMotionCompensationVelAccMode(message.msg.dm_MotionCompensationMode.velAccCompensationMode);
+											serverDriver->motionCompensation().setMotionCompensationVelAccMode(message.msg.dm_MotionCompensationMode.velAccCompensationMode);
 											info->setMotionCompensationMode();
 											_this->_setMotionCompensationMessageId = message.msg.dm_MotionCompensationMode.messageId;
 											_this->_setMotionCompensationClientId = message.msg.dm_MotionCompensationMode.clientId;
@@ -818,7 +821,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.vd_GenericDeviceIdMessage.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.vd_GenericDeviceIdMessage.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.vd_GenericDeviceIdMessage.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
@@ -842,7 +845,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 								if (message.msg.dm_triggerHapticPulse.deviceId >= vr::k_unMaxTrackedDeviceCount) {
 									resp.status = ipc::ReplyStatus::InvalidId;
 								} else {
-									OpenvrDeviceManipulationInfo* info = driver->deviceManipulation_getInfo(message.msg.dm_triggerHapticPulse.deviceId);
+									DeviceManipulationHandle* info = driver->getDeviceManipulationHandleById(message.msg.dm_triggerHapticPulse.deviceId);
 									if (!info) {
 										resp.status = ipc::ReplyStatus::NotFound;
 									} else {
@@ -863,19 +866,19 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							{
 								ipc::Reply resp(ipc::ReplyType::GenericReply);
 								resp.messageId = message.msg.dm_SetMotionCompensationProperties.messageId;
-								auto serverDriver = CServerDriver::getInstance();
+								auto serverDriver = ServerDriver::getInstance();
 								if (serverDriver) {
 									if (message.msg.dm_SetMotionCompensationProperties.velAccCompensationModeValid) {
-										serverDriver->setMotionCompensationVelAccMode(message.msg.dm_SetMotionCompensationProperties.velAccCompensationMode);
+										serverDriver->motionCompensation().setMotionCompensationVelAccMode(message.msg.dm_SetMotionCompensationProperties.velAccCompensationMode);
 									}
 									if (message.msg.dm_SetMotionCompensationProperties.kalmanFilterProcessNoiseValid) {
-										serverDriver->setMotionCompensationKalmanProcessVariance(message.msg.dm_SetMotionCompensationProperties.kalmanFilterProcessNoise);
+										serverDriver->motionCompensation().setMotionCompensationKalmanProcessVariance(message.msg.dm_SetMotionCompensationProperties.kalmanFilterProcessNoise);
 									}
 									if (message.msg.dm_SetMotionCompensationProperties.kalmanFilterObservationNoiseValid) {
-										serverDriver->setMotionCompensationKalmanObservationVariance(message.msg.dm_SetMotionCompensationProperties.kalmanFilterObservationNoise);
+										serverDriver->motionCompensation().setMotionCompensationKalmanObservationVariance(message.msg.dm_SetMotionCompensationProperties.kalmanFilterObservationNoise);
 									}
 									if (message.msg.dm_SetMotionCompensationProperties.movingAverageWindowValid) {
-										serverDriver->setMotionCompensationMovingAverageWindow(message.msg.dm_SetMotionCompensationProperties.movingAverageWindow);
+										serverDriver->motionCompensation().setMotionCompensationMovingAverageWindow(message.msg.dm_SetMotionCompensationProperties.movingAverageWindow);
 									}
 									resp.status = ipc::ReplyStatus::Ok;
 								} else {
@@ -891,7 +894,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, CServerDriver
 							break;
 
 						case ipc::RequestType::InputRemapping_SetTouchpadEmulationFixEnabled: {
-							OpenvrDeviceManipulationInfo::setTouchpadEmulationFixFlag(message.msg.ir_SetTouchPadEmulationFixEnabled.enable);
+							DeviceManipulationHandle::setTouchpadEmulationFixFlag(message.msg.ir_SetTouchPadEmulationFixEnabled.enable);
 						} break;
 
 						default:

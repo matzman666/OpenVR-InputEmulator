@@ -1,15 +1,12 @@
+#include "driver/ServerDriver.h"
+#include "driver/WatchdogProvider.h"
 
-#include "stdafx.h"
-#include "driver_vrinputemulator.h"
+
+vrinputemulator::driver::ServerDriver serverDriver;
+vrinputemulator::driver::WatchdogProvider watchdogProvider;
 
 
 #define HMD_DLL_EXPORT extern "C" __declspec( dllexport )
-
-namespace vrinputemulator {
-namespace driver {
-
-CServerDriver serverDriver;
-CWatchdogProvider watchdogProvider;
 
 
 HMD_DLL_EXPORT void *HmdDriverFactory(const char *pInterfaceName, int *pReturnCode) {
@@ -24,19 +21,3 @@ HMD_DLL_EXPORT void *HmdDriverFactory(const char *pInterfaceName, int *pReturnCo
 	}
 	return nullptr;
 }
-
-
-vr::EVRInitError CWatchdogProvider::Init(vr::IVRDriverContext * pDriverContext) {
-	LOG(TRACE) << "CWatchdogProvider::Init()";
-	VR_INIT_WATCHDOG_DRIVER_CONTEXT(pDriverContext);
-	return vr::VRInitError_None;
-}
-
-
-void CWatchdogProvider::Cleanup() {
-	LOG(TRACE) << "CWatchdogProvider::Cleanup()";
-	VR_CLEANUP_WATCHDOG_DRIVER_CONTEXT();
-}
-
-} // end namespace driver
-} // end namespace vrinputemulator
