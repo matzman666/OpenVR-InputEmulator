@@ -4,7 +4,7 @@
 #include <utility>
 
 
-#define IPC_PROTOCOL_VERSION 2
+#define IPC_PROTOCOL_VERSION 3
 
 namespace vrinputemulator {
 namespace ipc {

@@ -5,8 +5,17 @@
 #include <MinHook.h>
 #include "../logging.h"
 
+
+namespace vr {
+	enum EVRInputError;
+	enum EVRScalarType;
+	enum EVRScalarUnits;
+	typedef uint64_t VRInputComponentHandle_t;
+}
+
+
 namespace vrinputemulator {
-	namespace driver {
+namespace driver {
 
 
 #define CREATE_MH_HOOK(detourInfo, detourFunc, logName, objPtr, vtableOffset) {\

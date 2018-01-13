@@ -2,9 +2,11 @@
 
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <openvr_driver.h>
 #include <vrinputemulator_types.h>
 #include <openvr_math.h>
+#include "../hooks/common.h"
 #include "../logging.h"
 #include "../com/shm/driver_ipc_shm.h"
 #include "../devicemanipulation/MotionCompensationManager.h"
@@ -107,27 +109,7 @@ public:
 	MotionCompensationManager& motionCompensation() { return m_motionCompensation; }
 	void sendReplySetMotionCompensationMode(bool success);
 
-	/*void enableMotionCompensation(bool enable);
-	MotionCompensationStatus motionCompensationStatus() { return _motionCompensationStatus; }
-	void _setMotionCompensationStatus(MotionCompensationStatus status) { _motionCompensationStatus = status;  }
-	void setMotionCompensationRefDevice(DeviceManipulationHandle* device);
-	DeviceManipulationHandle* getMotionCompensationRefDevice();
-	void setMotionCompensationVelAccMode(MotionCompensationVelAccMode velAccMode);
-	double motionCompensationKalmanProcessVariance() { return m_motionCompensationKalmanProcessVariance; }
-	void setMotionCompensationKalmanProcessVariance(double variance);
-	double motionCompensationKalmanObservationVariance() { return m_motionCompensationKalmanObservationVariance; }
-	void setMotionCompensationKalmanObservationVariance(double variance);
-	double motionCompensationMovingAverageWindow() { return m_motionCompensationMovingAverageWindow; }
-	void setMotionCompensationMovingAverageWindow(unsigned window);
-	void _disableMotionCompensationOnAllDevices();
-	bool _isMotionCompensationZeroPoseValid();
-	void _setMotionCompensationZeroPose(const vr::DriverPose_t& pose);
-	void _updateMotionCompensationRefPose(const vr::DriverPose_t& pose);
-	bool _applyMotionCompensation(vr::DriverPose_t& pose, DeviceManipulationHandle* deviceInfo);
-	void sendReplySetMotionCompensationMode(bool success);*/
-
 	//// function hooks related ////
-
 	void hooksTrackedDeviceAdded(void* serverDriverHost, int version, const char *pchDeviceSerialNumber, vr::ETrackedDeviceClass& eDeviceClass, void* pDriver);
 	void hooksTrackedDeviceActivated(void* serverDriver, int version, uint32_t unObjectId);
 	bool hooksTrackedDevicePoseUpdated(void* serverDriverHost, int version, uint32_t& unWhichDevice, vr::DriverPose_t& newPose, uint32_t& unPoseStructSize);
@@ -136,9 +118,22 @@ public:
 	bool hooksTrackedDeviceButtonTouched(void* serverDriverHost, int version, uint32_t& unWhichDevice, vr::EVRButtonId& eButtonId, double& eventTimeOffset);
 	bool hooksTrackedDeviceButtonUntouched(void* serverDriverHost, int version, uint32_t& unWhichDevice, vr::EVRButtonId& eButtonId, double& eventTimeOffset);
 	bool hooksTrackedDeviceAxisUpdated(void* serverDriverHost, int version, uint32_t& unWhichDevice, uint32_t& unWhichAxis, vr::VRControllerAxis_t& axisState);
+	bool hooksPollNextEvent(void* serverDriverHost, int version, void* pEvent, uint32_t uncbVREvent);
+	
 	bool hooksControllerTriggerHapticPulse(void* controllerComponent, int version, uint32_t& unAxisId, uint16_t& usPulseDurationMicroseconds);
-	void hooksPropertiesReadPropertyBatch(void* properties, vr::PropertyContainerHandle_t ulContainer, void* pBatch, uint32_t unBatchEntryCount);
-	void hooksPropertiesWritePropertyBatch(void* properties, vr::PropertyContainerHandle_t ulContainer, void* pBatch, uint32_t unBatchEntryCount);
+	
+	void hooksPropertiesReadPropertyBatch(void* properties, int version, vr::PropertyContainerHandle_t ulContainer, void* pBatch, uint32_t unBatchEntryCount);
+	void hooksPropertiesWritePropertyBatch(void* properties, int version, vr::PropertyContainerHandle_t ulContainer, void* pBatch, uint32_t unBatchEntryCount);
+	
+	void hooksCreateBooleanComponent(void* driverInput, int version, vr::PropertyContainerHandle_t ulContainer, const char *pchName, void* pHandle);
+	void hooksCreateScalarComponent(void* driverInput, int version, vr::PropertyContainerHandle_t ulContainer, const char *pchName, void* pHandle, vr::EVRScalarType eType, vr::EVRScalarUnits eUnits);
+	void hooksCreateHapticComponent(void* driverInput, int version, vr::PropertyContainerHandle_t ulContainer, const char *pchName, void* pHandle);
+	bool hooksUpdateBooleanComponent(void* driverInput, int version, vr::VRInputComponentHandle_t& ulComponent, bool& bNewValue, double& fTimeOffset);
+	bool hooksUpdateScalarComponent(void* driverInput, int version, vr::VRInputComponentHandle_t& ulComponent, float& fNewValue, double& fTimeOffset);
+
+	// driver events injection
+	void addDriverEventForInjection(void* serverDriverHost, std::shared_ptr<void> event, uint32_t size);
+	std::pair<std::shared_ptr<void>, uint32_t> getDriverEventForInjection(void* serverDriverHost);
 
 
 private:
@@ -161,38 +156,17 @@ private:
 	DeviceManipulationHandle* _openvrIdToDeviceManipulationHandleMap[vr::k_unMaxTrackedDeviceCount];
 	std::map<vr::PropertyContainerHandle_t, DeviceManipulationHandle*> _propertyContainerToDeviceManipulationHandleMap;
 	std::map<void*, DeviceManipulationHandle*> _ptrToDeviceManipulationHandleMap;
+	std::map<uint64_t, DeviceManipulationHandle*> _inputComponentToDeviceManipulationHandleMap;
 
 	//// motion compensation related ////
 	MotionCompensationManager m_motionCompensation;
-	/*bool _motionCompensationEnabled = false;
-	DeviceManipulationHandle* _motionCompensationRefDevice = nullptr;
-	MotionCompensationStatus _motionCompensationStatus = MotionCompensationStatus::WaitingForZeroRef;
-	constexpr static uint32_t _motionCompensationZeroRefTimeoutMax = 20;
-	uint32_t _motionCompensationZeroRefTimeout = 0;
-	MotionCompensationVelAccMode _motionCompensationVelAccMode = MotionCompensationVelAccMode::Disabled;
-	double m_motionCompensationKalmanProcessVariance = 0.1;
-	double m_motionCompensationKalmanObservationVariance = 0.1;
-	unsigned m_motionCompensationMovingAverageWindow = 3;
-
-	bool _motionCompensationZeroPoseValid = false;
-	vr::HmdVector3d_t _motionCompensationZeroPos;
-	vr::HmdQuaternion_t _motionCompensationZeroRot;
-
-	bool _motionCompensationRefPoseValid = false;
-	vr::HmdVector3d_t _motionCompensationRefPos;
-	vr::HmdQuaternion_t _motionCompensationRotDiff;
-	vr::HmdQuaternion_t _motionCompensationRotDiffInv;
-
-	bool _motionCompensationRefVelAccValid = false;
-	vr::HmdVector3d_t _motionCompensationRefPosVel;
-	vr::HmdVector3d_t _motionCompensationRefPosAcc;
-	vr::HmdVector3d_t _motionCompensationRefRotVel;
-	vr::HmdVector3d_t _motionCompensationRefRotAcc;*/
 
 	//// function hooks related ////
-	
 	std::shared_ptr<InterfaceHooks> _driverContextHooks;
 
+	// driver events injection
+	std::mutex _driverEventInjectionMutex;
+	std::map<void*, std::queue<std::pair<std::shared_ptr<void>, uint32_t>>> m_eventsToInjectQueues;
 
 	// Device Property Overrides
 	std::string _propertiesOverrideHmdManufacturer;

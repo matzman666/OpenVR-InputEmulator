@@ -1,9 +1,12 @@
 #include "DeviceManipulationHandle.h"
 
+#include <boost/regex.hpp>
+#include <boost/algorithm/string.hpp>
 #include "../driver/ServerDriver.h"
 #include "../hooks/IVRServerDriverHost004Hooks.h"
 #include "../hooks/IVRServerDriverHost005Hooks.h"
 #include "../hooks/IVRControllerComponent001Hooks.h"
+#include "../hooks/IVRDriverInput001Hooks.h"
 
 #undef WIN32_LEAN_AND_MEAN
 #undef NOSOUND
@@ -26,9 +29,11 @@ namespace driver {
 bool DeviceManipulationHandle::touchpadEmulationEnabledFlag = true;
 
 
-DeviceManipulationHandle::DeviceManipulationHandle(vr::ETrackedDeviceClass eDeviceClass, void* driverPtr, void* driverHostPtr, int driverInterfaceVersion)
-	: m_isValid(true), m_parent(ServerDriver::getInstance()), m_motionCompensationManager(m_parent->motionCompensation()), m_deviceDriverPtr(driverPtr), m_deviceDriverHostPtr(driverHostPtr),
-	m_deviceDriverInterfaceVersion(driverInterfaceVersion), m_eDeviceClass(eDeviceClass) {}
+DeviceManipulationHandle::DeviceManipulationHandle(const char* serial, vr::ETrackedDeviceClass eDeviceClass, void* driverPtr, void* driverHostPtr, int driverInterfaceVersion)
+		: m_isValid(true), m_parent(ServerDriver::getInstance()), m_motionCompensationManager(m_parent->motionCompensation()), m_deviceDriverPtr(driverPtr), m_deviceDriverHostPtr(driverHostPtr),
+		m_deviceDriverInterfaceVersion(driverInterfaceVersion), m_eDeviceClass(eDeviceClass), m_serialNumber(serial) {
+	memset(_AxisIdToComponentHandleMap, 0, sizeof(_AxisIdToComponentHandleMap));
+}
 
 
 void DeviceManipulationHandle::setDigitalInputRemapping(uint32_t buttonId, const DigitalInputRemapping& remapping) {
@@ -68,7 +73,7 @@ AnalogInputRemapping DeviceManipulationHandle::getAnalogInputRemapping(uint32_t 
 	}
 }
 
-bool DeviceManipulationHandle::handlePoseUpdate(void* serverDriverHost, int version, uint32_t& unWhichDevice, vr::DriverPose_t& newPose, uint32_t& unPoseStructSize) {
+bool DeviceManipulationHandle::handlePoseUpdate(uint32_t& unWhichDevice, vr::DriverPose_t& newPose, uint32_t unPoseStructSize) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 
 	if (m_deviceMode == 1) { // fake disconnect mode
@@ -179,7 +184,35 @@ void DeviceManipulationHandle::ll_sendButtonEvent(ButtonEventType eventType, vr:
 		default:
 			break;
 		}
-		
+	} else if (m_deviceDriverInterfaceVersion == 5) {
+		auto it = _ButtonIdToComponentHandleMap.find(eButtonId);
+		if (it != _ButtonIdToComponentHandleMap.end()) {
+			uint64_t componentHandle = 0;
+			bool newValue = false;
+			switch (eventType)	{
+				case ButtonEventType::ButtonTouched:
+					componentHandle = it->second.first;
+					newValue = true;
+					break;
+				case ButtonEventType::ButtonUntouched:
+					componentHandle = it->second.first;
+					newValue = false;
+					break;
+				case ButtonEventType::ButtonPressed:
+					componentHandle = it->second.second;
+					newValue = true;
+					break;
+				case ButtonEventType::ButtonUnpressed:
+					componentHandle = it->second.second;
+					newValue = false;
+					break;
+				default:
+					break;
+			}
+			if (componentHandle != 0) {
+				IVRDriverInput001Hooks::updateBooleanComponentOrig(m_driverInputPtr, componentHandle, newValue, eventTimeOffset);
+			}
+		}
 	}
 }
 
@@ -187,6 +220,15 @@ void DeviceManipulationHandle::ll_sendButtonEvent(ButtonEventType eventType, vr:
 void DeviceManipulationHandle::ll_sendAxisEvent(uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState) {
 	if (m_deviceDriverInterfaceVersion == 4) {
 		IVRServerDriverHost004Hooks::trackedDeviceAxisUpdatedOrig(m_deviceDriverHostPtr, m_openvrId, unWhichAxis, axisState);
+	} else if (m_deviceDriverInterfaceVersion == 5) {
+		if (unWhichAxis < 5) {
+			if (_AxisIdToComponentHandleMap[unWhichAxis].first != 0) {
+				sendScalarComponentUpdate(m_openvrId, unWhichAxis, 0, axisState.x, 0.0);
+			}
+			if (_AxisIdToComponentHandleMap[unWhichAxis].second != 0) {
+				sendScalarComponentUpdate(m_openvrId, unWhichAxis, 1, axisState.y, 0.0);
+			}
+		}
 	}
 }
 
@@ -194,12 +236,58 @@ void DeviceManipulationHandle::ll_sendAxisEvent(uint32_t unWhichAxis, const vr::
 bool DeviceManipulationHandle::ll_triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds) {
 	if (m_deviceDriverInterfaceVersion == 4 && m_controllerComponentHooks) {
 		return std::static_pointer_cast<IVRControllerComponent001Hooks>(m_controllerComponentHooks)->triggerHapticPulseOrig(unAxisId, usPulseDurationMicroseconds);
+	} else if (m_deviceDriverInterfaceVersion == 5) {
+		
+		struct VREvent_HapticVibration_t {
+			uint64_t containerHandle; // property container handle of the device with the haptic component
+			uint64_t componentHandle; // Which haptic component needs to vibrate
+			float fDurationSeconds;
+			float fFrequency;
+			float fAmplitude;
+		};
+
+		vr::VREvent_t* hapticEvent = (vr::VREvent_t*)malloc(48);
+		hapticEvent->eventType = 1700; // VREvent_Input_HapticVibration = 1700
+		hapticEvent->eventAgeSeconds = 0.0f;
+		hapticEvent->trackedDeviceIndex = m_openvrId;
+		auto eventData = reinterpret_cast<VREvent_HapticVibration_t*>(&hapticEvent->data);
+		eventData->containerHandle = m_propertyContainerHandle;
+		eventData->componentHandle = m_inputHapticComponentHandle;
+		eventData->fDurationSeconds = ((float)usPulseDurationMicroseconds)/1E6f;
+		eventData->fFrequency = 1.0f/ eventData->fDurationSeconds;
+		eventData->fAmplitude = 1.0f;
+		m_parent->addDriverEventForInjection(m_deviceDriverHostPtr, std::shared_ptr<void>(hapticEvent), 48);
 	}
 	return true;
 }
 
 
-bool DeviceManipulationHandle::handleButtonEvent(void* serverDriverHost, int version, uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId& eButtonId, double& eventTimeOffset) {
+void DeviceManipulationHandle::ll_sendScalarComponentUpdate(vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset) {
+	if (m_deviceDriverInterfaceVersion == 5) {
+		IVRDriverInput001Hooks::updateScalarComponentOrig(m_driverInputPtr, ulComponent, fNewValue, fTimeOffset);
+	} else if (m_deviceDriverInterfaceVersion == 4) {
+		auto it = _componentHandleToAxisIdMap.find(ulComponent);
+		if (it != _componentHandleToAxisIdMap.end()) {
+			std::lock_guard<std::recursive_mutex> lock(_mutex);
+			unsigned unWhichAxis = it->second.first;
+			unsigned unWhichAxisDim = it->second.second;
+			if (unWhichAxis < 5) {
+				auto& axisInfo = m_analogInputRemapping[unWhichAxis];
+				if (unWhichAxisDim == 0) {
+					axisInfo.binding.lastSeenAxisState.x = fNewValue;
+					axisInfo.binding.lastSendAxisState.x = fNewValue;
+				} else {
+					axisInfo.binding.lastSeenAxisState.x = fNewValue;
+					axisInfo.binding.lastSendAxisState.x = fNewValue;
+				}
+				IVRServerDriverHost004Hooks::trackedDeviceAxisUpdatedOrig(m_deviceDriverHostPtr, m_openvrId, unWhichAxis, axisInfo.binding.lastSendAxisState);
+			}
+		}
+	}
+}
+
+
+bool DeviceManipulationHandle::handleButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId& eButtonId, double& eventTimeOffset) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	auto buttonIt = m_digitalInputRemapping.find(eButtonId);
 	if (buttonIt != m_digitalInputRemapping.end()) {
@@ -406,22 +494,62 @@ void DeviceManipulationHandle::RunFrameDigitalBinding(vrinputemulator::DigitalBi
 }
 
 
-bool DeviceManipulationHandle::handleAxisUpdate(void* serverDriverHost, int version, uint32_t& unWhichDevice, uint32_t& unWhichAxis, vr::VRControllerAxis_t& axisState) {
+bool DeviceManipulationHandle::handleAxisUpdate(uint32_t& unWhichDevice, uint32_t& unWhichAxis, vr::VRControllerAxis_t& axisState) {
 	std::lock_guard<std::recursive_mutex> lock(_mutex);
 	AnalogInputRemappingInfo* axisInfo = nullptr;
 	if (unWhichAxis < 5) {
 		axisInfo = m_analogInputRemapping + unWhichAxis;
 	}
+	if (m_deviceMode == 1 || (m_deviceMode == 3 && !m_redirectSuspended) /*|| m_deviceMode == 5*/) {
+		return false;
+	}
 	if (axisInfo && axisInfo->remapping.valid) {
 		sendAnalogBinding(axisInfo->remapping.binding, unWhichDevice, unWhichAxis, axisState, &axisInfo->binding);
 	} else {
-		if (m_deviceMode == 1 || (m_deviceMode == 3 && !m_redirectSuspended) /*|| m_deviceMode == 5*/) {
-			// nop
-		} else {
-			sendAxisEvent(unWhichDevice, unWhichAxis, axisState);
-		}
+		sendAxisEvent(unWhichDevice, unWhichAxis, axisState);
 	}
 	return false;
+}
+
+
+bool DeviceManipulationHandle::handleBooleanComponentUpdate(vr::VRInputComponentHandle_t& ulComponent, bool& bNewValue, double& fTimeOffset) {
+	LOG(DEBUG) << "DeviceManipulationHandle::handleBooleanComponentUpdate(" << ulComponent << ", " << bNewValue << ", " << fTimeOffset << ")";
+	auto it = _componentHandleToButtonIdMap.find(ulComponent);
+	if (it != _componentHandleToButtonIdMap.end()) {
+		ButtonEventType eventType;
+		if (it->second.second == 0) { // touch
+			eventType = bNewValue ? ButtonEventType::ButtonTouched : ButtonEventType::ButtonUntouched;
+		} else { // press
+			eventType = bNewValue ? ButtonEventType::ButtonPressed : ButtonEventType::ButtonUnpressed;
+		}
+		return handleButtonEvent(m_openvrId, eventType, it->second.first, fTimeOffset);
+	}
+	return true;
+}
+
+
+bool DeviceManipulationHandle::handleScalarComponentUpdate(vr::VRInputComponentHandle_t& ulComponent, float& fNewValue, double& fTimeOffset) {
+	LOG(DEBUG) << "DeviceManipulationHandle::handleScalarComponentUpdate(" << ulComponent << ", " << fNewValue << ", " << fTimeOffset << ")";
+	auto it = _componentHandleToAxisIdMap.find(ulComponent);
+	if (it != _componentHandleToAxisIdMap.end()) {
+		std::lock_guard<std::recursive_mutex> lock(_mutex);
+		AnalogInputRemappingInfo* axisInfo = nullptr;
+		unsigned unWhichAxis = it->second.first;
+		unsigned unWhichAxisDim = it->second.second;
+		if (unWhichAxis < 5) {
+			axisInfo = m_analogInputRemapping + unWhichAxis;
+		}
+		if (m_deviceMode == 1 || (m_deviceMode == 3 && !m_redirectSuspended) /*|| m_deviceMode == 5*/) {
+			return false;
+		}
+		if (axisInfo && axisInfo->remapping.valid) {
+			sendAnalogBinding(axisInfo->remapping.binding, m_openvrId, unWhichAxis, unWhichAxisDim, ulComponent, fNewValue, fTimeOffset);
+		} else {
+			sendScalarComponentUpdate(m_openvrId, unWhichAxis, unWhichAxisDim, ulComponent, fNewValue, fTimeOffset);
+		}
+		return false;
+	}
+	return true;
 }
 
 
@@ -435,6 +563,135 @@ bool DeviceManipulationHandle::triggerHapticPulse(uint32_t unAxisId, uint16_t us
 		return ll_triggerHapticPulse(unAxisId, usPulseDurationMicroseconds);
 	}
 	return true;
+}
+
+
+bool _matchInputComponentName(const char* name, std::string& segment0, std::string& segment1, std::string& segment2, std::string& segment3) {
+	boost::regex rgx("^/([^/]*)(/([^/]*))?(/([^/]*))?(/([^/]*))?");
+	boost::smatch match;
+	std::string text(name);
+	if (boost::regex_search(text, match, rgx)) {
+		segment0 = match[1];
+		segment1 = match[3];
+		segment2 = match[5];
+		segment3 = match[7];
+		return true;
+	} else {
+		return false;
+	}
+}
+
+std::map<std::string, vr::EVRButtonId> _inputComponentNameToButtonId = {
+	{ "system", vr::k_EButton_System },
+	{ "application_menu", vr::k_EButton_ApplicationMenu },
+	{ "grip", vr::k_EButton_Grip },
+	{ "dpad_left/", vr::k_EButton_DPad_Left },
+	{ "dpad_up", vr::k_EButton_DPad_Up },
+	{ "dpad_right", vr::k_EButton_DPad_Right },
+	{ "dpad_down", vr::k_EButton_DPad_Down },
+	{ "a", vr::k_EButton_A },
+	{ "x", vr::k_EButton_A },
+	{ "b", vr::k_EButton_ApplicationMenu },
+	{ "y", vr::k_EButton_ApplicationMenu },
+	{ "trackpad", vr::k_EButton_SteamVR_Touchpad },
+	{ "joystick", vr::k_EButton_SteamVR_Touchpad },
+	{ "trigger", vr::k_EButton_SteamVR_Trigger },
+};
+
+std::map<std::string, uint32_t> _inputComponentNameToAxisId = {
+	{ "trackpad", 0 },
+	{ "joystick", 0 },
+	{ "trigger", 1 },
+};
+
+void DeviceManipulationHandle::inputAddBooleanComponent(const char *pchName, uint64_t pHandle) {
+	std::string sg0, sg1, sg2, sg3;
+	if (_matchInputComponentName(pchName, sg0, sg1, sg2, sg3)) {
+		LOG(DEBUG) << "Device Component Name Segments: \"" << sg0 << "\", \"" << sg1 << "\", \"" << sg2 << "\", \"" << sg3 << "\"";
+		vr::EVRButtonId buttonId;
+		int buttonType = 1; // 0 .. touch, 1 ..click
+		bool errorFlag = false;
+		if (!sg3.empty()) {
+			LOG(ERROR) << "Device input component name \"" << pchName << "\" has too many segments.";
+		} else {
+			if (boost::iequals(sg0, "proximity")) { // proximity sensor
+				buttonId = vr::k_EButton_ProximitySensor;
+			} else if (boost::iequals(sg0, "input")) { // digital button
+				boost::algorithm::to_lower(sg1);
+				auto it = _inputComponentNameToButtonId.find(sg1);
+				if (it != _inputComponentNameToButtonId.end()) {
+					buttonId = it->second;
+					if (boost::iequals(sg2, "touch")) {
+						buttonType = 0;
+					}
+				} else {
+					LOG(ERROR) << "Could not map input component name \"" << pchName << "\" to a button id.";
+					errorFlag = true;
+				}
+			} else {
+				LOG(ERROR) << "Unknown first component name segment \"" << sg0 << "\".";
+				errorFlag = true;
+			}
+		}
+		if (!errorFlag) {
+			_componentHandleToButtonIdMap.emplace(pHandle, std::make_pair(buttonId, buttonType));
+			if (buttonType == 0) {
+				_ButtonIdToComponentHandleMap[buttonId].first = pHandle;
+			} else {
+				_ButtonIdToComponentHandleMap[buttonId].second = pHandle;
+			}
+			LOG(INFO) << "Mapped input component \"" << pchName << "\" to button id (" << (int)buttonId << ", " << buttonType << ")";
+		}
+	} else {
+		LOG(ERROR) << "Could not parse input component name \"" << pchName << "\".";
+	}
+}
+
+void DeviceManipulationHandle::inputAddScalarComponent(const char *pchName, uint64_t pHandle, vr::EVRScalarType eType, vr::EVRScalarUnits eUnits) {
+	std::string sg0, sg1, sg2, sg3;
+	if (_matchInputComponentName(pchName, sg0, sg1, sg2, sg3)) {
+		LOG(DEBUG) << "Device Component Name Segments: \"" << sg0 << "\", \"" << sg1 << "\", \"" << sg2 << "\", \"" << sg3 << "\"";
+		uint32_t axisId;
+		uint32_t axisDim = 0;
+		bool errorFlag = false;
+		if (!sg3.empty()) {
+			LOG(ERROR) << "Device input component name \"" << pchName << "\" has too many segments.";
+		} else {
+			if (boost::iequals(sg0, "input")) { // analog input
+				boost::algorithm::to_lower(sg1);
+				auto it = _inputComponentNameToAxisId.find(sg1);
+				if (it != _inputComponentNameToAxisId.end()) {
+					axisId = it->second;
+					if (boost::iequals(sg2, "x")) {
+						axisDim = 0;
+					} else if (boost::iequals(sg2, "y")) {
+						axisDim = 1;
+					}
+				} else {
+					LOG(ERROR) << "Could not map input component name \"" << pchName << "\" to an axis id.";
+					errorFlag = true;
+				}
+			} else {
+				LOG(ERROR) << "Unknown first component name segment \"" << sg0 << "\".";
+				errorFlag = true;
+			}
+		}
+		if (!errorFlag) {
+			_componentHandleToAxisIdMap.emplace(pHandle, std::make_pair(axisId, axisDim));
+			if (axisDim == 0) {
+				_AxisIdToComponentHandleMap[axisId].first = pHandle;
+			} else {
+				_AxisIdToComponentHandleMap[axisId].second = pHandle;
+			}
+			LOG(INFO) << "Mapped input component \"" << pchName << "\" to axis id (" << axisId << ", " << axisDim << ")";
+		}
+	} else {
+		LOG(ERROR) << "Could not parse input component name \"" << pchName << "\".";
+	}
+}
+
+void DeviceManipulationHandle::inputAddHapticComponent(const char * pchName, uint64_t pHandle) {
+	m_inputHapticComponentHandle = pHandle;
 }
 
 
@@ -525,7 +782,7 @@ void DeviceManipulationHandle::sendDigitalBinding(vrinputemulator::DigitalBindin
 						//nop
 					} else {
 						sendKeyboardEvent(eventType, binding.data.keyboard.shiftPressed, binding.data.keyboard.ctrlPressed, 
-							binding.data.keyboard.altPressed, (WORD)binding.data.keyboard.keyCode, bindingInfo);
+							binding.data.keyboard.altPressed, (WORD)binding.data.keyboard.keyCode, binding.data.keyboard.sendScanCode, bindingInfo);
 					}
 				} break;
 				case DigitalBindingType::SuspendRedirectMode: {
@@ -663,6 +920,65 @@ void DeviceManipulationHandle::sendAnalogBinding(vrinputemulator::AnalogBinding&
 	}
 }
 
+void DeviceManipulationHandle::sendAnalogBinding(vrinputemulator::AnalogBinding & binding, uint32_t unWhichDevice, uint32_t unWhichAxis, uint32_t unAxisDim, vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset) {
+	if (binding.type == AnalogBindingType::NoRemapping) {
+		sendScalarComponentUpdate(unWhichDevice, unWhichAxis, unAxisDim, ulComponent, fNewValue, fTimeOffset);
+	} else if (binding.type == AnalogBindingType::Disabled) {
+		// nop
+	} else {
+		switch (binding.type) {
+			case AnalogBindingType::OpenVR: {
+				if (m_deviceMode == 1 || (m_deviceMode == 3 && !m_redirectSuspended) /*|| m_deviceMode == 5*/) {
+					//nop
+				} else {
+					uint32_t axisId = binding.data.openvr.axisId;
+					uint32_t axisDim = unAxisDim;
+					uint32_t deviceId = binding.data.openvr.controllerId;
+					auto myNewState = fNewValue;
+					if (deviceId >= 999) {
+						deviceId = m_openvrId;
+					}
+					if ((unAxisDim == 0 && binding.invertXAxis) || (unAxisDim == 1 && binding.invertYAxis)) {
+						myNewState *= -1;
+					}
+					if (binding.swapAxes) {
+						if (axisDim == 0) {
+							axisDim = 1;
+						} else {
+							axisDim = 0;
+						}
+					}
+					if (binding.lowerDeadzone < binding.upperDeadzone && (binding.lowerDeadzone > 0.0f || binding.upperDeadzone < 1.0f)) {
+						auto zone = binding.upperDeadzone - binding.lowerDeadzone;
+						if (myNewState >= 0.0f) {
+							myNewState = (myNewState - binding.lowerDeadzone) * (1.0f / zone) + binding.lowerDeadzone;
+							if (myNewState < 0.0f) {
+								myNewState = 0.0f;
+							} else if (myNewState > 1.0f) {
+								myNewState = 1.0f;
+							}
+						} else {
+							myNewState = (myNewState + binding.lowerDeadzone) * (1.0f / zone) - binding.lowerDeadzone;
+							if (myNewState > 0.0f) {
+								myNewState = 0.0f;
+							} else if (myNewState < -1.0f) {
+								myNewState = -1.0f;
+							}
+						}
+					}
+					if (deviceId != unWhichDevice || axisId != unWhichAxis || axisDim != unAxisDim) {
+						sendScalarComponentUpdate(deviceId, axisId, unAxisDim, myNewState, fTimeOffset);
+					} else {
+						sendScalarComponentUpdate(deviceId, axisId, unAxisDim, ulComponent, myNewState, fTimeOffset);
+					}
+				}
+			} break;
+			default: {
+			} break;
+		}
+	}
+}
+
 
 void DeviceManipulationHandle::_buttonPressDeadzoneFix(vr::EVRButtonId eButtonId) {
 	auto& axisInfo = m_analogInputRemapping[eButtonId - vr::k_EButton_Axis0];
@@ -673,7 +989,7 @@ void DeviceManipulationHandle::_buttonPressDeadzoneFix(vr::EVRButtonId eButtonId
 	}
 }
 
-void DeviceManipulationHandle::sendButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode, DigitalInputRemappingInfo::BindingInfo* binding) {
+void DeviceManipulationHandle::sendButtonEvent(uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode, DigitalInputRemappingInfo::BindingInfo* binding) {
 	if (!directMode) {
 		if (unWhichDevice == m_openvrId && ((m_deviceMode == 2 && !m_redirectSuspended) || m_deviceMode == 4)) {
 			unWhichDevice = m_redirectRef->openvrId();
@@ -758,45 +1074,68 @@ void DeviceManipulationHandle::sendButtonEvent(uint32_t& unWhichDevice, ButtonEv
 }
 
 
-void DeviceManipulationHandle::sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, DigitalInputRemappingInfo::BindingInfo* binding) {
+void DeviceManipulationHandle::sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, bool sendScanCode, DigitalInputRemappingInfo::BindingInfo* binding) {
 	if ( (eventType == ButtonEventType::ButtonPressed && (!binding || !binding->pressedState)) 
 			|| (eventType == ButtonEventType::ButtonUnpressed && (!binding || binding->pressedState)) ) {
 		INPUT ips[4];
 		memset(ips, 0, sizeof(ips));
-		/* DirectInput games ignore virtual key codes, so we have to send the scan code */
-		WORD flags = KEYEVENTF_SCANCODE;
+		WORD flags = 0;
+		/* DirectInput games ignore virtual key codes, for those scan codes should be used */
+		if (sendScanCode) {
+			flags |= KEYEVENTF_SCANCODE;
+			keyCode = MapVirtualKey(keyCode, MAPVK_VK_TO_VSC);
+		}
 		if (eventType == ButtonEventType::ButtonUnpressed) {
 			flags |= KEYEVENTF_KEYUP;
 		}
-		auto scanCode = MapVirtualKey(keyCode, MAPVK_VK_TO_VSC);
 		unsigned ipCount = 0;
-		if (eventType == ButtonEventType::ButtonUnpressed && scanCode) {
+		if (eventType == ButtonEventType::ButtonUnpressed && keyCode) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wScan = scanCode;
+			if (sendScanCode) {
+				ips[ipCount].ki.wScan = keyCode;
+			} else {
+				ips[ipCount].ki.wVk = keyCode;
+			}
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
 		if (shiftPressed) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wScan = MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC);
+			if (sendScanCode) {
+				ips[ipCount].ki.wScan = MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC);
+			} else {
+				ips[ipCount].ki.wVk = VK_SHIFT;
+			}
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
 		if (ctrlPressed) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+			if (sendScanCode) {
+				ips[ipCount].ki.wScan = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+			} else {
+				ips[ipCount].ki.wVk = VK_CONTROL;
+			}
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
 		if (altPressed) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wScan = MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC);
+			if (sendScanCode) {
+				ips[ipCount].ki.wScan = MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC);
+			} else {
+				ips[ipCount].ki.wVk = VK_MENU;
+			}
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
-		if (eventType == ButtonEventType::ButtonPressed && scanCode) {
+		if (eventType == ButtonEventType::ButtonPressed && keyCode) {
 			ips[ipCount].type = INPUT_KEYBOARD;
-			ips[ipCount].ki.wScan = scanCode;
+			if (sendScanCode) {
+				ips[ipCount].ki.wScan = keyCode;
+			} else {
+				ips[ipCount].ki.wVk = keyCode;
+			}
 			ips[ipCount].ki.dwFlags = flags;
 			ipCount++;
 		}
@@ -812,7 +1151,7 @@ void DeviceManipulationHandle::sendKeyboardEvent(ButtonEventType eventType, bool
 }
 
 
-void DeviceManipulationHandle::sendAxisEvent(uint32_t& unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState, bool directMode, AnalogInputRemappingInfo::BindingInfo* binding) {
+void DeviceManipulationHandle::sendAxisEvent(uint32_t unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState, bool directMode, AnalogInputRemappingInfo::BindingInfo* binding) {
 	if (!directMode) {
 		if (unWhichDevice == m_openvrId && ((m_deviceMode == 2 && !m_redirectSuspended) || m_deviceMode == 4)) {
 			unWhichDevice = m_redirectRef->openvrId();
@@ -867,6 +1206,105 @@ void DeviceManipulationHandle::sendAxisEvent(uint32_t& unWhichDevice, uint32_t u
 
 	} else {
 		ll_sendAxisEvent(unWhichAxis, axisState);
+	}
+}
+
+void DeviceManipulationHandle::sendScalarComponentUpdate(uint32_t unWhichDevice, uint32_t unWhichAxis, uint32_t unAxisDim, vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset, bool directMode) {
+	if (!directMode) {
+		if (unWhichDevice == m_openvrId && ((m_deviceMode == 2 && !m_redirectSuspended) || m_deviceMode == 4)) {
+			unWhichDevice = m_redirectRef->openvrId();
+		}
+		if (unWhichDevice != m_openvrId) {
+			auto deviceInfo = m_parent->getDeviceManipulationHandleById(unWhichDevice);
+			if (deviceInfo) {
+				return deviceInfo->sendScalarComponentUpdate(unWhichDevice, unWhichAxis, unAxisDim, fNewValue, fTimeOffset, true);
+			}
+		}
+	}
+	if (unWhichAxis < 5) {
+		auto& axisInfo = m_analogInputRemapping[unWhichAxis];
+		if (axisInfo.remapping.valid && touchpadEmulationEnabledFlag) {
+			auto myNewState = fNewValue;
+			auto& lastSeenState = m_analogInputRemapping[unWhichAxis].binding.lastSeenAxisState;
+			auto& lastSendState = m_analogInputRemapping[unWhichAxis].binding.lastSendAxisState;
+			bool suppress = false;
+
+			if (m_analogInputRemapping[unWhichAxis].remapping.binding.touchpadEmulationMode == 1) {
+				if (unAxisDim == 0 && (fNewValue != 0.0f && vrmath::signum(fNewValue) == vrmath::signum(lastSendState.x) && abs(fNewValue) < abs(lastSendState.x))) {
+					myNewState = lastSendState.x;
+				} else if (unAxisDim == 1 && (fNewValue != 0.0f && vrmath::signum(fNewValue) == vrmath::signum(lastSendState.y) && abs(fNewValue) < abs(lastSendState.y))) {
+					myNewState = lastSendState.y;
+				}
+
+			} else if (m_analogInputRemapping[unWhichAxis].remapping.binding.touchpadEmulationMode == 2) {
+				// Joystick was already in neutral position but we haven't send it yet, and now it moved away from neutral position
+				// => send neutral position before we do anything else since some menus use this information to reset input handling.
+				if (lastSeenState.x == 0.0f && lastSeenState.y == 0.0f && (lastSendState.x != 0.0f || lastSendState.y != 0.0f) && fNewValue != 0.0f) {
+					ll_sendScalarComponentUpdate(ulComponent, 0.0f, fTimeOffset);
+					if (unAxisDim == 0) {
+						ll_sendScalarComponentUpdate(_AxisIdToComponentHandleMap[unWhichAxis].second, 0.0f, fTimeOffset);
+					} else {
+						ll_sendScalarComponentUpdate(_AxisIdToComponentHandleMap[unWhichAxis].first, 0.0f, fTimeOffset);
+					}
+					lastSendState = {0.0f, 0.0f};
+				}
+				if (unAxisDim == 0 && (fNewValue == 0.0f || (vrmath::signum(fNewValue) == vrmath::signum(lastSendState.x) && abs(fNewValue) < abs(lastSendState.x)))) {
+					myNewState = lastSendState.x;
+				} else if (unAxisDim == 1 && (fNewValue == 0.0f || (vrmath::signum(fNewValue) == vrmath::signum(lastSendState.y) && abs(fNewValue) < abs(lastSendState.y)))) {
+					myNewState = lastSendState.y;
+				}
+			}
+
+			if (unAxisDim == 0) {
+				lastSeenState.x = fNewValue;
+			} else {
+				lastSeenState.y = fNewValue;
+			}
+			if (!suppress) {
+				ll_sendScalarComponentUpdate(ulComponent, myNewState, fTimeOffset);
+				if (unAxisDim == 0) {
+					lastSendState.x = myNewState;
+				} else {
+					lastSendState.y = myNewState;
+				}
+			}
+		} else {
+			ll_sendScalarComponentUpdate(ulComponent, fNewValue, fTimeOffset);
+			if (unAxisDim == 0) {
+				axisInfo.binding.lastSeenAxisState.x = fNewValue;
+				axisInfo.binding.lastSendAxisState.x = fNewValue;
+			} else {
+				axisInfo.binding.lastSeenAxisState.y = fNewValue;
+				axisInfo.binding.lastSendAxisState.y = fNewValue;
+			}
+		}
+	} else {
+		ll_sendScalarComponentUpdate(ulComponent, fNewValue, fTimeOffset);
+	}
+}
+
+void DeviceManipulationHandle::sendScalarComponentUpdate(uint32_t unWhichDevice, uint32_t unWhichAxis, uint32_t unAxisDim, float fNewValue, double fTimeOffset, bool directMode) {
+	if (!directMode) {
+		if (unWhichDevice == m_openvrId && ((m_deviceMode == 2 && !m_redirectSuspended) || m_deviceMode == 4)) {
+			unWhichDevice = m_redirectRef->openvrId();
+		}
+		if (unWhichDevice != m_openvrId) {
+			auto deviceInfo = m_parent->getDeviceManipulationHandleById(unWhichDevice);
+			if (deviceInfo) {
+				return deviceInfo->sendScalarComponentUpdate(unWhichDevice, unWhichAxis, unAxisDim, fNewValue, fTimeOffset, true);
+			}
+		}
+	}
+	if (unWhichAxis < 5) {
+		uint64_t componentHandle = 0;
+		if (unAxisDim == 0) {
+			componentHandle = _AxisIdToComponentHandleMap[unWhichAxis].first;
+		} else {
+			componentHandle = _AxisIdToComponentHandleMap[unWhichAxis].second;
+		}
+		if (componentHandle != 0) {
+			sendScalarComponentUpdate(unWhichDevice, unWhichAxis, unAxisDim, componentHandle, fNewValue, fTimeOffset, directMode);
+		}
 	}
 }
 

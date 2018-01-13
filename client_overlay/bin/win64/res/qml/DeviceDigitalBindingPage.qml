@@ -58,6 +58,7 @@ MyStackViewPage {
             keyboardShiftToggle.checked = DigitalInputRemappingController.keyboardShiftEnabled()
             keyboardCtrlToggle.checked = DigitalInputRemappingController.keyboardCtrlEnabled()
             keyboardAltToggle.checked = DigitalInputRemappingController.keyboardAltEnabled()
+            keyboardUseScanCodeToggle.currentIndex = DigitalInputRemappingController.keyboardUseScanCode() ? 1 : 0
             keyboardKeyComboBox.currentIndex = DigitalInputRemappingController.keyboardKeyIndex()
             toggleModeToggle.checked = DigitalInputRemappingController.isToggleModeEnabled()
             toggleThresholdSlider.value = DigitalInputRemappingController.toggleModeThreshold()
@@ -71,6 +72,7 @@ MyStackViewPage {
             keyboardCtrlToggle.checked = false
             keyboardAltToggle.checked = false
             toggleModeToggle.checked = false
+            keyboardUseScanCodeToggle.currentIndex = 1
             toggleThresholdSlider.value = 300
             autoTriggerToggle.checked = false
             triggerFrequencySlider.value = 10
@@ -189,18 +191,30 @@ MyStackViewPage {
                 }
                 MyToggleButton {
                     id: keyboardShiftToggle
-                    Layout.preferredWidth: 200
+                    Layout.preferredWidth: 174
                     text: "Shift"
                 }
                 MyToggleButton {
                     id: keyboardCtrlToggle
-                    Layout.preferredWidth: 200
+                    Layout.preferredWidth: 174
                     text: "CTRL"
                 }
                 MyToggleButton {
                     id: keyboardAltToggle
-                    Layout.preferredWidth: 200
+                    Layout.preferredWidth: 174
                     text: "Alt"
+                }
+                MyText {
+                    text: "Using: "
+                    Layout.preferredWidth: 90
+                }
+                MyComboBox {
+                    id: keyboardUseScanCodeToggle
+                    Layout.preferredWidth:275
+                    model: [
+                        "Virtual Key Code",
+                        "Scan Code"
+                    ]
                 }
             }
         }
@@ -417,7 +431,8 @@ MyStackViewPage {
                         var ctrl = keyboardCtrlToggle.checked
                         var alt = keyboardAltToggle.checked
                         var keyIndex = keyboardKeyComboBox.currentIndex
-                        DigitalInputRemappingController.finishConfigureBinding_keyboard(shift, ctrl, alt, keyIndex, toggleMode, toggleDelay, autoTrigger, autoTriggerFreq)
+                        var useScanCode = keyboardUseScanCodeToggle.currentIndex == 1
+                        DigitalInputRemappingController.finishConfigureBinding_keyboard(shift, ctrl, alt, keyIndex, useScanCode, toggleMode, toggleDelay, autoTrigger, autoTriggerFreq)
                     } else if (bindingTypeComboBox.currentIndex == 4) {
                         DigitalInputRemappingController.finishConfigureBinding_suspendRedirectMode()
                     } else if (bindingTypeComboBox.currentIndex == 5) {

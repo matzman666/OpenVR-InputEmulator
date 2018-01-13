@@ -63,7 +63,27 @@ void IVRServerDriverHost005Hooks::_trackedDevicePoseUpdated(void* _this, uint32_
 }
 
 bool IVRServerDriverHost005Hooks::_pollNextEvent(void* _this, void* pEvent, uint32_t uncbVREvent) {
-	return pollNextEventHook.origFunc(_this, pEvent, uncbVREvent);
+	auto injectedEvent = serverDriver->getDriverEventForInjection(_this);
+	if (injectedEvent.first) {
+		if (injectedEvent.second == uncbVREvent) {
+			memcpy(pEvent, injectedEvent.first.get(), uncbVREvent);
+			auto event = (vr::VREvent_t*)pEvent;
+			LOG(DEBUG) << "IVRServerDriverHost005Hooks::_pollNextEvent: Injecting event: " << event->eventType << ", " << event->trackedDeviceIndex;
+			return true;
+		} else {
+			auto event = (vr::VREvent_t*)injectedEvent.first.get();
+			LOG(ERROR) << "IVRServerDriverHost005Hooks::_pollNextEvent: Could not inject event (" << event->eventType << ", " << event->trackedDeviceIndex 
+				<< ") because size does not match, expected " << uncbVREvent << " but got " << injectedEvent.second;
+		}
+	}
+	bool retval, hretval;
+	do {
+		retval = pollNextEventHook.origFunc(_this, pEvent, uncbVREvent);
+		if (retval) {
+			hretval = serverDriver->hooksPollNextEvent(_this, 5, pEvent, uncbVREvent);
+		}
+	} while (retval && !hretval);
+	return retval;
 }
 
 

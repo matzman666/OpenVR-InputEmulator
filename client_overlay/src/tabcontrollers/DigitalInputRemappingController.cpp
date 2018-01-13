@@ -187,6 +187,15 @@ unsigned DigitalInputRemappingController::keyboardKeyIndex() {
 	}
 }
 
+
+bool DigitalInputRemappingController::keyboardUseScanCode() {
+	if (m_currentBinding) {
+		return m_currentBinding->data.keyboard.sendScanCode;
+	} else {
+		return false;
+	}
+}
+
 int DigitalInputRemappingController::getButtonMaxCount() {
 	return (int)vr::k_EButton_Max;
 }
@@ -309,13 +318,14 @@ void DigitalInputRemappingController::finishConfigureBinding_OpenVR(int controll
 	emit configureDigitalBindingFinished();
 }
 
-void DigitalInputRemappingController::finishConfigureBinding_keyboard(bool shiftPressed, bool ctrlPressed, bool altPressed, unsigned long keyIndex, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency) {
+void DigitalInputRemappingController::finishConfigureBinding_keyboard(bool shiftPressed, bool ctrlPressed, bool altPressed, unsigned long keyIndex, bool useScanCode, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency) {
 	m_currentBinding->type = vrinputemulator::DigitalBindingType::Keyboard;
 	memset(&m_currentBinding->data, 0, sizeof(m_currentBinding->data));
 	m_currentBinding->data.keyboard.shiftPressed = shiftPressed;
 	m_currentBinding->data.keyboard.ctrlPressed = ctrlPressed;
 	m_currentBinding->data.keyboard.altPressed = altPressed;
 	m_currentBinding->data.keyboard.keyCode = parent->keyboardVirtualCodeIdFromIndex(keyIndex);
+	m_currentBinding->data.keyboard.sendScanCode = useScanCode;
 	m_currentBinding->toggleEnabled = toggleMode;
 	m_currentBinding->toggleDelay = toggleThreshold;
 	m_currentBinding->autoTriggerEnabled = autoTrigger;

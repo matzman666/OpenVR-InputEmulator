@@ -95,6 +95,7 @@ namespace vrinputemulator {
 				bool ctrlPressed = false;
 				bool altPressed = false;
 				uint32_t keyCode = 0x00;
+				bool sendScanCode = true;
 			} keyboard;
 
 			BindingUnion() {}

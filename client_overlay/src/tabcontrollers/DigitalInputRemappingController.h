@@ -59,6 +59,7 @@ public:
 	Q_INVOKABLE bool keyboardCtrlEnabled();
 	Q_INVOKABLE bool keyboardAltEnabled();
 	Q_INVOKABLE unsigned keyboardKeyIndex();
+	Q_INVOKABLE bool keyboardUseScanCode();
 
 	const vrinputemulator::DigitalInputRemapping& currentRemapping() { return m_currentRemapping; }
 
@@ -76,7 +77,7 @@ public slots:
 	void finishConfigureBinding_Original();
 	void finishConfigureBinding_Disabled();
 	void finishConfigureBinding_OpenVR(int controllerId, int ButtonId, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency);
-	void finishConfigureBinding_keyboard(bool shiftPressed, bool ctrlPressed, bool altPressed, unsigned long keyIndex, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency);
+	void finishConfigureBinding_keyboard(bool shiftPressed, bool ctrlPressed, bool altPressed, unsigned long keyIndex, bool useScanCode, bool toggleMode, int toggleThreshold, bool autoTrigger, int triggerFrequency);
 	void finishConfigureBinding_suspendRedirectMode();
 	void finishConfigureBinding_toggleTouchpadEmulationFix();
 

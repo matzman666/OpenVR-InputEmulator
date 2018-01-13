@@ -7,6 +7,7 @@
 #include "utils/KalmanFilter.h"
 #include "utils/MovingAverageRingBuffer.h"
 #include "../logging.h"
+#include "../hooks/common.h"
 
 
 
@@ -30,10 +31,12 @@ private:
 	std::recursive_mutex _mutex;
 	vr::ETrackedDeviceClass m_eDeviceClass = vr::TrackedDeviceClass_Invalid;
 	uint32_t m_openvrId = vr::k_unTrackedDeviceIndexInvalid;
+	std::string m_serialNumber;
 
 	int m_deviceDriverInterfaceVersion = 0;
-	void* m_deviceDriverPtr = nullptr;
-	void* m_deviceDriverHostPtr = nullptr;
+	void* m_deviceDriverPtr;
+	void* m_deviceDriverHostPtr;
+	void* m_driverInputPtr = nullptr;
 	std::shared_ptr<InterfaceHooks> m_serverDriverHooks;
 	std::shared_ptr<InterfaceHooks> m_controllerComponentHooks;
 
@@ -91,11 +94,17 @@ private:
 	PosKalmanFilter m_kalmanFilter;
 
 	vr::PropertyContainerHandle_t m_propertyContainerHandle = vr::k_ulInvalidPropertyContainer;
+	uint64_t m_inputHapticComponentHandle = 0; // Let's assume for now that there is only one haptic component
+	std::map<uint64_t, std::pair<vr::EVRButtonId, int>> _componentHandleToButtonIdMap;
+	std::map<vr::EVRButtonId, std::pair<uint64_t, uint64_t>> _ButtonIdToComponentHandleMap;
+	std::map<uint64_t, std::pair<unsigned, unsigned>> _componentHandleToAxisIdMap;
+	std::pair<uint64_t, uint64_t> _AxisIdToComponentHandleMap[5];
 
 	HANDLE _vibrationCueTheadHandle = NULL;
 
 	void sendDigitalBinding(vrinputemulator::DigitalBinding& binding, uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, DigitalInputRemappingInfo::BindingInfo* bindingInfo = nullptr);
 	void sendAnalogBinding(vrinputemulator::AnalogBinding& binding, uint32_t unWhichDevice, uint32_t axisId, const vr::VRControllerAxis_t& axisState, AnalogInputRemappingInfo::BindingInfo* bindingInfo = nullptr);
+	void sendAnalogBinding(vrinputemulator::AnalogBinding& binding, uint32_t unWhichDevice, uint32_t unWhichAxis, uint32_t unAxisDim, vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset);
 
 	void _buttonPressDeadzoneFix(vr::EVRButtonId eButtonId);
 	void _vibrationCue();
@@ -104,19 +113,21 @@ private:
 	int _disableOldMode(int newMode);
 
 public:
-	DeviceManipulationHandle(vr::ETrackedDeviceClass eDeviceClass, void* driverPtr, void* driverHostPtr, int driverInterfaceVersion);
+	DeviceManipulationHandle(const char* serial, vr::ETrackedDeviceClass eDeviceClass, void* driverPtr, void* driverHostPtr, int driverInterfaceVersion);
 
 	bool isValid() const { return m_isValid; }
 	vr::ETrackedDeviceClass deviceClass() const { return m_eDeviceClass; }
 	uint32_t openvrId() const { return m_openvrId; }
 	void setOpenvrId(uint32_t id) { m_openvrId = id; }
+	const std::string& serialNumber() { return m_serialNumber; }
 
 	void* driverPtr() const { return m_deviceDriverPtr; }
 	void* driverHostPtr() const { return m_deviceDriverHostPtr; }
+	void* driverInputPtr() const { return m_driverInputPtr; }
+	void setDriverInputPtr(void* ptr) { m_driverInputPtr = ptr; }
 	void setServerDriverHooks(std::shared_ptr<InterfaceHooks> hooks) { m_serverDriverHooks = hooks; }
 	void setControllerComponentHooks(std::shared_ptr<InterfaceHooks> hooks) { m_controllerComponentHooks = hooks; }
 
-	void setFakeDisconnection(bool value);
 	int deviceMode() const { return m_deviceMode; }
 	int setDefaultMode();
 	int setRedirectMode(bool target, DeviceManipulationHandle* ref);
@@ -151,17 +162,27 @@ public:
 	void ll_sendPoseUpdate(const vr::DriverPose_t& newPose);
 	void ll_sendButtonEvent(ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset);
 	void ll_sendAxisEvent(uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState);
+	void ll_sendScalarComponentUpdate(vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset);
 	bool ll_triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds);
 
-	bool handlePoseUpdate(void* serverDriverHost, int version, uint32_t& unWhichDevice, vr::DriverPose_t& newPose, uint32_t& unPoseStructSize);
-	bool handleButtonEvent(void* serverDriverHost, int version, uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId& eButtonId, double& eventTimeOffset);
-	bool handleAxisUpdate(void* serverDriverHost, int version, uint32_t& unWhichDevice, uint32_t& unWhichAxis, vr::VRControllerAxis_t& axisState);
+	bool handlePoseUpdate(uint32_t& unWhichDevice, vr::DriverPose_t& newPose, uint32_t unPoseStructSize);
+	bool handleButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId& eButtonId, double& eventTimeOffset);
+	bool handleAxisUpdate(uint32_t& unWhichDevice, uint32_t& unWhichAxis, vr::VRControllerAxis_t& axisState);
+	bool handleBooleanComponentUpdate(vr::VRInputComponentHandle_t& ulComponent, bool& bNewValue, double& fTimeOffset);
+	bool handleScalarComponentUpdate(vr::VRInputComponentHandle_t& ulComponent, float& fNewValue, double& fTimeOffset);
 
-	void sendButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode = false, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
-	void sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
-	void sendAxisEvent(uint32_t& unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState, bool directMode = false, AnalogInputRemappingInfo::BindingInfo* binding = nullptr);
+	void sendButtonEvent(uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode = false, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
+	void sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, bool sendScanCode, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
+	void sendAxisEvent(uint32_t unWhichDevice, uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState, bool directMode = false, AnalogInputRemappingInfo::BindingInfo* binding = nullptr);
+	void sendScalarComponentUpdate(uint32_t unWhichDevice, uint32_t unWhichAxis, uint32_t unAxisDim, vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset, bool directMode = false);
+	void sendScalarComponentUpdate(uint32_t unWhichDevice, uint32_t unWhichAxis, uint32_t unAxisDim, float, double fTimeOffset, bool directMode = false);
+	
 
 	bool triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds, bool directMode = false);
+
+	void inputAddBooleanComponent(const char *pchName, uint64_t pHandle);
+	void inputAddScalarComponent(const char *pchName, uint64_t pHandle, vr::EVRScalarType eType, vr::EVRScalarUnits eUnits);
+	void inputAddHapticComponent(const char * pchName, uint64_t pHandle);
 
 	PosKalmanFilter& kalmanFilter() { return m_kalmanFilter; }
 	MovingAverageRingBuffer& velMovingAverage() { return m_velMovingAverageBuffer; }

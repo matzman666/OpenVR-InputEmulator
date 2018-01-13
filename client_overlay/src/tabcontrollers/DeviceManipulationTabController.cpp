@@ -326,11 +326,16 @@ void DeviceManipulationTabController::reloadDeviceManipulationProfiles() {
 						serial = data["controllerSerial"].toString();
 					}
 					binding.data.openvr.buttonId = data["buttonId"].toUInt();
-				} else if (binding.type == vrinputemulator::DigitalBindingType::OpenVR) {
+				} else if (binding.type == vrinputemulator::DigitalBindingType::Keyboard) {
 					binding.data.keyboard.shiftPressed = data["shiftPressed"].toBool();
 					binding.data.keyboard.altPressed = data["altPressed"].toBool();
 					binding.data.keyboard.ctrlPressed = data["ctrlPressed"].toBool();
 					binding.data.keyboard.keyCode = data["keyCode"].toUInt();
+					if (data.contains("sendScanCode")) {
+						binding.data.keyboard.sendScanCode = true;
+					} else {
+						binding.data.keyboard.sendScanCode = data["sendScanCode"].toBool();
+					}
 				}
 				binding.toggleEnabled = data["toggleEnabled"].toBool();
 				binding.toggleDelay = data["toggleDelay"].toUInt();
@@ -427,11 +432,12 @@ void DeviceManipulationTabController::saveDeviceManipulationProfiles() {
 			if (!serial.isEmpty()) {
 				data["controllerSerial"] = serial;
 			}
-		} else if (binding.type == vrinputemulator::DigitalBindingType::OpenVR) {
+		} else if (binding.type == vrinputemulator::DigitalBindingType::Keyboard) {
 			data["shiftPressed"] = binding.data.keyboard.shiftPressed;
 			data["altPressed"] = binding.data.keyboard.altPressed;
 			data["ctrlPressed"] = binding.data.keyboard.ctrlPressed;
 			data["keyCode"] = binding.data.keyboard.keyCode;
+			data["sendScanCode"] = binding.data.keyboard.sendScanCode;
 		}
 		data["toggleEnabled"] = binding.toggleEnabled;
 		data["autoTriggerEnabled"] = binding.autoTriggerEnabled;
@@ -668,20 +674,26 @@ void DeviceManipulationTabController::applyDeviceManipulationProfile(unsigned in
 						p.second.remapping.longPressBinding.autoTriggerEnabled = false;
 					}
 
-					if (p.second.remapping.binding.type == vrinputemulator::DigitalBindingType::OpenVR && !p.second.normalBindingControllerSerial.isEmpty()) {
-						p.second.remapping.binding.data.openvr.controllerId = _getDeviceIdFromSerial(p.second.normalBindingControllerSerial);
-					} else {
-						p.second.remapping.binding.data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
+					if (p.second.remapping.binding.type == vrinputemulator::DigitalBindingType::OpenVR) {
+						if (!p.second.normalBindingControllerSerial.isEmpty()) {
+							p.second.remapping.binding.data.openvr.controllerId = _getDeviceIdFromSerial(p.second.normalBindingControllerSerial);
+						} else {
+							p.second.remapping.binding.data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
+						}
 					}
-					if (p.second.remapping.longPressBinding.type == vrinputemulator::DigitalBindingType::OpenVR && !p.second.longBindingControllerSerial.isEmpty()) {
-						p.second.remapping.longPressBinding.data.openvr.controllerId = _getDeviceIdFromSerial(p.second.longBindingControllerSerial);
-					} else {
-						p.second.remapping.longPressBinding.data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
+					if (p.second.remapping.longPressBinding.type == vrinputemulator::DigitalBindingType::OpenVR) {
+						if (!p.second.longBindingControllerSerial.isEmpty()) {
+							p.second.remapping.longPressBinding.data.openvr.controllerId = _getDeviceIdFromSerial(p.second.longBindingControllerSerial);
+						} else {
+							p.second.remapping.longPressBinding.data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
+						}
 					}
-					if (p.second.remapping.doublePressBinding.type == vrinputemulator::DigitalBindingType::OpenVR && !p.second.doubleBindingControllerSerial.isEmpty()) {
-						p.second.remapping.doublePressBinding.data.openvr.controllerId = _getDeviceIdFromSerial(p.second.doubleBindingControllerSerial);
-					} else {
-						p.second.remapping.doublePressBinding.data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
+					if (p.second.remapping.doublePressBinding.type == vrinputemulator::DigitalBindingType::OpenVR) {
+						if (!p.second.doubleBindingControllerSerial.isEmpty()) {
+							p.second.remapping.doublePressBinding.data.openvr.controllerId = _getDeviceIdFromSerial(p.second.doubleBindingControllerSerial);
+						} else {
+							p.second.remapping.doublePressBinding.data.openvr.controllerId = vr::k_unTrackedDeviceIndexInvalid;
+						}
 					}
 					parent->vrInputEmulator().setDigitalInputRemapping(device->openvrId, p.first, p.second.remapping);
 				}
@@ -1185,9 +1197,9 @@ void DeviceManipulationTabController::triggerHapticPulse(unsigned index) {
 	try {
 		// When I use a thread everything works in debug modus, but as soon as I switch to release mode I get a segmentation fault
 		// Hard to debug since it works in debug modus and therefore I cannot use a debugger :-(
-		for (unsigned i = 0; i < 50; ++i) {
-			parent->vrInputEmulator().triggerHapticPulse(deviceInfos[index]->openvrId, 0, 1000, true);
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		for (unsigned i = 0; i < 100; ++i) {
+			parent->vrInputEmulator().triggerHapticPulse(deviceInfos[index]->openvrId, 0, 2000, true);
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 		/*if (identifyThread.joinable()) {
 			identifyThread.join();

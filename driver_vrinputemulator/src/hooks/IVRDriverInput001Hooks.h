@@ -5,13 +5,6 @@
 #include <openvr_driver.h>
 
 
-namespace vr {
-enum EVRInputError;
-enum EVRScalarType;
-enum EVRScalarUnits;
-typedef uint64_t VRInputComponentHandle_t;
-}
-
 namespace vrinputemulator {
 namespace driver {
 

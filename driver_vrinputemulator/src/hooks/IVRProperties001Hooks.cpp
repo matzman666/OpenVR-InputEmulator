@@ -37,13 +37,13 @@ std::shared_ptr<InterfaceHooks> IVRProperties001Hooks::createHooks(void * iptr) 
 
 vr::ETrackedPropertyError IVRProperties001Hooks::_readPropertyBatch(void* _this, vr::PropertyContainerHandle_t ulContainer, void* pBatch, uint32_t unBatchEntryCount) {
 	auto retval = readPropertyBatchHook.origFunc(_this, ulContainer, pBatch, unBatchEntryCount);
-	serverDriver->hooksPropertiesReadPropertyBatch(_this, ulContainer, pBatch, unBatchEntryCount);
+	serverDriver->hooksPropertiesReadPropertyBatch(_this, 1, ulContainer, pBatch, unBatchEntryCount);
 	//LOG(TRACE) << "IVRproperties001Hooks::_readPropertyBatch(" << _this << ", " << ulContainer << ", " << pBatch << ", " << unBatchEntryCount << ") = " << (int)retval;
 	return retval;
 }
 
 vr::ETrackedPropertyError IVRProperties001Hooks::_writePropertyBatch(void* _this, vr::PropertyContainerHandle_t ulContainer, void* pBatch, uint32_t unBatchEntryCount) {
-	serverDriver->hooksPropertiesWritePropertyBatch(_this, ulContainer, pBatch, unBatchEntryCount);
+	serverDriver->hooksPropertiesWritePropertyBatch(_this, 1, ulContainer, pBatch, unBatchEntryCount);
 	auto retval = writePropertyBatchHook.origFunc(_this, ulContainer, pBatch, unBatchEntryCount);
 	//LOG(TRACE) << "IVRproperties001Hooks::_writePropertyBatch(" << _this << ", " << ulContainer << ", " << pBatch << ", " << unBatchEntryCount << ") = " << (int)retval;
 	return retval;
