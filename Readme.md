@@ -40,6 +40,20 @@ Download the newest command-line client from the [release section](https://githu
 
 # Documentation
 
+## Fallout 4 VR specific Fixes
+
+There is an Oculus Touch specific fix available for Fallout 4 VR. It allows to emulate trackpad behaviour with the Rift's joysticks. Therefore, on the [input remapping pages](https://github.com/matzman666/OpenVR-InputEmulator#analog-input-settings) of each analog axis a touchpad emulation mode can be configured. 
+
+Currently there are two modes available:
+
+- **Position Based**: This modes assumes that the joystick can only move further away from the center position. All newer positions smaller can the last known position are ignored. The saved highest position is reset when the center position has been reached. The idea is to ignore input events caused by the joystick snapping back to center position. As soon as the center position is reached it is immediately send to the application in a position update. This helps with movement controls as otherwise any movement in an application is not reset when the joystick is let go by the user, and FO4 menus ignore this position update. However, the pipboy map does not ignore this position update.
+
+- **Position Based (Deferred Zero Update)**: This modes works exactly the same as the mode above with one small difference. The position update when the center position is reached is not immediately send but only when the joystick starts moving again. This helps with the pipboy-map but messes up movement controls. To still be able to move you can configure a toggle button to turn on/off touchpad emulation mode (see below).
+
+To enable/disable the touchpad emulation mode at will you can configure a toggle binding on any digital button. Therefore, select a digital button, select [either normal, double or long press](https://github.com/matzman666/OpenVR-InputEmulator#digital-input-settings), and then select ["Toggle Touchpad Emulation" as binding type](https://github.com/matzman666/OpenVR-InputEmulator#digital-binding). Now with audio cue.
+
+FO4 also tends to ignore joystick clicks when the joystick is exactly at center position. To help with this you can also activate the deadzone fix for button presses on the [analog input remapping page](https://github.com/matzman666/OpenVR-InputEmulator#analog-input-settings)).
+
 ## Top Page:
 
 ![Root Page](docs/screenshots/DeviceManipulationPage.png)
@@ -133,6 +147,9 @@ Allows to configure a digital button binding. Available binding types are:
 ![Digital Binding Page - Keyboard](docs/screenshots/DigitalBindingKeyboardPage.png)
 
 - **Key**: Onto which keyboard key should the input be mapped.
+- **Using**: Allows to select which type of keyboard code is send:
+  - **Scan Code**: A scan code represents a physical key that may have different meaning depending on keyboard layout. Most DirectInput games only work with this setting.
+  - **Virtual Key Code**: A virtual key code represents a virtual key which always has the same meaning independent from the keyboard layout. Some applications only work with this setting.
 - **Toggle Mode**: When the button is pressed longer than the specified threshold, the key state is toggled.
 - **Auto Trigger**: The key state is constantly pressed and then unpressed with the specified frequency as long as the user keeps the button pressed.
 
