@@ -164,12 +164,14 @@ public:
 	void ll_sendAxisEvent(uint32_t unWhichAxis, const vr::VRControllerAxis_t& axisState);
 	void ll_sendScalarComponentUpdate(vr::VRInputComponentHandle_t ulComponent, float fNewValue, double fTimeOffset);
 	bool ll_triggerHapticPulse(uint32_t unAxisId, uint16_t usPulseDurationMicroseconds);
+	bool ll_sendHapticPulseEvent(float fDurationSeconds, float fFrequency, float fAmplitude);
 
 	bool handlePoseUpdate(uint32_t& unWhichDevice, vr::DriverPose_t& newPose, uint32_t unPoseStructSize);
 	bool handleButtonEvent(uint32_t& unWhichDevice, ButtonEventType eventType, vr::EVRButtonId& eButtonId, double& eventTimeOffset);
 	bool handleAxisUpdate(uint32_t& unWhichDevice, uint32_t& unWhichAxis, vr::VRControllerAxis_t& axisState);
 	bool handleBooleanComponentUpdate(vr::VRInputComponentHandle_t& ulComponent, bool& bNewValue, double& fTimeOffset);
 	bool handleScalarComponentUpdate(vr::VRInputComponentHandle_t& ulComponent, float& fNewValue, double& fTimeOffset);
+	bool handleHapticPulseEvent(float& fDurationSeconds, float& fFrequency, float& fAmplitude);
 
 	void sendButtonEvent(uint32_t unWhichDevice, ButtonEventType eventType, vr::EVRButtonId eButtonId, double eventTimeOffset, bool directMode = false, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);
 	void sendKeyboardEvent(ButtonEventType eventType, bool shiftPressed, bool ctrlPressed, bool altPressed, WORD keyCode, bool sendScanCode, DigitalInputRemappingInfo::BindingInfo* binding = nullptr);

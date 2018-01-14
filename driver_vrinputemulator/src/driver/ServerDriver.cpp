@@ -95,8 +95,7 @@ bool ServerDriver::hooksPollNextEvent(void* serverDriverHost, int version, void*
 
 			auto it = _propertyContainerToDeviceManipulationHandleMap.find(eventData->containerHandle);
 			if (it != _propertyContainerToDeviceManipulationHandleMap.end()) {
-				it->second->triggerHapticPulse(0, (uint16_t)(eventData->fDurationSeconds * 1E6));
-				return false;
+				return it->second->handleHapticPulseEvent(eventData->fDurationSeconds, eventData->fFrequency, eventData->fAmplitude);
 			}
 		}
 	return true;

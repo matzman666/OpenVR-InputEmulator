@@ -212,6 +212,8 @@ void DeviceManipulationHandle::ll_sendButtonEvent(ButtonEventType eventType, vr:
 			if (componentHandle != 0) {
 				IVRDriverInput001Hooks::updateBooleanComponentOrig(m_driverInputPtr, componentHandle, newValue, eventTimeOffset);
 			}
+		} else {
+			LOG(WARNING) << "Device " << m_openvrId << ": No mapping from button id " << eButtonId << " to input component.";
 		}
 	}
 }
@@ -222,11 +224,15 @@ void DeviceManipulationHandle::ll_sendAxisEvent(uint32_t unWhichAxis, const vr::
 		IVRServerDriverHost004Hooks::trackedDeviceAxisUpdatedOrig(m_deviceDriverHostPtr, m_openvrId, unWhichAxis, axisState);
 	} else if (m_deviceDriverInterfaceVersion == 5) {
 		if (unWhichAxis < 5) {
-			if (_AxisIdToComponentHandleMap[unWhichAxis].first != 0) {
-				sendScalarComponentUpdate(m_openvrId, unWhichAxis, 0, axisState.x, 0.0);
-			}
-			if (_AxisIdToComponentHandleMap[unWhichAxis].second != 0) {
-				sendScalarComponentUpdate(m_openvrId, unWhichAxis, 1, axisState.y, 0.0);
+			if (_AxisIdToComponentHandleMap[unWhichAxis].first == 0 && _AxisIdToComponentHandleMap[unWhichAxis].second == 0) {
+				LOG(WARNING) << "Device " << m_openvrId << ": No mapping from axis id " << unWhichAxis << " to input component.";
+			} else {
+				if (_AxisIdToComponentHandleMap[unWhichAxis].first != 0) {
+					sendScalarComponentUpdate(m_openvrId, unWhichAxis, 0, axisState.x, 0.0);
+				}
+				if (_AxisIdToComponentHandleMap[unWhichAxis].second != 0) {
+					sendScalarComponentUpdate(m_openvrId, unWhichAxis, 1, axisState.y, 0.0);
+				} 
 			}
 		}
 	}
@@ -256,6 +262,35 @@ bool DeviceManipulationHandle::ll_triggerHapticPulse(uint32_t unAxisId, uint16_t
 		eventData->fDurationSeconds = ((float)usPulseDurationMicroseconds)/1E6f;
 		eventData->fFrequency = 1.0f/ eventData->fDurationSeconds;
 		eventData->fAmplitude = 1.0f;
+		m_parent->addDriverEventForInjection(m_deviceDriverHostPtr, std::shared_ptr<void>(hapticEvent), 48);
+	}
+	return true;
+}
+
+
+bool DeviceManipulationHandle::ll_sendHapticPulseEvent(float fDurationSeconds, float fFrequency, float fAmplitude) {
+	if (m_deviceDriverInterfaceVersion == 4 && m_controllerComponentHooks) {
+		return std::static_pointer_cast<IVRControllerComponent001Hooks>(m_controllerComponentHooks)->triggerHapticPulseOrig(0, (uint16_t)(fDurationSeconds * 1E6));
+	} else if (m_deviceDriverInterfaceVersion == 5) {
+
+		struct VREvent_HapticVibration_t {
+			uint64_t containerHandle; // property container handle of the device with the haptic component
+			uint64_t componentHandle; // Which haptic component needs to vibrate
+			float fDurationSeconds;
+			float fFrequency;
+			float fAmplitude;
+		};
+
+		vr::VREvent_t* hapticEvent = (vr::VREvent_t*)malloc(48);
+		hapticEvent->eventType = 1700; // VREvent_Input_HapticVibration = 1700
+		hapticEvent->eventAgeSeconds = 0.0f;
+		hapticEvent->trackedDeviceIndex = m_openvrId;
+		auto eventData = reinterpret_cast<VREvent_HapticVibration_t*>(&hapticEvent->data);
+		eventData->containerHandle = m_propertyContainerHandle;
+		eventData->componentHandle = m_inputHapticComponentHandle;
+		eventData->fDurationSeconds = fDurationSeconds;
+		eventData->fFrequency = fFrequency;
+		eventData->fAmplitude = fAmplitude;
 		m_parent->addDriverEventForInjection(m_deviceDriverHostPtr, std::shared_ptr<void>(hapticEvent), 48);
 	}
 	return true;
@@ -523,6 +558,8 @@ bool DeviceManipulationHandle::handleBooleanComponentUpdate(vr::VRInputComponent
 			eventType = bNewValue ? ButtonEventType::ButtonPressed : ButtonEventType::ButtonUnpressed;
 		}
 		return handleButtonEvent(m_openvrId, eventType, it->second.first, fTimeOffset);
+	} else {
+		LOG(INFO) << "No mapping from boolean component handle " << ulComponent << " to button id";
 	}
 	return true;
 }
@@ -548,8 +585,21 @@ bool DeviceManipulationHandle::handleScalarComponentUpdate(vr::VRInputComponentH
 			sendScalarComponentUpdate(m_openvrId, unWhichAxis, unWhichAxisDim, ulComponent, fNewValue, fTimeOffset);
 		}
 		return false;
+	} else {
+		LOG(INFO) << "No mapping from scalar component handle " << ulComponent << " to axis id";
 	}
 	return true;
+}
+
+bool DeviceManipulationHandle::handleHapticPulseEvent(float& fDurationSeconds, float& fFrequency, float& fAmplitude) {
+	std::lock_guard<std::recursive_mutex> lock(_mutex);
+	if ((m_deviceMode == 3 && !m_redirectSuspended) || m_deviceMode == 4) {
+		m_redirectRef->ll_sendHapticPulseEvent(fDurationSeconds, fFrequency, fAmplitude);
+		return false;
+	} else  if (m_deviceMode == 0 || ((m_deviceMode == 3 || m_deviceMode == 2) && m_redirectSuspended)) {
+		return true;
+	}
+	return false;
 }
 
 
