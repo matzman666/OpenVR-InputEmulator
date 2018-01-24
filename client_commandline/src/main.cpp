@@ -21,8 +21,7 @@ void printHelp(int argc, const char* argv[]) {
 		<< "  setdeviceconnection\t\tSets the connection state of a virtual device" << std::endl
 		<< "  setdeviceposition\t\tSets the position of a virtual device" << std::endl
 		<< "  setdevicerotation\t\tSets the rotation of a virtual device" << std::endl
-		<< "  devicetranslationoffset\tConfigure the device translation offset" << std::endl
-		<< "  devicerotationoffset\t\tConfigure the device rotation offset" << std::endl
+		<< "  deviceoffsets\t\t\tConfigure the device translation/rotation offsets" << std::endl
 		<< "  benchmarkipc\t\t\tipc benchmarks" << std::endl;
 }
 
