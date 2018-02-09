@@ -480,7 +480,7 @@ void deviceOffsets(int argc, const char * argv[]) {
 		if (argc < 8) {
 			throw std::runtime_error("Error: Too few arguments.");
 		}
-		if (std::strcmp(argv[3], "worldPosOffset") == 0) {
+		if (std::strcmp(argv[4], "worldPosOffset") == 0) {
 			universe = 1;
 			type = 2;
 		} else if (std::strcmp(argv[4], "worldRotOffset") == 0) {
