@@ -56,7 +56,7 @@ void IpcShmCommunicator::_ipcThreadFunc(IpcShmCommunicator* _this, ServerDriver 
 		while (!_this->_ipcThreadStopFlag) {
 			try {
 				ipc::Request message;
-				uint64_t recv_size;
+				size_t recv_size;
 				unsigned priority;
 				boost::posix_time::ptime timeout = boost::posix_time::microsec_clock::universal_time() + boost::posix_time::milliseconds(50);
 				if (messageQueue.timed_receive(&message, sizeof(ipc::Request), recv_size, priority, timeout)) {
