@@ -50,6 +50,8 @@ private:
 	vr::HmdVector3d_t m_driverFromHeadTranslationOffset = { 0.0, 0.0, 0.0 };
 	vr::HmdQuaternion_t m_deviceRotationOffset = { 1.0, 0.0, 0.0, 0.0 };
 	vr::HmdVector3d_t m_deviceTranslationOffset = { 0.0, 0.0, 0.0 };
+	vr::HmdQuaternion_t m_clientRotationOffset = { 1.0, 0.0, 0.0, 0.0 };
+	vr::HmdVector3d_t m_clientTranslationOffset = { 0.0, 0.0, 0.0 };
 
 	struct DigitalInputRemappingInfo {
 		int state = 0;
@@ -149,6 +151,10 @@ public:
 	vr::HmdQuaternion_t& deviceRotationOffset() { return m_deviceRotationOffset; }
 	const vr::HmdVector3d_t& deviceTranslationOffset() const { return m_deviceTranslationOffset; }
 	vr::HmdVector3d_t& deviceTranslationOffset() { return m_deviceTranslationOffset; }
+	const vr::HmdQuaternion_t& clientRotationOffset() const { return m_clientRotationOffset; }
+	vr::HmdQuaternion_t& clientRotationOffset() { return m_clientRotationOffset; }
+	const vr::HmdVector3d_t& clientTranslationOffset() const { return m_clientTranslationOffset; }
+	vr::HmdVector3d_t& clientTranslationOffset() { return m_clientTranslationOffset; }
 
 	void setDigitalInputRemapping(uint32_t buttonId, const DigitalInputRemapping& remapping);
 	DigitalInputRemapping getDigitalInputRemapping(uint32_t buttonId);
