@@ -75,6 +75,12 @@ void IVRServerDriverHost004Hooks::trackedDeviceAxisUpdatedOrig(void * _this, uin
 
 
 bool IVRServerDriverHost004Hooks::_trackedDeviceAdded(void* _this, const char *pchDeviceSerialNumber, vr::ETrackedDeviceClass eDeviceClass, void *pDriver) {
+	char *sn = (char*)pchDeviceSerialNumber;
+	if ((sn >= (char*)0 && sn < (char*)0xff) || eDeviceClass < 0 || eDeviceClass > vr::ETrackedDeviceClass::TrackedDeviceClass_DisplayRedirect ) {
+		// SteamVR Vive driver bug, it's calling this function with random garbage
+		LOG(ERROR) << "Not running _trackedDeviceAdded because of SteamVR driver bug.";
+		return false;
+	}
 	LOG(TRACE) << "IVRServerDriverHost004Hooks::_trackedDeviceAdded(" << _this << ", " << pchDeviceSerialNumber << ", " << eDeviceClass << ", " << pDriver << ")";
 	serverDriver->hooksTrackedDeviceAdded(_this, 4, pchDeviceSerialNumber, eDeviceClass, pDriver);
 	auto retval = trackedDeviceAddedHook.origFunc(_this, pchDeviceSerialNumber, eDeviceClass, pDriver);
