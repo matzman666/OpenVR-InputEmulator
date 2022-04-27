@@ -1,0 +1,248 @@
+﻿  Moc'ing DeviceManipulationTabController.h...
+  Moc'ing DigitalInputRemappingController.h...
+  Moc'ing AnalogInputRemappingController.h...
+  Moc'ing overlaycontroller.h...
+  AnalogInputRemappingController.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  moc_AnalogInputRemappingController.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  moc_DeviceManipulationTabController.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  moc_DigitalInputRemappingController.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  moc_overlaycontroller.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  DigitalInputRemappingController.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  DeviceManipulationTabController.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  main.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  overlaycontroller.cpp
+  Unknown compiler version - please run the configure tests and report the results
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(122,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(216,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,19): error C3646: 'pose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\ipc_protocol.h(408,23): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,53): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(78,65): error C2143: syntax error: missing ',' before '&'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,6): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,19): error C3646: 'getVirtualDevicePose': unknown override specifier
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,39): error C2059: syntax error: '('
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(86,65): error C2238: unexpected token(s) preceding ';'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,64): error C2039: 'DriverPose_t': is not a member of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\openvr\headers\openvr.h(3538): message : see declaration of 'vr'
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\mario\Documents\GitHub\OpenVR-InputEmulator\lib_vrinputemulator\include\vrinputemulator.h(98,76): error C2143: syntax error: missing ',' before '&'
+  Generating Code...

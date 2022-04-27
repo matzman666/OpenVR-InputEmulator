@@ -4,6 +4,7 @@
 #include "IVRDriverContextHooks.h"
 #include "IVRServerDriverHost004Hooks.h"
 #include "IVRServerDriverHost005Hooks.h"
+#include "IVRServerDriverHost006Hooks.h"
 #include "ITrackedDeviceServerDriver005Hooks.h"
 #include "IVRControllerComponent001Hooks.h"
 #include "IVRDriverInput001Hooks.h"
@@ -25,6 +26,9 @@ std::shared_ptr<InterfaceHooks> InterfaceHooks::hookInterface(void* interfaceRef
 		retval = IVRServerDriverHost004Hooks::createHooks(interfaceRef);
 	} else if (interfaceVersion.compare("IVRServerDriverHost_005") == 0) {
 		retval = IVRServerDriverHost005Hooks::createHooks(interfaceRef);
+	}
+	else if (interfaceVersion.compare("IVRServerDriverHost_006") == 0) {
+		retval = IVRServerDriverHost006Hooks::createHooks(interfaceRef);
 	} else if (interfaceVersion.compare("IVRDriverInput_001") == 0) {
 		retval = IVRDriverInput001Hooks::createHooks(interfaceRef);
 	} else if (interfaceVersion.compare("ITrackedDeviceServerDriver_005") == 0) {

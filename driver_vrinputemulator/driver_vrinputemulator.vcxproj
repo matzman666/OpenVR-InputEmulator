@@ -36,6 +36,7 @@
     <ClCompile Include="src\driver_vrinputemulator.cpp" />
     <ClCompile Include="src\hooks\IVRServerDriverHost004Hooks.cpp" />
     <ClCompile Include="src\devicemanipulation\utils\KalmanFilter.cpp" />
+    <ClCompile Include="src\hooks\IVRServerDriverHost006Hooks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\com\shm\driver_ipc_shm.h" />
@@ -52,6 +53,7 @@
     <ClInclude Include="src\driver\ServerDriver.h" />
     <ClInclude Include="src\hooks\common.h" />
     <ClInclude Include="src\hooks\IVRServerDriverHost004Hooks.h" />
+    <ClInclude Include="src\hooks\IVRServerDriverHost006Hooks.h" />
     <ClInclude Include="src\logging.h" />
     <ClInclude Include="src\driver\utils\DevicePropertyValueVisitor.h" />
     <ClInclude Include="src\devicemanipulation\utils\KalmanFilter.h" />
@@ -61,32 +63,32 @@
     <ProjectGuid>{AF6FBE95-527D-499B-9ABD-3A47E9E84C8A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>driver_vrinputemulator</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
