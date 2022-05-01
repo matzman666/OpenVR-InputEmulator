@@ -4,3 +4,4 @@
 /Release/*
 /Debug/*
 .vs/*
+*.tlog
