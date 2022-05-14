@@ -359,7 +359,7 @@ NOTE: Adjust the path the `msvc2015_64` folder in Qt to match your installation
 
 ## Building
 1. Open *'VRInputEmulator.sln'* in Visual Studio Community.
-2. Build the driver.
+2. Build Solution.
 
 
 # Known Bugs

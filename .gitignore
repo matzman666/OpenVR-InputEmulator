@@ -5,3 +5,9 @@
 /Debug/*
 .vs/*
 *.tlog
+client_overlay/x64/Debug/*
+driver_vrinputemulator/bin/x64/*
+client_overlay/bin/win64/OpenVR-InputEmulatorOverlay.exe
+client_overlay/bin/win64/OpenVR-InputEmulatorOverlay.ilk
+client_overlay/bin/win64/OpenVR-InputEmulatorOverlay.pdb
+driver_vrinputemulator/bin/x64/
