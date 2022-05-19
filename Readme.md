@@ -340,7 +340,8 @@ client_commandline.exe setdeviceposition 0 -1 -1 -1
 
 ## Initial Setup
 ### Qt
-1. Goto https://download.qt.io/official_releases/qt/5.7/5.7.0/
+1. Goto 
+https://download.qt.io/new_archive/qt/5.7/5.7.0/
 1. Download Qt 5.7.0
 1. Run the Qt installer (I installed it to "c:\Qt")
 1. Goto `OpenVR-InputEmulator\client_overlay`
