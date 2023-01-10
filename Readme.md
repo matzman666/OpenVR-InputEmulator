@@ -1,4 +1,4 @@
-![language](https://img.shields.io/badge/Language-C%2B%2B11-green.svg)  ![dependencies](https://img.shields.io/badge/Dependencies-Boost%201.63-green.svg)  ![license_gpl3](https://img.shields.io/badge/License-GPL%203.0-green.svg)
+![language](https://img.shields.io/badge/Language-C%2B%2B11-green.svg) ![dependencies](https://img.shields.io/badge/Dependencies-Boost%201.63-green.svg) ![license_gpl3](https://img.shields.io/badge/License-GPL%203.0-green.svg)
 
 ### This is a fork of OpenVRInputEmulator that is compatible with the latest SteamVR versions (hopefully). Thanks p1mp184.
 
@@ -10,7 +10,7 @@ An OpenVR driver that allows to create virtual controllers, emulate controller i
 
 The OpenVR driver hooks into the HTC Vive lighthouse driver and allows to modify any pose updates or button/axis events coming from the Vive controllers before they reach the OpenVR runtime. Due to the nature of this hack the driver may break when Valve decides to update the driver-side OpenVR API.
 
-The motivation of this driver is that I want to make myself a tracked gun that is guaranteed to work in any SteamVR game regardless of whether the original dev wants to support tracked guns or not. To accomplish this I need some way to add translation and rotation offsets to the poses of the motion controllers so that I can line up my tracked gun and the gun in the game. Additionally I need a way to easily switch between the tracking puck on my gun and my motion controller with the game thinking it's still the same controller (Throwing grenades with a tracked gun is not fun). But this driver should also support other use cases. 
+The motivation of this driver is that I want to make myself a tracked gun that is guaranteed to work in any SteamVR game regardless of whether the original dev wants to support tracked guns or not. To accomplish this I need some way to add translation and rotation offsets to the poses of the motion controllers so that I can line up my tracked gun and the gun in the game. Additionally I need a way to easily switch between the tracking puck on my gun and my motion controller with the game thinking it's still the same controller (Throwing grenades with a tracked gun is not fun). But this driver should also support other use cases.
 
 There is also a client-side API which other programs can use to communicate with the driver. This API should be powerful enough to also support the development of full-fledged motion-controller drivers.
 
@@ -19,7 +19,7 @@ There is also a client-side API which other programs can use to communicate with
 - Add translation and rotation offsets to the pose of existing controllers.
 - Redirect the pose from one controller to another.
 - Swap controllers.
-- Motion  compensation for 6-dof motion platforms.
+- Motion compensation for 6-dof motion platforms.
 - Create virtual controllers and control their positions and rotations.
 - Emulate controller input.
 - Remap controller buttons.
@@ -37,14 +37,13 @@ Download the newest installer from the [release section](https://github.com/matz
 
 ## Command-Line Client
 
-Download the newest command-line client from the [release section](https://github.com/matzman666/OpenVR-InputEmulator/releases), unzip it, and then execute the contained binary in a cmd window. Enter *'client_commandline.exe help'* on the command line for usage instructions.
-
+Download the newest command-line client from the [release section](https://github.com/matzman666/OpenVR-InputEmulator/releases), unzip it, and then execute the contained binary in a cmd window. Enter _'client_commandline.exe help'_ on the command line for usage instructions.
 
 # Documentation
 
 ## Fallout 4 VR specific Fixes
 
-There is an Oculus Touch specific fix available for Fallout 4 VR. It allows to emulate trackpad behaviour with the Rift's joysticks. Therefore, on the [input remapping pages](https://github.com/matzman666/OpenVR-InputEmulator#analog-input-settings) of each analog axis a touchpad emulation mode can be configured. 
+There is an Oculus Touch specific fix available for Fallout 4 VR. It allows to emulate trackpad behaviour with the Rift's joysticks. Therefore, on the [input remapping pages](https://github.com/matzman666/OpenVR-InputEmulator#analog-input-settings) of each analog axis a touchpad emulation mode can be configured.
 
 Currently there are two modes available:
 
@@ -95,14 +94,15 @@ Redirect mode can be temporarily suspended by re-mapping a controller button to 
 ![Motion Compensation Settings Page](docs/screenshots/MotionCompensationPage.png)
 
 **Vel/Acc Compensation Mode**: How should reported velocities and acceleration values be adjusted. The problem with only adjusting the headset position is that pose prediction also takes velocity and acceleration into accound. As long as the reported values to not differ too much from the real values, pose prediction errors are hardly noticeable. But with fast movements of the motion platform the pose prediction error can be noticeable. Available modes are:
+
 - **Disabled**: Do not adjust velocity/acceration values.
 - **Set Zero**: Set all velocity/acceleration values to zero. Most simple form of velocity/acceleration compensation.
 - **Use Reference Tracker**: Substract the velocity/acceleration values of the motion compensation reference tracker/controller from the values reported from the headset. Most accurate form of velocity/acceleration compensation. However, it requires that the reference tracker/controller is as closely mounted to the head position as possible. The further away it is from the head position the larger the error.
 - **Linear Approximation w/ Moving Average (Experimental)**: Uses linear approximation to estimate the velocity/acceleration values. The used formula is: (current_position - last_position) / time_difference. To reduce jitter the average over the last few values is used.
   - **Moving Average Window**: How many values are used for calculating the average.
 - **Kalman Filter (Experimental)**: The position values are fed into a kalman filter which then outputs a velocity value. The kalman filter implementation is based on the filter described [here](https://en.wikipedia.org/wiki/Kalman_filter#Example_application.2C_technical).
-  - **Process/Observation Noise**: Parameters used to fine-tune the kalman filter. 
-  
+  - **Process/Observation Noise**: Parameters used to fine-tune the kalman filter.
+
 ## Input Remapping Page:
 
 ![Input Remapping Page](docs/screenshots/InputRemappingPage.png)
@@ -184,7 +184,6 @@ Available touch emulation modes:
 - **Invert X/Y Axis**: Inverts the x or y axis.
 - **Swap X/Y**: Swaps the x and the y axis.
 - **Dead Zone**: Allows to configure dead zones in the middle (left value) and at the edges (right value) of an axis. The deadzone in the middle is mapped to 0, and the deadzone at the edges is mapped to 1. All input between the deadzones is remapped to an interval of [0, 1].
-
 
 ## client_commandline commands:
 
@@ -290,7 +289,6 @@ setdeviceposition <virtualId> <x> <y> <z>
 
 setdevicerotation <virtualId> <yaw> <pitch> <roll>.
 
-
 ## Client API
 
 ToDo. See [vrinputemulator.h](https://github.com/matzman666/OpenVR-InputEmulator/blob/master/lib_vrinputemulator/include/vrinputemulator.h).
@@ -339,9 +337,11 @@ client_commandline.exe setdeviceposition 0 -1 -1 -1
 ```
 
 ## Initial Setup
+
 ### Qt
-1. Goto 
-https://download.qt.io/new_archive/qt/5.7/5.7.0/
+
+1. Goto
+   https://download.qt.io/new_archive/qt/5.7/5.7.0/
 1. Download Qt 5.7.0
 1. Run the Qt installer (I installed it to "c:\Qt")
 1. Goto `OpenVR-InputEmulator\client_overlay`
@@ -359,9 +359,9 @@ https://download.qt.io/new_archive/qt/5.7/5.7.0/
 NOTE: Adjust the path the `msvc2015_64` folder in Qt to match your installation
 
 ## Building
-1. Open *'VRInputEmulator.sln'* in Visual Studio Community.
-2. Build Solution.
 
+1. Open _'VRInputEmulator.sln'_ in Visual Studio 2019.
+2. Build Solution.
 
 # Known Bugs
 
