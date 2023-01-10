@@ -23,7 +23,7 @@ void VRInputEmulator::_ipcThreadFunc(VRInputEmulator * _this) {
 	while (!_this->_ipcThreadStop) {
 		try {
 			ipc::Reply message;
-			uint64_t recv_size;
+			size_t recv_size;
 			unsigned priority;
 			boost::posix_time::ptime timeout = boost::posix_time::microsec_clock::universal_time() + boost::posix_time::milliseconds(50);
 			if (_this->_ipcClientQueue->timed_receive(&message, sizeof(ipc::Reply), recv_size, priority, timeout)) {
