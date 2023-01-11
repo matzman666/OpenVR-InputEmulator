@@ -1,11 +1,12 @@
 .vs/*
 */build/*
 */Release/*
-*bin/*
 */Debug/*
 Debug/*
 Release/*
 build/*
+*/x64/*
+*/bin/*
 /third-party/boost_1_63_0/*
 *.tlog
 driver_vrinputemulator/bin/*
