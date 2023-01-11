@@ -1,6 +1,6 @@
 ![language](https://img.shields.io/badge/Language-C%2B%2B11-green.svg) ![dependencies](https://img.shields.io/badge/Dependencies-Boost%201.63-green.svg) ![license_gpl3](https://img.shields.io/badge/License-GPL%203.0-green.svg)
 
-### This is a fork of OpenVRInputEmulator that is compatible with the latest SteamVR versions (hopefully). Thanks p1mp184.
+### This is a fork of OpenVRInputEmulator that is compatible with the latest SteamVR versions (hopefully). Fixes aren't mine, I took code from other people, including p1mp184, and merged it all into one repo.
 
 # OpenVR-InputEmulator
 
