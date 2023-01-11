@@ -135,16 +135,6 @@ bool DeviceManipulationHandle::handlePoseUpdate(uint32_t& unWhichDevice, vr::Dri
 			if (m_deviceTranslationOffset.v[0] != 0.0 || m_deviceTranslationOffset.v[1] != 0.0 || m_deviceTranslationOffset.v[2] != 0.0) {
 				VECTOR_ADD(newPose.vecPosition, m_deviceTranslationOffset);
 			}
-			if (m_clientRotationOffset.w != 1.0 || m_clientRotationOffset.x != 0.0
-				|| m_clientRotationOffset.y != 0.0 || m_clientRotationOffset.z != 0.0) {
-				newPose.qWorldFromDriverRotation = m_clientRotationOffset * newPose.qWorldFromDriverRotation;
-			}
-			if (m_clientTranslationOffset.v[0] != 0.0 || m_clientTranslationOffset.v[1] != 0.0 || m_clientTranslationOffset.v[2] != 0.0) {
-				vr::HmdVector3d_t rotatedTranslation = vrmath::quaternionRotateVector(m_clientRotationOffset, newPose.vecWorldFromDriverTranslation);
-				newPose.vecWorldFromDriverTranslation[0] = rotatedTranslation.v[0] + m_clientTranslationOffset.v[0];
-				newPose.vecWorldFromDriverTranslation[1] = rotatedTranslation.v[1] + m_clientTranslationOffset.v[1];
-				newPose.vecWorldFromDriverTranslation[2] = rotatedTranslation.v[2] + m_clientTranslationOffset.v[2];
-			}
 		}
 		
 		m_motionCompensationManager._applyMotionCompensation(newPose, this);

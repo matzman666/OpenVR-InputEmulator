@@ -254,11 +254,6 @@ struct Request_DeviceManipulation_SetDeviceOffsets {
 	vr::HmdQuaternion_t deviceRotationOffset;
 	bool deviceTranslationOffsetValid;
 	vr::HmdVector3d_t deviceTranslationOffset;
-	// client universe offsets
-	bool clientRotationOffsetValid;
-	vr::HmdQuaternion_t clientRotationOffset;
-	bool clientTranslationOffsetValid;
-	vr::HmdVector3d_t clientTranslationOffset;
 };
 
 struct Request_DeviceManipulation_RedirectMode {
@@ -442,8 +437,6 @@ struct Reply_DeviceManipulation_GetDeviceOffsets {
 	vr::HmdVector3d_t driverFromHeadTranslationOffset;
 	vr::HmdQuaternion_t deviceRotationOffset;
 	vr::HmdVector3d_t deviceTranslationOffset;
-	vr::HmdQuaternion_t clientRotationOffset;
-	vr::HmdVector3d_t clientTranslationOffset;
 };
 
 struct Reply_InputRemapping_GetDigitalRemapping {
