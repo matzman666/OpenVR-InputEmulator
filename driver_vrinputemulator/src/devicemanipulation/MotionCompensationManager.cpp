@@ -1,7 +1,9 @@
 #include "MotionCompensationManager.h"
-
+#include <math.h>
 #include "DeviceManipulationHandle.h"
 #include "../driver/ServerDriver.h"
+#include <iostream>
+
 
 
 // driver namespace
@@ -83,18 +85,66 @@ bool MotionCompensationManager::_isMotionCompensationZeroPoseValid() {
 
 void MotionCompensationManager::_setMotionCompensationZeroPose(const vr::DriverPose_t& pose) {
 	// convert pose from driver space to app space
-	auto tmpConj = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation);
-	_motionCompensationZeroPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
-	_motionCompensationZeroRot = tmpConj * pose.qRotation;
+	
+	vr::HmdVector3d_t angles2 = vrmath::quaternionToYPR(pose.qWorldFromDriverRotation);
+	vr::HmdQuaternion_t pau = vrmath::quaternionFromYawPitchRoll(angles2.v[0]/1,angles2.v[1]/1,angles2.v[2]/1);
+	double family[3] = { 0.0,0.0,0.0 };
+	family[0] = pose.vecWorldFromDriverTranslation[0];
+	family[1] = pose.vecWorldFromDriverTranslation[1];
+	family[2] = pose.vecWorldFromDriverTranslation[2];
+
+	vr::HmdVector3d_t angles = vrmath::quaternionToYPR(pose.qRotation);
+	family[0] = pose.vecWorldFromDriverTranslation[0];// -1 * sin(qRotationp[0].v[2] / 2);
+	family[1] = pose.vecWorldFromDriverTranslation[1] + 0.75 * sin((qRotationp[0].v[1] - aref.v[1]) / 2) + 0.75 * (((1 - cos(qRotationp[0].v[2] - aref.v[2]) / 2)));// +0.75 * abs(sin((qRotationp[0].v[2] - aref.v[2]) / 4));// cos((qRotationp[0].v[2] - aref.v[2]) / 2);// era 0.75 per v1
+	family[2] = pose.vecWorldFromDriverTranslation[2] - 0.9 * (1 - cos((qRotationp[0].v[1] - aref.v[1]) / 2)); //+0.3 * sin((qRotationp[0].v[1] - aref.v[1]) / 2);// -0.9 * (1 - cos((qRotationp[0].v[1] - aref.v[1]) / 2));
+
+
+	aref = angles;
+	LOG(INFO) << "Yaw:   " << aref.v[0];
+	LOG(INFO) << "Pitch: " << aref.v[1];
+	LOG(INFO) << "Roll:  " << aref.v[2];
+
+	auto tmpConj = vrmath::quaternionConjugate(pau);//pose.qWorldFromDriverRotation
+	_motionCompensationZeroPos = vrmath::quaternionRotateVectorp(pau, tmpConj, pose.vecPosition, true, 1,1,1) - family;//pose.qWorldFromDriverRotation...pose.vecWorldFromDriverTranslation;
+	_motionCompensationZeroRot = tmpConj *  vrmath::quaternionHalver(pose.qRotation, 3000.0);// 20201129 era 3000
 
 	_motionCompensationZeroPoseValid = true;
 }
 
 void MotionCompensationManager::_updateMotionCompensationRefPose(const vr::DriverPose_t& pose) {
 	// convert pose from driver space to app space
-	auto tmpConj = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation);
-	_motionCompensationRefPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
-	auto poseWorldRot = tmpConj * pose.qRotation;
+
+		
+	vecPositionp[0][0] = pose.vecPosition[0];
+	vecPositionp[1][0] = pose.vecPosition[1];
+	vecPositionp[2][0] = pose.vecPosition[2];
+	qRotationp[0] = vrmath::quaternionToYPR(pose.qRotation);
+	double pau[3] = { 0,0,0, };
+	vr::HmdVector3d_t lau = { 0,0,0 };
+	vr::HmdQuaternion_t ary = { 0,0,0,0 };
+	double family[3] = { 0.0,0.0,0.0 };
+	family[0] = pose.vecWorldFromDriverTranslation[0];// -1 * sin(qRotationp[0].v[2] / 2);
+	family[1] = pose.vecWorldFromDriverTranslation[1] +0.75 * sin((qRotationp[0].v[1] - aref.v[1]) / 2) + 0.75 * (((1 - cos(qRotationp[0].v[2] - aref.v[2]) / 2)));// +0.75 * abs(sin((qRotationp[0].v[2] - aref.v[2]) / 4));// cos((qRotationp[0].v[2] - aref.v[2]) / 2);// era 0.75 per v1
+	family[2] = pose.vecWorldFromDriverTranslation[2] -0.9 * (1 - cos((qRotationp[0].v[1] - aref.v[1]) / 2)); //+0.3 * sin((qRotationp[0].v[1] - aref.v[1]) / 2);// -0.9 * (1 - cos((qRotationp[0].v[1] - aref.v[1]) / 2));
+
+
+	for (int i = 0; i < 1; i++)
+	{
+		pau[0] = pau[0] + vecPositionp[0][i];
+		pau[1] = pau[1] + vecPositionp[1][i];
+		pau[2] = pau[2] + vecPositionp[2][i];
+		lau = lau + qRotationp[i];
+	}
+
+	ary = vrmath::quaternionFromYawPitchRoll(lau.v[0], lau.v[1], lau.v[2]);
+	
+	vr::HmdVector3d_t angles2 = vrmath::quaternionToYPR(pose.qWorldFromDriverRotation);
+	vr::HmdQuaternion_t set = vrmath::quaternionFromYawPitchRoll(angles2.v[0] / 3000, angles2.v[1] / 3000, angles2.v[2] / 3000);
+
+
+	auto tmpConj = vrmath::quaternionConjugate(set);//pose.qWorldFromDriverRotation
+	_motionCompensationRefPos = vrmath::quaternionRotateVectorp(set, tmpConj, pose.vecPosition, true, 1,1,1) - family;//pose.qWorldFromDriverRotation...(pose.vecWorldFromDriverTranslation);
+	auto poseWorldRot = tmpConj * vrmath::quaternionHalver(ary, 3000.0);// 20201129 era 3000
 
 	// calculate orientation difference and its inverse
 	_motionCompensationRotDiff = poseWorldRot * vrmath::quaternionConjugate(_motionCompensationZeroRot);
@@ -117,9 +167,14 @@ void MotionCompensationManager::_updateMotionCompensationRefPose(const vr::Drive
 bool MotionCompensationManager::_applyMotionCompensation(vr::DriverPose_t& pose, DeviceManipulationHandle* deviceInfo) {
 	if (_motionCompensationEnabled && _motionCompensationZeroPoseValid && _motionCompensationRefPoseValid) {
 		// convert pose from driver space to app space
+
+
+		vr::HmdVector3d_t angles = vrmath::quaternionToYPR(pose.qRotation);
+		vr::HmdQuaternion_t ary = vrmath::quaternionFromYawPitchRoll(angles.v[0]/3000, angles.v[1]/3000, angles.v[2]/3000);
+
 		vr::HmdQuaternion_t tmpConj = vrmath::quaternionConjugate(pose.qWorldFromDriverRotation);
 		auto poseWorldPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, pose.vecPosition, true) - pose.vecWorldFromDriverTranslation;
-		auto poseWorldRot = tmpConj * pose.qRotation;
+		auto poseWorldRot = tmpConj *  (pose.qRotation);
 
 		// do motion compensation
 		auto compensatedPoseWorldPos = _motionCompensationZeroPos + vrmath::quaternionRotateVector(_motionCompensationRotDiff, _motionCompensationRotDiffInv, poseWorldPos - _motionCompensationRefPos, true);
@@ -265,9 +320,9 @@ bool MotionCompensationManager::_applyMotionCompensation(vr::DriverPose_t& pose,
 		// convert back to driver space
 		pose.qRotation = pose.qWorldFromDriverRotation * compensatedPoseWorldRot;
 		auto adjPoseDriverPos = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, compensatedPoseWorldPos + pose.vecWorldFromDriverTranslation);
-		pose.vecPosition[0] = adjPoseDriverPos.v[0];
-		pose.vecPosition[1] = adjPoseDriverPos.v[1];
-		pose.vecPosition[2] = adjPoseDriverPos.v[2];
+		pose.vecPosition[0] = 1.0*adjPoseDriverPos.v[0];
+		pose.vecPosition[1] = 1.0*adjPoseDriverPos.v[1];
+		pose.vecPosition[2] = 1.0*adjPoseDriverPos.v[2];
 		if (compensatedPoseWorldVelValid) {
 			auto adjPoseDriverVel = vrmath::quaternionRotateVector(pose.qWorldFromDriverRotation, tmpConj, compensatedPoseWorldVel);
 			pose.vecVelocity[0] = adjPoseDriverVel.v[0];

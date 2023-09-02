@@ -56,6 +56,11 @@ private:
 	MotionCompensationStatus _motionCompensationStatus = MotionCompensationStatus::WaitingForZeroRef;
 	constexpr static uint32_t _motionCompensationZeroRefTimeoutMax = 20;
 	uint32_t _motionCompensationZeroRefTimeout = 0;
+	double vecPositionp[3][2];
+	vr::HmdVector3d_t qRotationp[2];
+	vr::HmdVector3d_t aref;
+	double sm = 2.0;
+	int pc = 0;
 	MotionCompensationVelAccMode _motionCompensationVelAccMode = MotionCompensationVelAccMode::Disabled;
 	double m_motionCompensationKalmanProcessVariance = 0.1;
 	double m_motionCompensationKalmanObservationVariance = 0.1;

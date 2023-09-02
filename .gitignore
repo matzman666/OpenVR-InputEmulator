@@ -1,5 +1,12 @@
-/third-party/LeapSDK/*
+.vs/*
+*/build/*
+*/Release/*
+*/Debug/*
+Debug/*
+Release/*
+build/*
+*/x64/*
+*/bin/*
 /third-party/boost_1_63_0/*
-/build/*
-/Release/*
-/Debug/*
+*.tlog
+driver_vrinputemulator/bin/*
